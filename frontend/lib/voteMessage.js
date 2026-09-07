@@ -1,5 +1,4 @@
-// The exact message a voter signs with their wallet. Shared by the client
-// (before signing) and the server (before verifying) so they always match.
+// The exact message a voter signs (EIP-191 personal_sign). Shared by client and server.
 export function voteMessage({ cycleId, optionId, wallet }) {
-  return `Boomerang Community Vote\nCycle: ${cycleId}\nOption: ${optionId}\nWallet: ${wallet}`;
+  return `Boomerang Community Vote\nChain: Robinhood Chain (4663)\nCycle: ${cycleId}\nOption: ${optionId}\nWallet: ${wallet}`;
 }

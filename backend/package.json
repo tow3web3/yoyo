@@ -1,28 +1,25 @@
 {
   "name": "boomerang-backend",
-  "version": "1.0.0",
-  "description": "Boomerang - PumpFun volume fee redistribution bot backend",
+  "version": "2.0.0",
+  "description": "Boomerang on Robinhood Chain: creator fees turned into Stock Token dividends for holders",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "migrate": "node src/db/migrate.js"
+    "migrate": "node src/db/migrate.js",
+    "test-run": "node scripts/test-run.mjs",
+    "probe": "node scripts/probe-stock.mjs"
   },
-  "keywords": ["solana", "pumpfun", "telegram", "bot", "airdrop"],
+  "keywords": ["robinhood-chain", "stock-tokens", "telegram", "bot", "airdrop", "dividends"],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@pump-fun/pump-sdk": "^1.24.0",
-    "@solana/web3.js": "^1.95.0",
-    "@solana/spl-token": "^0.4.0",
-    "@jup-ag/api": "^6.0.0",
+    "viem": "^2.21.0",
     "telegraf": "^4.16.0",
     "express": "^4.18.0",
     "pg": "^8.11.0",
-    "node-cron": "^3.0.0",
-    "dotenv": "^16.4.0",
-    "axios": "^1.6.0",
-    "bs58": "^6.0.0"
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.4.0"
   }
 }

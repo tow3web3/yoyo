@@ -1,15 +1,28 @@
-import { neon } from '@neondatabase/serverless';
+// Read-only Postgres access for the site's API routes (the same database the
+// bot writes to). Exposes a tagged template, `sql\`... ${value} ...\``, that
+// returns the rows array, so queries read like plain SQL.
+import { Pool } from 'pg';
 
-// Read-only Neon access for the public site's API routes. The PC backend
-// writes to the same database (bot, scheduler, executions); Vercel only reads.
-// Lazy-initialised so a missing env var doesn't crash the build.
-let _sql;
+let pool;
 
-export function getSql() {
-  if (!_sql) {
+function getPool() {
+  if (!pool) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error('DATABASE_URL is not set');
-    _sql = neon(url);
+    const ssl = url.includes('sslmode=require') || url.includes('neon.tech') ? { rejectUnauthorized: false } : false;
+    pool = new Pool({ connectionString: url, ssl, max: 5, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 5_000 });
+    pool.on('error', (e) => console.error('pg pool error:', e.message));
   }
-  return _sql;
+  return pool;
+}
+
+async function sql(strings, ...values) {
+  let text = '';
+  strings.forEach((s, i) => { text += s; if (i < values.length) text += `$${i + 1}`; });
+  const { rows } = await getPool().query(text, values);
+  return rows;
+}
+
+export function getSql() {
+  return sql;
 }

@@ -1,0 +1,18 @@
+[Unit]
+Description=BOOMERANG site (Next.js standalone)
+After=network.target postgresql.service
+
+[Service]
+WorkingDirectory=/root/boomerang/frontend
+EnvironmentFile=/root/boomerang/frontend/.env.local
+Environment=NODE_ENV=production
+Environment=PORT=5401
+Environment=HOSTNAME=127.0.0.1
+# Next places server.js at .next/standalone/server.js, or one level deeper when it detects a workspace root.
+ExecStart=/bin/bash -c 'cd /root/boomerang/frontend && exec /usr/bin/node "$(find .next/standalone -maxdepth 2 -name server.js | head -1)"'
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

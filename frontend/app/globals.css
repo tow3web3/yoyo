@@ -3,73 +3,110 @@
 @tailwind utilities;
 
 body {
-  @apply min-h-screen bg-night-950 text-fg antialiased;
+  @apply min-h-screen bg-ground text-ink antialiased;
   background-image:
-    radial-gradient(900px circle at 50% -12%, rgba(16, 185, 129, 0.12), transparent 60%),
-    radial-gradient(700px circle at 100% 0%, rgba(110, 231, 183, 0.10), transparent 55%),
-    radial-gradient(rgba(15, 26, 20, 0.04) 1px, transparent 1px);
-  background-size: auto, auto, 24px 24px;
+    radial-gradient(900px circle at 50% -12%, rgba(0, 200, 5, 0.10), transparent 60%),
+    radial-gradient(700px circle at 100% 0%, rgba(246, 195, 67, 0.12), transparent 55%);
   background-attachment: fixed;
 }
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-line bg-white shadow-soft;
+    @apply rounded-2xl border border-line bg-paper shadow-soft;
   }
   .panel-glow {
-    @apply rounded-2xl border border-line bg-white shadow-glow;
+    @apply rounded-2xl border border-hood-200 bg-paper shadow-glow;
+  }
+  .panel-gold {
+    @apply rounded-2xl border border-gold-200 bg-paper shadow-gold;
+  }
+  .panel-ink {
+    @apply rounded-2xl border border-ink bg-ink text-white;
   }
 
-  /* Primary CTA — emerald fill, white text */
+  /* Primary CTA: Robinhood green pill, ink text like the app's buy button */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-boom-500 px-5 py-2.5
-           text-sm font-semibold text-white shadow-sm;
-    transition: background-color 0.18s ease, transform 0.12s ease;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-hood-500 px-5 py-2.5
+           text-sm font-bold text-ink shadow-sm;
+    transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
   }
   .btn-primary:hover {
-    @apply bg-boom-600 -translate-y-px;
+    @apply -translate-y-px bg-hood-400;
+    box-shadow: 0 8px 24px rgba(0, 200, 5, 0.28);
   }
   .btn-primary:active {
     @apply translate-y-0;
   }
+  .btn-primary:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
 
-  /* Secondary CTA — subtle outline */
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white
-           px-5 py-2.5 text-sm font-semibold text-fg;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-line bg-paper
+           px-5 py-2.5 text-sm font-semibold text-ink;
     transition: border-color 0.18s ease, color 0.18s ease, transform 0.12s ease;
   }
   .btn-ghost:hover {
-    @apply -translate-y-px border-boom-400 text-boom-700;
+    @apply -translate-y-px border-hood-400 text-hood-700;
+  }
+
+  .btn-ink {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-white;
+    transition: transform 0.12s ease, background-color 0.18s ease;
+  }
+  .btn-ink:hover {
+    @apply -translate-y-px bg-hood-900;
   }
 
   .chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-line bg-white
-           px-3 py-1 text-xs font-medium text-mut;
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-paper px-3 py-1 text-xs font-medium text-mut;
+  }
+  .chip-gold {
+    @apply inline-flex items-center gap-2 rounded-full border border-gold-300 bg-gold-50 px-3 py-1 text-xs font-bold text-gold-700;
   }
 
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.2em] text-boom-600;
+    @apply text-xs font-bold uppercase tracking-[0.2em] text-hood-600;
   }
 
-  /* Playful hover for cards */
+  /* Ticker-style figures */
+  .figure {
+    @apply font-mono tabular-nums;
+  }
+  .up {
+    @apply text-hood-600;
+  }
+  .dn {
+    @apply text-down;
+  }
+
   .card-fun {
     @apply transition-all duration-300;
   }
   .card-fun:hover {
-    @apply -translate-y-1.5 -rotate-1;
+    @apply -translate-y-1.5;
+  }
+
+  /* Stock logo tile: white disc with a hairline, the way the app lists tickers */
+  .stock-logo {
+    @apply flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-paper;
   }
 }
 
-/* Fun gradient text */
 .text-gradient {
-  background: linear-gradient(100deg, #10b981, #34d399 45%, #38bdf8);
+  background: linear-gradient(100deg, #00A804, #00C805 45%, #33D93E);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-gold-gradient {
+  background: linear-gradient(100deg, #C9931B, #F6C343 55%, #FFE38A);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* Big hero boomerang: spins in, lands with a bounce, then floats gently */
+/* Hero boomerang: lands with a bounce, then floats */
 @keyframes boomerang-land {
   0% { transform: translateY(-160px) rotate(-900deg) scale(0.5); opacity: 0; }
   55% { transform: translateY(14px) rotate(30deg) scale(1.06); opacity: 1; }
@@ -81,25 +118,10 @@ body {
   50% { transform: translateY(-14px) rotate(3deg); }
 }
 .boomerang-hero {
-  animation: boomerang-land 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
-             heroFloat 6s ease-in-out 1.6s infinite;
+  animation: boomerang-land 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, heroFloat 6s ease-in-out 1.6s infinite;
 }
-@media (prefers-reduced-motion: reduce) {
-  .boomerang-hero { animation: none; }
-}
-
-/* Interactive hero boomerang: spins on hover, flies far + returns on click.
-   Nesting: .boomerang-hero (land/float) > .boom-throw (flight) > .boom-spin (rotation). */
-.boom-throw {
-  border: 0;
-  padding: 0;
-  background: none;
-}
-.boom-spin {
-  will-change: transform;
-}
-
-/* Click: shoot out far, loop around, and come home */
+.boom-throw { border: 0; padding: 0; background: none; }
+.boom-spin { will-change: transform; }
 @keyframes boomThrow {
   0%   { transform: translate(0, 0) scale(1); }
   18%  { transform: translate(46vw, -26vh) scale(0.55); }
@@ -109,113 +131,34 @@ body {
   88%  { transform: translate(8vw, -8vh) scale(1.08); }
   100% { transform: translate(0, 0) scale(1); }
 }
-.boom-throw.is-thrown {
-  animation: boomThrow 2.2s cubic-bezier(0.45, 0.05, 0.4, 1) both;
-  z-index: 30;
-}
+.boom-throw.is-thrown { animation: boomThrow 2.2s cubic-bezier(0.45, 0.05, 0.4, 1) both; z-index: 30; }
 
-@media (prefers-reduced-motion: reduce) {
-  .boom-throw.is-thrown {
-    animation: none;
-  }
+/* Stock coins orbiting the boomerang */
+.orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -1.5rem 0 0 -1.5rem;
+  animation: orbit var(--dur, 22s) linear infinite;
+  animation-delay: var(--delay, 0s);
 }
+.orbit:hover { animation-play-state: paused; }
 
-/* Token search: a boomerang sweeps across, then the answer is revealed */
+/* Token search: the boomerang sweeps across, then the answer pops */
 @keyframes boomerang-sweep {
   0% { left: -12%; transform: translateY(-50%) rotate(0deg); opacity: 0; }
   12% { opacity: 1; }
   88% { opacity: 1; }
   100% { left: 112%; transform: translateY(-50%) rotate(1080deg); opacity: 0; }
 }
-.boomerang-sweep {
-  animation: boomerang-sweep 1s ease-in-out;
-}
+.boomerang-sweep { animation: boomerang-sweep 1s ease-in-out; }
 @keyframes reveal-pop {
   0% { opacity: 0; transform: translateY(10px) scale(0.98); }
   100% { opacity: 1; transform: none; }
 }
-.reveal-pop {
-  animation: reveal-pop 0.5s ease-out both;
-}
+.reveal-pop { animation: reveal-pop 0.5s ease-out both; }
 
-/* ===== Why Boomerang: boomerangs fly a return loop and uncover the text ===== */
-/* The wrapper follows a Bézier flight path and banks along it; the inner
-   image spins fast on its own centre — like a real returning boomerang. */
-@keyframes wb-flight {
-  0%   { offset-distance: 0%; opacity: 0; }
-  7%   { opacity: 1; }
-  93%  { opacity: 1; }
-  100% { offset-distance: 100%; opacity: 0; }
-}
-@keyframes wb-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-.wb-boom {
-  position: absolute;
-  top: 0;
-  left: 0;
-  offset-rotate: auto; /* bank into the curve */
-  opacity: 0;
-  will-change: offset-distance, opacity;
-  filter: drop-shadow(0 8px 14px rgba(16, 185, 129, 0.28));
-}
-.wb-boom .wb-spin {
-  display: block;
-  width: 100%;
-  height: 100%;
-  animation: wb-spin 0.55s linear infinite;
-  animation-play-state: paused;
-}
-
-/* Big boomerang — wide return loop across the top, reveals the heading */
-.wb-boom--1 {
-  width: 66px;
-  height: 66px;
-  offset-path: path("M -90 300 C 150 335 320 55 565 70 C 815 85 1000 -25 1065 150 C 1115 305 875 325 635 302 C 415 281 215 360 15 332 C -70 320 -150 314 -200 300");
-  animation: wb-flight 3.3s cubic-bezier(0.45, 0.05, 0.35, 1) both;
-  animation-play-state: paused;
-}
-/* Smaller, deeper boomerang — lower arc, reveals the body copy */
-.wb-boom--2 {
-  width: 42px;
-  height: 42px;
-  opacity: 0;
-  offset-path: path("M -70 250 C 170 262 330 372 575 338 C 825 303 990 372 1100 252");
-  animation: wb-flight 2.7s 0.55s cubic-bezier(0.4, 0.1, 0.4, 1) both;
-  animation-play-state: paused;
-  filter: drop-shadow(0 6px 10px rgba(56, 189, 248, 0.25));
-}
-
-.wb-stage.in .wb-boom { animation-play-state: running; }
-.wb-stage.in .wb-boom .wb-spin { animation-play-state: running; }
-
-/* Text starts wiped from the left; the boomerang's pass uncovers it */
-.wb-reveal {
-  clip-path: inset(0 100% 0 0);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: clip-path 0.75s cubic-bezier(0.2, 0.7, 0.2, 1),
-    opacity 0.6s ease, transform 0.75s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.wb-stage.in .wb-reveal {
-  clip-path: inset(0 0 0 0);
-  opacity: 1;
-  transform: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wb-boom { display: none; }
-  .wb-reveal {
-    clip-path: none;
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-}
-
-/* Marquee */
+/* Ticker tape */
 @keyframes marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
@@ -223,48 +166,65 @@ body {
 .marquee-track {
   display: flex;
   width: max-content;
-  animation: marquee 32s linear infinite;
+  animation: marquee 48s linear infinite;
   will-change: transform;
 }
-.marquee-track:hover {
-  animation-play-state: paused;
-}
+.marquee-track:hover { animation-play-state: paused; }
 
-@keyframes feedIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Dividend statement lines writing themselves in */
+@keyframes lineIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: none; }
 }
-.animate-feedin {
-  animation: feedIn 0.4s ease-out;
-}
+.line-in { animation: lineIn 0.5s ease-out both; }
 
-/* Scroll reveal */
-.reveal {
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+/* Why section: text uncovered as the boomerangs sweep past */
+@keyframes wb-flight {
+  0% { offset-distance: 0%; opacity: 0; }
+  7% { opacity: 1; }
+  93% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
 }
-.reveal.is-visible {
-  opacity: 1;
-  transform: none;
+@keyframes wb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.wb-boom {
+  position: absolute; top: 0; left: 0;
+  offset-rotate: auto; opacity: 0;
+  will-change: offset-distance, opacity;
+  filter: drop-shadow(0 8px 14px rgba(0, 200, 5, 0.28));
 }
+.wb-boom .wb-spin { display: block; width: 100%; height: 100%; animation: wb-spin 0.55s linear infinite; animation-play-state: paused; }
+.wb-boom--1 {
+  width: 66px; height: 66px;
+  offset-path: path("M -90 300 C 150 335 320 55 565 70 C 815 85 1000 -25 1065 150 C 1115 305 875 325 635 302 C 415 281 215 360 15 332 C -70 320 -150 314 -200 300");
+  animation: wb-flight 3.3s cubic-bezier(0.45, 0.05, 0.35, 1) both; animation-play-state: paused;
+}
+.wb-boom--2 {
+  width: 42px; height: 42px; opacity: 0;
+  offset-path: path("M -70 250 C 170 262 330 372 575 338 C 825 303 990 372 1100 252");
+  animation: wb-flight 2.7s 0.55s cubic-bezier(0.4, 0.1, 0.4, 1) both; animation-play-state: paused;
+  filter: drop-shadow(0 6px 10px rgba(246, 195, 67, 0.35));
+}
+.wb-stage.in .wb-boom { animation-play-state: running; }
+.wb-stage.in .wb-boom .wb-spin { animation-play-state: running; }
+.wb-reveal {
+  clip-path: inset(0 100% 0 0); opacity: 0; transform: translateY(8px);
+  transition: clip-path 0.75s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.6s ease, transform 0.75s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.wb-stage.in .wb-reveal { clip-path: inset(0 0 0 0); opacity: 1; transform: none; }
+
+@keyframes feedIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-feedin { animation: feedIn 0.4s ease-out; }
+
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.reveal.is-visible { opacity: 1; transform: none; }
+
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
+  .boomerang-hero, .boom-throw.is-thrown, .orbit, .marquee-track, .line-in { animation: none; }
+  .wb-boom { display: none; }
+  .wb-reveal, .reveal { clip-path: none; opacity: 1; transform: none; transition: none; }
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-}
-::-webkit-scrollbar-track {
-  @apply bg-night-900;
-}
-::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-night-700;
-}
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-boom-700;
-}
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { @apply bg-ground; }
+::-webkit-scrollbar-thumb { @apply rounded-full bg-line; }
+::-webkit-scrollbar-thumb:hover { @apply bg-hood-400; }

@@ -5,13 +5,10 @@ dotenv.config();
 
 const { Pool } = pg;
 
-// Enable SSL in production, or whenever the connection string asks for it
-// (managed Postgres like Neon requires SSL even in local development).
+// SSL only when the connection string asks for it (managed Postgres like Neon);
+// a local Postgres on the VM speaks plain TCP.
 const dbUrl = process.env.DATABASE_URL || '';
-const requiresSsl =
-  process.env.NODE_ENV === 'production' ||
-  dbUrl.includes('sslmode=require') ||
-  dbUrl.includes('neon.tech');
+const requiresSsl = dbUrl.includes('sslmode=require') || dbUrl.includes('neon.tech');
 
 // Create PostgreSQL connection pool
 const pool = new Pool({

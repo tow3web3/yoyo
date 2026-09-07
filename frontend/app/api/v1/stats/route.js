@@ -1,5 +1,6 @@
 import { getGlobalStats } from '../../../../lib/queries';
 import { apiJson, apiOptions } from '../../../../lib/apiResponse';
+import { STOCKS } from '../../../../lib/stocks';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,10 +13,11 @@ export async function GET() {
   try {
     const s = await getGlobalStats();
     return apiJson({
-      solRedistributed: Number(Number(s.totalSolClaimedLamports) / 1e9).toFixed(4),
-      distributions: s.totalExecutions,
+      ethPaidOut: (Number(s.totalEthClaimedWei) / 1e18).toFixed(4),
+      dividends: s.totalExecutions,
       activeBots: s.activeConfigs,
       creators: s.totalUsers,
+      stocksAvailable: STOCKS.length,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

@@ -1,5 +1,6 @@
 import { getEligibility } from '../../../../lib/voteQueries';
 import { fetchTokenMeta } from '../../../../lib/tokenMeta';
+import { EVM_ADDR } from '../../../../lib/stocks';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -7,11 +8,9 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   try {
     const wallet = new URL(request.url).searchParams.get('wallet');
-    if (!wallet) return Response.json({ error: 'wallet required' }, { status: 400 });
-
+    if (!wallet || !EVM_ADDR.test(wallet)) return Response.json({ error: 'wallet required' }, { status: 400 });
     const rows = await getEligibility(wallet);
     const meta = await fetchTokenMeta(rows.map((r) => r.token));
-
     return Response.json({
       wallet,
       eligible: rows.map((r) => ({

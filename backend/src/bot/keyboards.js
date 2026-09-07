@@ -1,27 +1,19 @@
 import { Markup } from 'telegraf';
+import { FEATURED_TICKERS, BASKETS, BASKET_KEYS } from '../chain/stocks.js';
+import { INTERVAL_OPTIONS } from '../services/schedule.js';
 
-const WEBSITE = process.env.WEBSITE_URL || 'https://boomerang.fun';
+const WEBSITE = process.env.WEBSITE_URL || process.env.FRONTEND_URL || 'https://boomerang.fun';
 
-/**
- * Home menu shown when the user has NO active configuration.
- */
 export function welcomeKeyboard() {
   return Markup.inlineKeyboard([
     [Markup.button.callback('🚀 Set up Boomerang', 'setup')],
-    [Markup.button.callback('📖 How it works', 'how'), Markup.button.callback('❓ FAQ', 'faq')],
-    [Markup.button.url('🌐 Website', WEBSITE)],
+    [Markup.button.callback('📖 How it works', 'how'), Markup.button.callback('📈 Stocks', 'stocks')],
+    [Markup.button.callback('❓ FAQ', 'faq'), Markup.button.url('🌐 Website', WEBSITE)],
   ]);
 }
 
-/**
- * Home menu shown when the user HAS a configuration.
- * @param {Object} config - bot config row
- */
 export function dashboardKeyboard(config) {
-  const toggle = config.is_active
-    ? Markup.button.callback('⏸️ Pause', 'pause')
-    : Markup.button.callback('▶️ Resume', 'resume');
-
+  const toggle = config.is_active ? Markup.button.callback('⏸️ Pause', 'pause') : Markup.button.callback('▶️ Resume', 'resume');
   return Markup.inlineKeyboard([
     [Markup.button.callback('📊 Status', 'status'), Markup.button.callback('⚡ Run now', 'runnow')],
     [Markup.button.callback('⚙️ Settings', 'settings'), toggle],
@@ -29,101 +21,103 @@ export function dashboardKeyboard(config) {
   ]);
 }
 
-/**
- * Settings submenu.
- */
 export function settingsKeyboard(config) {
-  const toggle = config.is_active
-    ? Markup.button.callback('⏸️ Pause bot', 'pause')
-    : Markup.button.callback('▶️ Resume bot', 'resume');
-
-  const troll = config.troll_mode
-    ? Markup.button.callback('👹 Troll Mode: ON — turn off', 'troll_mode')
-    : Markup.button.callback('🎲 Enable Troll Mode', 'troll_mode');
-
-  const vote = config.vote_mode
-    ? Markup.button.callback('🗳️ Community Vote: ON — turn off', 'vote_mode')
-    : Markup.button.callback('🗳️ Enable Community Vote', 'vote_mode');
-
+  const toggle = config.is_active ? Markup.button.callback('⏸️ Pause bot', 'pause') : Markup.button.callback('▶️ Resume bot', 'resume');
+  const hours = config.market_hours_only
+    ? Markup.button.callback('🕰️ Market hours only: ON', 'market_hours')
+    : Markup.button.callback('🕰️ Market hours only: off', 'market_hours');
+  const dest = config.destination === 'burn'
+    ? Markup.button.callback('🔥 Destination: burn (switch to holders)', 'destination')
+    : Markup.button.callback('🎁 Destination: holders (switch to burn)', 'destination');
   return Markup.inlineKeyboard([
-    [Markup.button.callback('⏱️ Change interval', 'change_interval')],
-    [Markup.button.callback('🎯 Change reward token', 'change_target')],
-    [troll],
-    [vote],
+    [Markup.button.callback('📈 Change reward', 'change_target')],
+    [Markup.button.callback('🎛️ Reward mode', 'reward_mode')],
+    [Markup.button.callback('⏱️ Schedule', 'change_interval')],
+    [hours],
+    [dest],
     [toggle],
     [Markup.button.callback('🗑️ Delete configuration', 'stop')],
     [Markup.button.callback('⬅️ Back', 'menu')],
   ]);
 }
 
-/**
- * Interval selection keyboard.
- * @param {string} prefix - callback prefix ('interval' for setup, 'editint' for edit)
- * @param {string} backAction - where the back/cancel button goes
- */
-export function intervalKeyboard(prefix = 'interval', backAction = 'cancel') {
+/** Reward picker: featured stocks, ETH, and a free-text option. */
+export function rewardKeyboard(prefix = 'reward', backAction = 'cancel') {
+  const rows = [];
+  for (let i = 0; i < FEATURED_TICKERS.length; i += 3) {
+    rows.push(FEATURED_TICKERS.slice(i, i + 3).map((t) => Markup.button.callback(`📈 ${t}`, `${prefix}_${t}`)));
+  }
+  rows.push([Markup.button.callback('⟠ ETH', `${prefix}_ETH`), Markup.button.callback('✍️ Type a ticker or address', `${prefix}_custom`)]);
+  rows.push([Markup.button.callback(backAction === 'cancel' ? '❌ Cancel' : '⬅️ Back', backAction)]);
+  return Markup.inlineKeyboard(rows);
+}
+
+export function rewardModeKeyboard(config) {
+  const mark = (m) => (config.reward_mode === m ? '✅ ' : '');
   return Markup.inlineKeyboard([
-    [
-      Markup.button.callback('1 min', `${prefix}_1`),
-      Markup.button.callback('2 min', `${prefix}_2`),
-      Markup.button.callback('5 min', `${prefix}_5`),
-    ],
-    [
-      Markup.button.callback('10 min', `${prefix}_10`),
-      Markup.button.callback('30 min', `${prefix}_30`),
-      Markup.button.callback('60 min', `${prefix}_60`),
-    ],
-    [Markup.button.callback(backAction === 'cancel' ? '❌ Cancel' : '⬅️ Back', backAction)],
+    [Markup.button.callback(`${mark('fixed')}🎯 Fixed reward`, 'mode_fixed')],
+    [Markup.button.callback(`${mark('roulette')}🎰 Stock Roulette (random each cycle)`, 'mode_roulette')],
+    [Markup.button.callback(`${mark('gainer')}🚀 Top Gainer (best stock of the day)`, 'mode_gainer')],
+    [Markup.button.callback(`${mark('portfolio')}📊 Portfolio (rotate a basket)`, 'mode_portfolio')],
+    [Markup.button.callback(`${mark('vote')}🗳️ Community Vote`, 'mode_vote')],
+    [Markup.button.callback('⬅️ Back', 'settings')],
   ]);
 }
 
-/**
- * Setup confirmation keyboard.
- */
+export function basketKeyboard() {
+  return Markup.inlineKeyboard([
+    ...BASKET_KEYS.map((k) => [Markup.button.callback(`${BASKETS[k].emoji} ${BASKETS[k].label}: ${BASKETS[k].tickers.join(' ')}`, `basket_${k}`)]),
+    [Markup.button.callback('⬅️ Back', 'reward_mode')],
+  ]);
+}
+
+export function feeSourceKeyboard() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('💼 Fees land in my wallet (ETH)', 'source_wallet')],
+    [Markup.button.callback('🦄 Uniswap V3 LP fees', 'source_univ3')],
+    [Markup.button.callback('❌ Cancel', 'cancel')],
+  ]);
+}
+
+export function intervalKeyboard(prefix = 'interval', backAction = 'cancel') {
+  const rows = [];
+  for (let i = 0; i < INTERVAL_OPTIONS.length; i += 3) {
+    rows.push(INTERVAL_OPTIONS.slice(i, i + 3).map((m) => Markup.button.callback(`${m} min`, `${prefix}_${m}`)));
+  }
+  rows.push([Markup.button.callback('🔔 Closing bell (4 pm ET)', `${prefix}_bell`), Markup.button.callback('🛎️ Opening bell', `${prefix}_open`)]);
+  rows.push([Markup.button.callback(backAction === 'cancel' ? '❌ Cancel' : '⬅️ Back', backAction)]);
+  return Markup.inlineKeyboard(rows);
+}
+
 export function confirmationKeyboard() {
   return Markup.inlineKeyboard([
-    [Markup.button.callback('✅ Activate bot', 'confirm_yes')],
+    [Markup.button.callback('✅ Activate', 'confirm_yes')],
     [Markup.button.callback('❌ Cancel', 'confirm_no')],
   ]);
 }
 
-/**
- * Status screen actions.
- */
-export function statusKeyboard(config) {
+export function statusKeyboard() {
   return Markup.inlineKeyboard([
     [Markup.button.callback('🔄 Refresh', 'status'), Markup.button.callback('⚡ Run now', 'runnow')],
     [Markup.button.callback('⚙️ Settings', 'settings'), Markup.button.callback('⬅️ Menu', 'menu')],
   ]);
 }
 
-/**
- * Cancel-only keyboard (used mid-input).
- */
 export function cancelKeyboard() {
   return Markup.inlineKeyboard([[Markup.button.callback('❌ Cancel', 'cancel')]]);
 }
 
-/**
- * Back to menu.
- */
 export function backToMenuKeyboard() {
   return Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back to menu', 'menu')]]);
 }
 
-/**
- * Irreversible-setup warning confirmation.
- */
 export function warningConfirmationKeyboard() {
   return Markup.inlineKeyboard([
-    [Markup.button.callback('✅ I understand — continue', 'warning_accept')],
+    [Markup.button.callback('✅ I understand, continue', 'warning_accept')],
     [Markup.button.callback('❌ Cancel', 'warning_cancel')],
   ]);
 }
 
-/**
- * Delete confirmation.
- */
 export function deleteConfirmKeyboard() {
   return Markup.inlineKeyboard([
     [Markup.button.callback('🗑️ Yes, delete it', 'confirm_delete')],

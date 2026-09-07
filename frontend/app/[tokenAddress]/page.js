@@ -5,42 +5,26 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import PerformanceChart from '../../components/PerformanceChart';
 import Navigation from '../../components/Navigation';
+import TickerTape from '../../components/TickerTape';
 import Footer from '../../components/Footer';
-import { Coins, Bolt, Swap, Gift, Arrow } from '../../components/Icons';
+import StockLogo from '../../components/StockLogo';
 import Countdown from '../../components/Countdown';
+import { Coins, Bolt, Swap, Gift, Arrow, Users, Copy, Check } from '../../components/Icons';
+import { describeAddress, explorerTx, explorerToken, explorerAddress } from '../../lib/stocks';
 
-function shortenAddress(a) {
-  return a ? `${a.slice(0, 4)}…${a.slice(-4)}` : '';
-}
-function formatNumber(n) {
-  return new Intl.NumberFormat('en-US').format(n || 0);
-}
-function formatCompact(n) {
-  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n || 0);
-}
-function tokenLabel(t) {
-  return t?.symbol || shortenAddress(t?.address);
-}
+const short = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '');
+const fmt = (n) => new Intl.NumberFormat('en-US').format(n || 0);
+const compact = (n) => new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 }).format(n || 0);
+const eth = (wei, d = 4) => (Number(wei || 0) / 1e18).toFixed(d);
+const units = (raw, decimals) => Number(raw || 0) / 10 ** Number(decimals ?? 18);
 
-/** Token logo with graceful fallback to a lettered badge. */
-function TokenLogo({ token, size = 'h-11 w-11' }) {
-  const [broken, setBroken] = useState(false);
-  if (token?.image && !broken) {
-    return (
-      <img
-        src={token.image}
-        alt=""
-        onError={() => setBroken(true)}
-        className={`${size} shrink-0 rounded-full border border-line bg-night-850 object-cover`}
-      />
-    );
-  }
-  return (
-    <div className={`${size} flex shrink-0 items-center justify-center rounded-full border border-line bg-boom-100 text-xs font-extrabold text-boom-700`}>
-      {tokenLabel(token).replace('$', '').slice(0, 3).toUpperCase()}
-    </div>
-  );
-}
+const MODE = {
+  fixed: null,
+  roulette: { label: 'Stock Roulette', emoji: '🎰', hint: 'a random liquid stock each cycle' },
+  gainer: { label: 'Top Gainer', emoji: '🚀', hint: "the day's best stock" },
+  portfolio: { label: 'Portfolio', emoji: '📊', hint: 'rotating through a basket' },
+  vote: { label: 'Community Vote', emoji: '🗳️', hint: 'holders pick the reward' },
+};
 
 export default function TokenDashboard() {
   const params = useParams();
@@ -48,24 +32,16 @@ export default function TokenDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [timeRange, setTimeRange] = useState('1m');
   const [copied, setCopied] = useState(false);
 
   const copyCA = async () => {
-    try {
-      await navigator.clipboard.writeText(tokenAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* clipboard unavailable */
-    }
+    try { await navigator.clipboard.writeText(tokenAddress); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* ignore */ }
   };
 
   useEffect(() => {
-    async function fetchDashboardData() {
+    async function load() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const response = await fetch(`${apiUrl}/api/dashboard/${tokenAddress}`);
+        const response = await fetch(`/api/dashboard/${tokenAddress}`);
         if (!response.ok) throw new Error('Token not found or not active');
         setData(await response.json());
         setLoading(false);
@@ -74,8 +50,8 @@ export default function TokenDashboard() {
         setLoading(false);
       }
     }
-    fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 30000);
+    load();
+    const interval = setInterval(load, 30000);
     return () => clearInterval(interval);
   }, [tokenAddress]);
 
@@ -83,9 +59,8 @@ export default function TokenDashboard() {
     return (
       <div className="flex min-h-screen items-center justify-center px-5">
         <div className="panel px-10 py-12 text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-line border-t-boom-400" />
-          <p className="text-sm font-medium text-fg">Loading dashboard…</p>
-          <p className="mt-1 text-xs text-mut">Fetching live data</p>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-line border-t-hood-500" />
+          <p className="text-sm font-medium text-ink">Loading dashboard…</p>
         </div>
       </div>
     );
@@ -95,180 +70,137 @@ export default function TokenDashboard() {
     return (
       <div className="flex min-h-screen items-center justify-center px-5">
         <div className="panel max-w-md px-8 py-10 text-center">
-          <h1 className="font-display text-xl font-semibold text-fg">Token not found</h1>
-          <p className="mt-2 text-sm text-mut">
-            This token doesn’t have an active Boomerang configuration yet.
-          </p>
-          <Link href="/" className="btn-primary mt-6">
-            Go home <Arrow className="h-4 w-4" />
-          </Link>
+          <h1 className="font-display text-xl font-bold text-ink">Token not found</h1>
+          <p className="mt-2 text-sm text-mut">This token doesn't have an active Boomerang configuration yet.</p>
+          <Link href="/" className="btn-primary mt-6">Go home <Arrow className="h-4 w-4" /></Link>
         </div>
       </div>
     );
   }
 
-  const solClaimed = (Number(data.stats.totalSolClaimed) / 1e9).toFixed(3);
-
-  // Reward-token amounts are stored in raw base units — convert with the
-  // reward token's decimals so we show real token counts, not huge integers.
-  const rewardDecimals = Number(data.targetToken.decimals ?? 0);
-  const toUnits = (raw) => Number(raw || 0) / 10 ** rewardDecimals;
-  const rewardSym = tokenLabel(data.targetToken);
+  const src = data.sourceToken;
+  const tgt = data.targetToken;
+  const reward = describeAddress(tgt.address, tgt);
+  const mode = MODE[data.config.rewardMode];
+  const rewardDecimals = Number(tgt.decimals ?? 18);
+  const ethClaimed = eth(data.stats.totalEthClaimed);
+  const quote = tgt.quote;
 
   const STATS = [
-    { Icon: Coins, label: 'Fees claimed', value: `${solClaimed} SOL`, accent: true },
-    { Icon: Bolt, label: 'Distributions', value: formatNumber(data.stats.totalExecutions) },
-    { Icon: Swap, label: 'Bought back', value: formatCompact(toUnits(data.stats.totalBoughtBack)) },
-    { Icon: Gift, label: 'Airdropped', value: formatCompact(toUnits(data.stats.totalAirdropped)) },
+    { Icon: Coins, label: 'Fees turned into dividends', value: `${ethClaimed} ETH`, accent: true },
+    { Icon: Bolt, label: 'Dividend cycles', value: fmt(data.stats.totalExecutions) },
+    { Icon: Users, label: 'Holders indexed', value: fmt(data.stats.holderCount) },
+    { Icon: Gift, label: mode ? 'Paid out (all rewards)' : `Paid out in ${reward.symbol}`, value: mode ? fmt(data.stats.totalExecutions) + ' drops' : compact(units(data.stats.totalAirdropped, rewardDecimals)) },
   ];
 
   return (
     <>
+      <TickerTape />
       <Navigation />
       <main className="mx-auto max-w-6xl px-5 py-8">
-        {/* Token header — identity, copiable CA, what the bot does */}
+        {/* Header */}
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <TokenLogo token={data.sourceToken} />
+            <StockLogo address={src.address} meta={src} size="h-12 w-12" text="text-xs" />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <h1 className="font-display text-xl font-bold tracking-tight text-fg">
-                  {data.sourceToken.name || tokenLabel(data.sourceToken)}
-                </h1>
-                <span className="text-sm font-medium text-mut">${tokenLabel(data.sourceToken)}</span>
-                {data.sourceToken.marketCap ? (
-                  <span className="rounded-full bg-boom-100 px-2 py-0.5 text-[11px] font-semibold text-boom-700">
-                    MC ${formatCompact(data.sourceToken.marketCap)}
-                  </span>
-                ) : null}
+                <h1 className="font-display text-xl font-extrabold tracking-tight text-ink">{src.name || `$${src.symbol || short(src.address)}`}</h1>
+                {src.symbol && <span className="font-mono text-sm font-medium text-mut">${src.symbol}</span>}
+                {src.marketCap ? <span className="rounded-full bg-hood-100 px-2 py-0.5 text-[11px] font-semibold text-hood-700">MC ${compact(src.marketCap)}</span> : null}
               </div>
-              <button
-                onClick={copyCA}
-                title="Copy contract address"
-                className="mt-1 inline-flex items-center gap-1.5 font-mono text-xs text-mut transition hover:text-fg"
-              >
-                {shortenAddress(data.sourceToken.address)}
-                {copied ? (
-                  <span className="text-boom-600">Copied!</span>
-                ) : (
-                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="9" width="11" height="11" rx="2" />
-                    <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-                  </svg>
-                )}
+              <button onClick={copyCA} title="Copy contract address" className="mt-1 inline-flex items-center gap-1.5 font-mono text-xs text-mut transition hover:text-ink">
+                {short(src.address)}
+                {copied ? <Check className="h-3.5 w-3.5 text-hood-600" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`chip ${data.config.isActive ? 'text-boom-700' : 'text-mut'}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${data.config.isActive ? 'bg-boom-400' : 'bg-mut'}`} />
-              {data.config.isActive ? 'Active' : 'Paused'} · every {data.config.intervalMinutes} min
+            <span className={`chip ${data.config.isActive ? 'text-hood-700' : 'text-mut'}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${data.config.isActive ? 'bg-hood-500' : 'bg-mut'}`} />
+              {data.config.isActive ? 'Active' : 'Paused'} · {data.config.scheduleLabel}
             </span>
-            {data.config.voteMode ? (
-              <>
-                <span className="chip border-sky-300 bg-sky-50 text-sky-700">
-                  🗳️ Community Vote · holders pick the reward
-                </span>
-                <Link href="/vote" className="btn-primary px-3 py-1.5 text-xs">
-                  Vote now
-                  <Arrow className="h-3.5 w-3.5" />
-                </Link>
-              </>
-            ) : data.config.trollMode ? (
-              <span className="chip border-purple-300 bg-purple-50 text-purple-700">
-                🎲 Troll Mode · random reward 👹
-              </span>
-            ) : (
-              <span className="chip text-fg">
-                <Gift className="h-3.5 w-3.5 text-boom-600" />
-                Rewards in ${tokenLabel(data.targetToken)}
-              </span>
+            {data.config.marketHoursOnly && <span className="chip">🕰️ Market hours only</span>}
+            {data.config.destination === 'burn' && <span className="chip border-orange-200 bg-orange-50 text-orange-700">🔥 Buyback and burn</span>}
+            {data.config.rewardMode === 'vote' && (
+              <Link href="/vote" className="btn-primary px-3 py-1.5 text-xs">Vote now <Arrow className="h-3.5 w-3.5" /></Link>
             )}
-            <a
-              href={`https://solscan.io/token/${data.sourceToken.address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-ghost px-3 py-1.5 text-xs"
-            >
-              Solscan
-              <Arrow className="h-3.5 w-3.5" />
-            </a>
+            <a href={explorerToken(src.address)} target="_blank" rel="noopener noreferrer" className="btn-ghost px-3 py-1.5 text-xs">Blockscout <Arrow className="h-3.5 w-3.5" /></a>
           </div>
         </div>
 
-        {/* Stat cards */}
-        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {STATS.map(({ Icon, label, value, accent }) => (
-            <div key={label} className="panel p-4">
-              <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-night-850 text-boom-600">
-                <Icon className="h-4 w-4" />
-              </span>
-              <p className={`font-display text-2xl font-semibold tracking-tight ${accent ? 'text-boom-700' : 'text-fg'}`}>
-                {value}
-              </p>
-              <p className="mt-1 text-xs uppercase tracking-wider text-mut">{label}</p>
+        {/* Reward card */}
+        <div className="mb-6 grid gap-4 lg:grid-cols-[1.2fr_2fr]">
+          <div className={`${reward.isStock ? 'panel-gold' : 'panel-glow'} flex items-center gap-4 p-5`}>
+            <StockLogo address={tgt.address} meta={tgt} size="h-14 w-14" text="text-sm" />
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-mut">{mode ? `${mode.emoji} ${mode.label}` : 'Dividends paid in'}</div>
+              {mode ? (
+                <>
+                  <div className="font-display text-xl font-extrabold text-ink">{mode.hint}</div>
+                  {data.config.basket && <div className="mt-0.5 font-mono text-xs text-mut">{data.config.basket.label}: {data.config.basket.tickers?.join(' > ')}</div>}
+                  <div className="mt-0.5 text-xs text-mut">Fallback reward: <span className="font-mono font-semibold text-ink">{reward.symbol}</span></div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-display text-2xl font-extrabold text-ink">{reward.symbol}</span>
+                    <span className="truncate text-sm text-mut">{reward.name}</span>
+                  </div>
+                  {quote ? (
+                    <div className="mt-0.5 flex items-center gap-2 font-mono text-sm">
+                      <span className="text-ink">${quote.price.toFixed(2)}</span>
+                      {typeof quote.changePct === 'number' && (
+                        <span className={quote.changePct >= 0 ? 'up' : 'dn'}>{quote.changePct >= 0 ? '▲' : '▼'} {Math.abs(quote.changePct).toFixed(2)}%</span>
+                      )}
+                      <span className="text-xs text-mut">Yahoo Finance</span>
+                    </div>
+                  ) : reward.isStock ? null : (
+                    <div className="mt-0.5 font-mono text-xs text-mut">{short(tgt.address)}</div>
+                  )}
+                </>
+              )}
             </div>
-          ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {STATS.map(({ Icon, label, value, accent }) => (
+              <div key={label} className="panel p-4">
+                <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-tile text-hood-700"><Icon className="h-4 w-4" /></span>
+                <p className={`figure font-display text-xl font-extrabold tracking-tight ${accent ? 'text-hood-700' : 'text-ink'}`}>{value}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-wider text-mut">{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Chart + side stats */}
+        {/* Chart + side */}
         <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="panel p-6 lg:col-span-2">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-fg">Airdrops over time</h2>
-              <div className="flex gap-1">
-                {['1w', '1m', '1y', 'All'].map((range) => (
-                  <button
-                    key={range}
-                    onClick={() => setTimeRange(range)}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                      timeRange === range ? 'bg-boom-500/15 text-boom-700' : 'text-mut hover:text-fg'
-                    }`}
-                  >
-                    {range}
-                  </button>
-                ))}
-              </div>
+              <h2 className="text-sm font-semibold text-ink">Fees paid out per cycle</h2>
+              <span className="text-xs text-mut">in ETH, last {data.recentExecutions.length} cycles</span>
             </div>
             {data.recentExecutions.length > 0 ? (
-              <PerformanceChart data={data.recentExecutions} timeRange={timeRange} symbol={rewardSym} decimals={rewardDecimals} />
+              <PerformanceChart data={data.recentExecutions} />
             ) : (
-              <div className="flex h-64 items-center justify-center text-sm text-mut">
-                No execution data yet
-              </div>
+              <div className="flex h-64 items-center justify-center text-sm text-mut">No dividend yet. The first cycle is coming.</div>
             )}
           </div>
 
           <div className="panel p-6">
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-mut">Distribution</h3>
+            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-mut">Next dividend</h3>
             <div className="space-y-4">
-              <div>
-                <p className="text-xs text-mut">Fees claimed</p>
-                <p className="font-display text-xl font-semibold text-boom-700">{solClaimed} SOL</p>
-              </div>
-              <div>
-                <p className="text-xs text-mut">Holders reached</p>
-                <p className="font-display text-xl font-semibold text-fg">{data.topRecipients.length}</p>
-              </div>
-              <div>
-                <p className="text-xs text-mut">Success rate</p>
-                <p className="font-display text-xl font-semibold text-fg">
-                  {data.stats.totalExecutions > 0 ? '100%' : '—'}
-                </p>
-              </div>
-              <div className="border-t border-line pt-4">
-                <p className="text-xs text-mut">Interval</p>
-                <p className="text-sm font-medium text-fg">Every {data.config.intervalMinutes} minutes</p>
-              </div>
               {data.config.isActive && (
                 <div>
-                  <p className="text-xs text-mut">Next distribution</p>
-                  <p className="font-display text-xl font-semibold tabular-nums text-boom-700">
-                    <Countdown intervalMinutes={data.config.intervalMinutes} />
-                  </p>
+                  <p className="text-xs text-mut">Countdown</p>
+                  <p className="figure font-display text-3xl font-extrabold text-hood-700"><Countdown intervalMinutes={data.config.intervalMinutes} scheduleKind={data.config.scheduleKind} /></p>
                 </div>
               )}
+              <div><p className="text-xs text-mut">Schedule</p><p className="text-sm font-medium text-ink">{data.config.scheduleLabel}{data.config.marketHoursOnly ? ', market hours only' : ''}</p></div>
+              <div><p className="text-xs text-mut">Fee source</p><p className="text-sm font-medium text-ink">{data.config.feeSource === 'univ3' ? 'Uniswap V3 LP fees' : 'Dev wallet balance (ETH)'}</p></div>
+              <div className="border-t border-line pt-4"><p className="text-xs text-mut">Last dividend</p><p className="text-sm font-medium text-ink">{data.stats.lastExecution ? new Date(data.stats.lastExecution).toLocaleString() : 'Never'}</p></div>
+              <div><p className="text-xs text-mut">Bought back</p><p className="figure text-sm font-medium text-ink">{mode ? '(varies per cycle)' : `${compact(units(data.stats.totalBoughtBack, rewardDecimals))} ${reward.symbol}`}</p></div>
             </div>
           </div>
         </div>
@@ -277,79 +209,62 @@ export default function TokenDashboard() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="panel p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-fg">Top recipients</h2>
-              <span className="text-xs text-mut">{data.topRecipients.length} holders</span>
+              <h2 className="text-sm font-semibold text-ink">Top recipients</h2>
+              <span className="text-xs text-mut">by dividends received</span>
             </div>
             <div className="space-y-1.5">
               {data.topRecipients.map((r, i) => (
-                <div key={r.address} className="flex items-center justify-between rounded-lg border border-line/70 px-3 py-2.5">
+                <a key={r.address} href={explorerAddress(r.address)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between rounded-lg border border-line/70 px-3 py-2.5 transition hover:border-hood-300">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-night-850 text-xs font-semibold text-boom-700">
-                      {i + 1}
-                    </span>
-                    <span className="font-mono text-sm text-fg">{shortenAddress(r.address)}</span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-tile text-xs font-semibold text-hood-700">{i + 1}</span>
+                    <span className="font-mono text-sm text-ink">{short(r.address)}</span>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-fg">
-                      {formatCompact(toUnits(r.totalReceived))} ${rewardSym}
-                    </p>
-                    <p className="text-xs text-mut">{r.airdropCount} drops</p>
+                    <p className="figure text-sm font-semibold text-ink">{compact(units(r.totalReceived, r.rewardDecimals ?? rewardDecimals))} {r.rewardSymbol || reward.symbol}</p>
+                    <p className="text-xs text-mut">{r.airdropCount} dividends</p>
                   </div>
-                </div>
+                </a>
               ))}
-              {data.topRecipients.length === 0 && (
-                <div className="py-12 text-center text-sm text-mut">No airdrops yet</div>
-              )}
+              {data.topRecipients.length === 0 && <div className="py-12 text-center text-sm text-mut">No dividends yet</div>}
             </div>
           </div>
 
           <div className="panel p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-fg">Recent activity</h2>
-              <span className="text-xs text-mut">{data.recentExecutions.length} runs</span>
+              <h2 className="text-sm font-semibold text-ink">Dividend history</h2>
+              <span className="text-xs text-mut">{data.recentExecutions.length} cycles</span>
             </div>
             <div className="space-y-1.5">
-              {data.recentExecutions.map((e) => (
-                <div key={e.id} className="rounded-lg border border-line/70 px-3 py-2.5">
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs text-mut">{new Date(e.executionTime).toLocaleTimeString()}</span>
-                    <span className="text-xs font-semibold text-boom-700">
-                      +{(Number(e.claimedSol) / 1e9).toFixed(3)} SOL
-                    </span>
+              {data.recentExecutions.slice(0, 12).map((e) => {
+                const r = describeAddress(e.rewardToken, { symbol: e.rewardSymbol });
+                return (
+                  <div key={e.id} className="rounded-lg border border-line/70 px-3 py-2.5">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-xs text-mut">{new Date(e.executionTime).toLocaleString()}</span>
+                      <span className="figure text-xs font-semibold text-hood-700">{eth(e.claimedEth)} ETH</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-xs text-mut">
+                      <span className="flex items-center gap-1.5">
+                        <StockLogo address={e.rewardToken} meta={{ symbol: e.rewardSymbol }} size="h-4 w-4" text="text-[6px]" />
+                        <span className="figure">{compact(units(e.totalAirdropped, e.rewardDecimals ?? rewardDecimals))} {r.symbol}</span>
+                        {e.destination === 'burn' ? <span>burned</span> : <span>to {e.holderCount} holders</span>}
+                        {e.note && <span className="text-gold-700" title={e.note}>· note</span>}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        {e.swapTx && <a href={explorerTx(e.swapTx)} target="_blank" rel="noopener noreferrer" className="font-medium text-mut hover:underline">swap ↗</a>}
+                        {e.txHash && <a href={explorerTx(e.txHash)} target="_blank" rel="noopener noreferrer" className="font-medium text-hood-700 hover:underline">payout ↗</a>}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-xs text-mut">
-                    <span>
-                      {formatCompact(Number(e.totalAirdropped || 0) / 10 ** (e.rewardDecimals ?? rewardDecimals))}{' '}
-                      ${e.rewardSymbol || rewardSym} → {e.holderCount} holders
-                    </span>
-                    <span className="flex items-center gap-2">
-                      {e.txSignature && (
-                        <a
-                          href={`https://solscan.io/tx/${e.txSignature}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(ev) => ev.stopPropagation()}
-                          className="font-medium text-boom-700 hover:underline"
-                        >
-                          Solscan ↗
-                        </a>
-                      )}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {data.recentExecutions.length === 0 && (
-                <div className="py-12 text-center text-sm text-mut">No executions yet</div>
-              )}
+                );
+              })}
+              {data.recentExecutions.length === 0 && <div className="py-12 text-center text-sm text-mut">No cycles yet</div>}
             </div>
           </div>
         </div>
 
-        {/* footer bar */}
         <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-mut">
-          <span>
-            Last execution: {data.stats.lastExecution ? new Date(data.stats.lastExecution).toLocaleString() : 'Never'}
-          </span>
+          <span>Robinhood Chain (4663)</span>
           <span>·</span>
           <span>Updated {new Date(data.timestamp).toLocaleTimeString()}</span>
         </div>

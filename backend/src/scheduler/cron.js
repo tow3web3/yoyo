@@ -3,162 +3,69 @@ import * as db from '../db/queries.js';
 import { executeBotConfig } from './executor.js';
 import { tickVoteCycles } from '../services/voteService.js';
 import { tickMissionClaims } from '../services/missionPayout.js';
+import { cronFor } from '../services/schedule.js';
 
-// Store active cron jobs
 const activeCronJobs = new Map();
 
-/**
- * Initialize scheduler and load all active configs
- */
 export async function initScheduler() {
-  console.log('⏰ Initializing scheduler...');
+  const activeConfigs = await db.getActiveBotConfigs();
+  console.log(`   Found ${activeConfigs.length} active configurations`);
+  for (const config of activeConfigs) scheduleConfig(config);
 
-  try {
-    const activeConfigs = await db.getActiveBotConfigs();
-    console.log(`   Found ${activeConfigs.length} active configurations`);
+  cron.schedule('*/5 * * * *', async () => {
+    await refreshScheduler();
+  });
 
-    for (const config of activeConfigs) {
-      scheduleConfig(config);
-    }
+  cron.schedule('*/5 * * * *', async () => {
+    try { await tickVoteCycles(); } catch (e) { console.error('Vote cycle tick failed:', e.message); }
+  });
+  tickVoteCycles().catch((e) => console.error('Initial vote tick failed:', e.message));
 
-    // Also set up a periodic check for new/updated configs every 5 minutes
-    cron.schedule('*/5 * * * *', async () => {
-      console.log('🔄 Checking for configuration updates...');
-      await refreshScheduler();
-    });
-
-    // Vote-cycle housekeeping: open/resolve community-vote cycles every 5 min.
-    cron.schedule('*/5 * * * *', async () => {
-      try {
-        await tickVoteCycles();
-      } catch (e) {
-        console.error('Vote cycle tick failed:', e.message);
-      }
-    });
-    // Run once on boot so vote-mode configs get an open cycle immediately.
-    tickVoteCycles().catch((e) => console.error('Initial vote tick failed:', e.message));
-
-    // Mission reward payouts from the treasury — every 2 minutes.
-    cron.schedule('*/2 * * * *', async () => {
-      try {
-        await tickMissionClaims();
-      } catch (e) {
-        console.error('Mission payout tick failed:', e.message);
-      }
-    });
-
-    console.log('✅ Scheduler initialized successfully');
-  } catch (error) {
-    console.error('❌ Failed to initialize scheduler:', error);
-    throw error;
-  }
+  cron.schedule('*/2 * * * *', async () => {
+    try { await tickMissionClaims(); } catch (e) { console.error('Mission payout tick failed:', e.message); }
+  });
 }
 
-/**
- * Schedule a single bot configuration
- * @param {Object} config - Bot configuration
- */
 export function scheduleConfig(config) {
   const configId = config.id;
-
-  // Stop existing job if any
   if (activeCronJobs.has(configId)) {
     activeCronJobs.get(configId).stop();
     activeCronJobs.delete(configId);
   }
-
   if (!config.is_active) {
-    console.log(`   ⏸️  Config ${configId} is paused, skipping`);
+    console.log(`   Config ${configId} is paused`);
     return;
   }
-
-  const cronExpression = getCronExpression(config.interval_minutes);
-  console.log(`   ⏱️  Scheduling config ${configId} with interval: ${config.interval_minutes} min (${cronExpression})`);
-
-  const job = cron.schedule(cronExpression, async () => {
-    console.log(`\n⏰ Cron triggered for config ${configId}`);
+  const { expression, timezone } = cronFor(config);
+  console.log(`   Scheduling config ${configId}: ${expression}${timezone ? ` (${timezone})` : ''}`);
+  const job = cron.schedule(expression, async () => {
     try {
       await executeBotConfig(config);
     } catch (error) {
-      console.error(`❌ Error executing config ${configId}:`, error);
+      console.error(`Error executing config ${configId}:`, error);
     }
-  });
-
+  }, timezone ? { timezone } : undefined);
   activeCronJobs.set(configId, job);
 }
 
-/**
- * Refresh scheduler with updated configs from database
- */
 export async function refreshScheduler() {
   try {
     const activeConfigs = await db.getActiveBotConfigs();
-    const activeConfigIds = new Set(activeConfigs.map(c => c.id));
-
-    // Remove jobs for configs that no longer exist or are inactive
+    const ids = new Set(activeConfigs.map((c) => c.id));
     for (const [configId, job] of activeCronJobs.entries()) {
-      if (!activeConfigIds.has(configId)) {
-        console.log(`   🗑️  Removing job for config ${configId}`);
-        job.stop();
-        activeCronJobs.delete(configId);
-      }
+      if (!ids.has(configId)) { job.stop(); activeCronJobs.delete(configId); }
     }
-
-    // Add/update jobs for active configs
-    for (const config of activeConfigs) {
-      scheduleConfig(config);
-    }
-
-    console.log(`✅ Scheduler refreshed: ${activeCronJobs.size} active jobs`);
+    for (const config of activeConfigs) scheduleConfig(config);
   } catch (error) {
-    console.error('❌ Error refreshing scheduler:', error);
+    console.error('Error refreshing scheduler:', error);
   }
 }
 
-/**
- * Get cron expression from interval in minutes
- * @param {number} minutes - Interval in minutes
- * @returns {string} - Cron expression
- */
-function getCronExpression(minutes) {
-  if (minutes === 1) return '* * * * *';
-  if (minutes === 2) return '*/2 * * * *';
-  if (minutes === 5) return '*/5 * * * *';
-  if (minutes === 10) return '*/10 * * * *';
-  if (minutes === 30) return '*/30 * * * *';
-  if (minutes === 60) return '0 * * * *';
-  
-  // For other values, try to create appropriate expression
-  if (minutes < 60) {
-    return `*/${minutes} * * * *`;
-  } else {
-    const hours = Math.floor(minutes / 60);
-    return `0 */${hours} * * *`;
-  }
-}
-
-/**
- * Get scheduler status
- * @returns {Object} - Status information
- */
 export function getSchedulerStatus() {
-  return {
-    activeJobs: activeCronJobs.size,
-    configIds: Array.from(activeCronJobs.keys()),
-  };
+  return { activeJobs: activeCronJobs.size, configIds: Array.from(activeCronJobs.keys()) };
 }
 
-/**
- * Stop all scheduled jobs
- */
 export function stopScheduler() {
-  console.log('🛑 Stopping all scheduled jobs...');
-  
-  for (const [configId, job] of activeCronJobs.entries()) {
-    job.stop();
-    console.log(`   Stopped job for config ${configId}`);
-  }
-  
+  for (const job of activeCronJobs.values()) job.stop();
   activeCronJobs.clear();
-  console.log('✅ Scheduler stopped');
 }

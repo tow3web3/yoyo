@@ -1,4 +1,5 @@
 import { getGlobalStats } from '../../../lib/queries';
+import { STOCKS } from '../../../lib/stocks';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,8 @@ export async function GET() {
       totalUsers: s.totalUsers,
       activeConfigs: s.activeConfigs,
       totalExecutions: s.totalExecutions,
-      totalSolClaimed: (Number(s.totalSolClaimedLamports) / 1e9).toFixed(2),
+      totalEthClaimed: (Number(s.totalEthClaimedWei) / 1e18).toFixed(4),
+      stocksAvailable: STOCKS.length,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

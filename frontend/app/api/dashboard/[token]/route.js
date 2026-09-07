@@ -1,61 +1,89 @@
-import { getDashboard } from '../../../../lib/queries';
+import { getDashboard, scheduleLabel } from '../../../../lib/queries';
 import { fetchTokenMeta } from '../../../../lib/tokenMeta';
+import { getQuotes } from '../../../../lib/prices';
+import { getStock, EVM_ADDR, BASKETS } from '../../../../lib/stocks';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const tokenView = (addr, meta) => ({
+  address: addr,
+  name: meta[addr]?.name || null,
+  symbol: meta[addr]?.symbol || null,
+  image: meta[addr]?.image || null,
+  marketCap: meta[addr]?.marketCap ?? null,
+  decimals: meta[addr]?.decimals ?? (getStock(addr) ? 18 : null),
+  isStock: Boolean(getStock(addr)),
+  sector: getStock(addr)?.sector || null,
+});
+
 export async function GET(request, { params }) {
   try {
     const { token } = await params;
+    if (!EVM_ADDR.test(token)) return Response.json({ error: 'Invalid address' }, { status: 400 });
     const data = await getDashboard(token);
+    if (!data) return Response.json({ error: 'Token not found', message: 'No active Boomerang configuration for this token' }, { status: 404 });
 
-    if (!data) {
-      return Response.json(
-        { error: 'Token not found', message: 'No active Boomerang configuration found for this token' },
-        { status: 404 }
-      );
-    }
-
-    const { config, stats, topRecipients, recentExecutions } = data;
+    const { config, stats, topRecipients, recentExecutions, holderCount } = data;
     const src = config.source_token_address;
     const tgt = config.target_token_address;
-    // Include every reward token actually used (Troll Mode varies it per run)
-    // so each run can show its real symbol + decimals.
-    const usedMints = recentExecutions.map((e) => e.reward_token_used).filter(Boolean);
-    const meta = await fetchTokenMeta([src, tgt, ...usedMints]);
+    const used = recentExecutions.map((e) => e.reward_token_used).filter(Boolean);
+    const meta = await fetchTokenMeta([src, tgt, ...used, ...topRecipients.map((r) => r.reward_token).filter(Boolean)]);
+
+    // Live quote for the reward when it is a stock.
+    const stock = getStock(tgt);
+    let quote = null;
+    if (stock) {
+      const q = await getQuotes([stock.ticker]);
+      quote = q[stock.ticker] || null;
+    }
+
     return Response.json({
-      sourceToken: { address: src, name: meta[src]?.name || null, symbol: meta[src]?.symbol || null, image: meta[src]?.image || null, marketCap: meta[src]?.marketCap ?? null },
-      targetToken: { address: tgt, name: meta[tgt]?.name || null, symbol: meta[tgt]?.symbol || null, image: meta[tgt]?.image || null, marketCap: meta[tgt]?.marketCap ?? null, decimals: meta[tgt]?.decimals ?? null },
+      sourceToken: tokenView(src, meta),
+      targetToken: { ...tokenView(tgt, meta), quote },
       stats: {
         totalAirdropped: stats.total_airdropped || '0',
         totalBoughtBack: stats.total_bought_back || '0',
-        totalSolClaimed: stats.total_sol_claimed || '0',
+        totalEthClaimed: stats.total_eth_claimed || '0',
         totalExecutions: stats.execution_count || 0,
         lastExecution: stats.last_execution,
+        holderCount,
       },
       topRecipients: topRecipients.map((r) => ({
         address: r.holder_address,
         totalReceived: r.total_received,
         airdropCount: r.airdrop_count,
+        rewardToken: r.reward_token,
+        rewardSymbol: r.reward_token ? meta[r.reward_token]?.symbol || null : null,
+        rewardDecimals: r.reward_token ? meta[r.reward_token]?.decimals ?? null : null,
       })),
       recentExecutions: recentExecutions.map((e) => ({
         id: e.id,
-        claimedSol: e.claimed_sol_amount,
+        claimedEth: e.claimed_eth_wei,
         boughtTokens: e.bought_token_amount,
         totalAirdropped: e.total_airdropped,
         holderCount: e.holder_count,
         executionTime: e.execution_time,
         status: e.status,
-        txSignature: e.tx_signature || null,
+        txHash: e.tx_hash || null,
+        swapTx: e.swap_tx || null,
         rewardToken: e.reward_token_used || null,
-        rewardSymbol: e.reward_token_used ? (meta[e.reward_token_used]?.symbol || null) : null,
-        rewardDecimals: e.reward_token_used ? (meta[e.reward_token_used]?.decimals ?? null) : null,
+        rewardSymbol: e.reward_token_used ? meta[e.reward_token_used]?.symbol || null : null,
+        rewardDecimals: e.reward_token_used ? meta[e.reward_token_used]?.decimals ?? null : null,
+        rewardMode: e.reward_mode_used || null,
+        destination: e.destination || 'holders',
+        note: e.error_message || null,
       })),
       config: {
         intervalMinutes: config.interval_minutes,
+        scheduleKind: config.schedule_kind,
+        scheduleLabel: scheduleLabel(config),
+        marketHoursOnly: Boolean(config.market_hours_only),
         isActive: config.is_active,
-        trollMode: Boolean(config.troll_mode),
-        voteMode: Boolean(config.vote_mode),
+        rewardMode: config.reward_mode,
+        basket: config.basket ? { key: config.basket, ...(BASKETS[config.basket] || {}) } : null,
+        destination: config.destination,
+        feeSource: config.fee_source,
       },
       timestamp: new Date().toISOString(),
     });

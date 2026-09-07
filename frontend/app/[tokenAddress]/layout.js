@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'Token Dashboard — Boomerang',
-  description: 'Live dashboard showing fee redistribution stats for a Boomerang token.',
+  title: 'Token dashboard · Boomerang',
+  description: 'Live dividend dashboard for a token paying its holders in Robinhood Stock Tokens.',
 };
 
 export default function DashboardLayout({ children }) {

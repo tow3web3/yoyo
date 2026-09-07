@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { resolveToken, randomDemoEvent, demoEventFromPairs } from '../lib/tokens';
+import StockLogo from './StockLogo';
+import { describeAddress, getStock, LIQUID_TICKERS } from '../lib/stocks';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
 const MAX_ROWS = 6;
 
 function relTime(iso, now) {
@@ -17,72 +17,45 @@ function relTime(iso, now) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-/** Coin avatar: tries the CDN logo, falls back to a colored ticker badge. */
-function Coin({ token, size = 'h-9 w-9' }) {
-  const [ok, setOk] = useState(Boolean(token.logo));
-  if (ok) {
-    return (
-      <img
-        src={token.logo}
-        alt={token.symbol}
-        onError={() => setOk(false)}
-        className={`${size} shrink-0 rounded-full border border-line bg-night-850 object-cover`}
-      />
-    );
-  }
-  return (
-    <div
-      className={`${size} flex shrink-0 items-center justify-center rounded-full border border-line text-[10px] font-extrabold text-white`}
-      style={{ background: token.color }}
-    >
-      {token.symbol.replace('$', '').slice(0, 3)}
-    </div>
-  );
-}
-
-// Merge curated/fallback token info with real DexScreener metadata.
-function disp(mint, meta) {
-  const base = resolveToken(mint);
-  const m = meta?.[mint];
+// Demo stream shown until the bot has real events.
+const DEMO_SOURCES = ['PEPE', 'WOJAK', 'CHAD', 'HOOD', 'PONS', 'MOON'];
+function demoEvent(id) {
+  const stock = getStock(LIQUID_TICKERS[Math.floor(Math.random() * LIQUID_TICKERS.length)]);
+  const isPaid = Math.random() > 0.3;
   return {
-    symbol: m?.symbol || base.symbol,
-    logo: m?.image || base.logo,
-    color: base.color,
+    id, type: isPaid ? 'paid' : 'linked', demo: true,
+    sourceSymbol: DEMO_SOURCES[Math.floor(Math.random() * DEMO_SOURCES.length)],
+    rewardToken: stock.address,
+    holderCount: isPaid ? 8 + Math.floor(Math.random() * 60) : null,
+    time: new Date().toISOString(),
   };
 }
 
 function Row({ event, now, meta }) {
-  const target = disp(event.targetToken, meta);
-  const source = disp(event.sourceToken, meta);
   const isPaid = event.type === 'paid';
-
+  const reward = describeAddress(event.rewardToken, meta?.[event.rewardToken]);
+  const sourceSymbol = event.sourceSymbol || meta?.[event.sourceToken]?.symbol || (event.sourceToken ? event.sourceToken.slice(2, 6).toUpperCase() : '????');
   return (
     <li className="animate-feedin flex items-center gap-3 border-b border-line/70 px-4 py-2.5 last:border-b-0">
-      <Coin token={isPaid ? target : source} />
+      {isPaid ? <StockLogo address={event.rewardToken} meta={meta?.[event.rewardToken]} /> : <StockLogo address={event.sourceToken} meta={meta?.[event.sourceToken]} />}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-sm font-medium text-fg">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-ink">
           {isPaid ? (
             <>
-              <span className="font-semibold text-boom-600">Paid</span>
-              <span className="truncate">${target.symbol}</span>
-              {event.holderCount ? (
-                <span className="text-mut">· {event.holderCount} holders</span>
-              ) : null}
+              <span className="font-semibold text-hood-600">Dividend</span>
+              <span className="truncate font-mono">{reward.symbol}</span>
+              {event.holderCount ? <span className="text-mut">· {event.holderCount} holders</span> : null}
             </>
           ) : (
             <>
-              <span className="font-semibold text-amber">Linked</span>
-              <span className="truncate">${source.symbol}</span>
+              <span className="font-semibold text-gold-600">Linked</span>
+              <span className="truncate">${sourceSymbol}</span>
             </>
           )}
         </div>
-        <div className="text-xs text-mut">
-          {isPaid ? `holders of $${source.symbol}` : `rewards in $${target.symbol}`}
-        </div>
+        <div className="text-xs text-mut">{isPaid ? `to holders of $${sourceSymbol}` : `paying dividends in ${reward.symbol}`}</div>
       </div>
-      <span className="shrink-0 font-mono text-[11px] tabular-nums text-mut">
-        {relTime(event.time, now)}
-      </span>
+      <span className="shrink-0 font-mono text-[11px] tabular-nums text-mut">{relTime(event.time, now)}</span>
     </li>
   );
 }
@@ -91,107 +64,47 @@ export default function LiveFeed() {
   const [events, setEvents] = useState([]);
   const [meta, setMeta] = useState({});
   const [now, setNow] = useState(() => Date.now());
+  const [demo, setDemo] = useState(false);
   const demoId = useRef(0);
-  const demoMode = useRef(false); // no real data at all → curated demo
-  const realMode = useRef(false); // tokens are linked → flow payouts for them
-  const realPairs = useRef([]); // [{ source, target }] from real linked tokens
+  const demoMode = useRef(false);
 
-  // Dedupe the {source, target} pairs carried by real activity events.
-  function pairsFrom(eventList) {
-    const seen = new Set();
-    const out = [];
-    for (const e of eventList) {
-      if (!e.sourceToken || !e.targetToken) continue;
-      const key = `${e.sourceToken}/${e.targetToken}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push({ source: e.sourceToken, target: e.targetToken });
-    }
-    return out;
-  }
-
-  // Initial load: prefer real data from the bot; otherwise run a demo stream.
   useEffect(() => {
     let cancelled = false;
-
     async function load() {
       try {
-        const res = await fetch(`${API}/api/activity?limit=${MAX_ROWS}`, { cache: 'no-store' });
+        const res = await fetch(`/api/activity?limit=${MAX_ROWS}`, { cache: 'no-store' });
         const data = await res.json();
         if (cancelled) return;
         if (Array.isArray(data.events) && data.events.length > 0) {
-          // Real tokens are linked. Keep the feed alive with reward payouts
-          // built from those same tokens (the bot has no executions yet).
-          realPairs.current = pairsFrom(data.events);
-          realMode.current = true;
+          demoMode.current = false;
+          setDemo(false);
           if (data.meta) setMeta((prev) => ({ ...prev, ...data.meta }));
           setEvents(data.events.map((e, i) => ({ ...e, id: `r${i}-${e.time}` })));
           return;
         }
-      } catch {
-        /* backend offline → demo */
+      } catch { /* backend offline */ }
+      if (!cancelled && !demoMode.current) {
+        demoMode.current = true;
+        setDemo(true);
+        setEvents(Array.from({ length: MAX_ROWS }, () => {
+          const ev = demoEvent(demoId.current++);
+          ev.time = new Date(Date.now() - Math.random() * 120000).toISOString();
+          return ev;
+        }));
       }
-      if (!cancelled) startDemo();
     }
-
-    function startDemo() {
-      demoMode.current = true;
-      // seed a few so it isn't empty on first paint
-      const seed = Array.from({ length: MAX_ROWS }, () => {
-        const ev = randomDemoEvent(demoId.current++);
-        ev.time = new Date(Date.now() - Math.random() * 120000).toISOString();
-        return ev;
-      });
-      setEvents(seed);
-    }
-
     load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Tick relative timestamps + drive the feed.
-  useEffect(() => {
+    const refresh = setInterval(load, 25000);
     const clock = setInterval(() => setNow(Date.now()), 1000);
-
-    // Add an event on a randomized cadence (40s–80s) so it feels organic.
-    let pump;
-    const schedulePump = () => {
-      const delay = 40000 + Math.random() * 40000;
-      pump = setTimeout(() => {
-        if (realMode.current) {
-          setEvents((prev) =>
-            [demoEventFromPairs(`p${demoId.current++}`, realPairs.current), ...prev].slice(0, MAX_ROWS)
-          );
-        } else if (demoMode.current) {
-          setEvents((prev) => [randomDemoEvent(demoId.current++), ...prev].slice(0, MAX_ROWS));
-        }
-        schedulePump();
-      }, delay);
+    let demoTimer;
+    const scheduleDemo = () => {
+      demoTimer = setTimeout(() => {
+        if (demoMode.current) setEvents((prev) => [demoEvent(demoId.current++), ...prev].slice(0, MAX_ROWS));
+        scheduleDemo();
+      }, 30000 + Math.random() * 30000);
     };
-    schedulePump();
-
-    // Periodically refresh the real token pairs so newly linked tokens join in.
-    const refresh = setInterval(async () => {
-      if (!realMode.current) return;
-      try {
-        const res = await fetch(`${API}/api/activity?limit=${MAX_ROWS}`, { cache: 'no-store' });
-        const data = await res.json();
-        if (Array.isArray(data.events) && data.events.length > 0) {
-          realPairs.current = pairsFrom(data.events);
-          if (data.meta) setMeta((prev) => ({ ...prev, ...data.meta }));
-        }
-      } catch {
-        /* ignore transient errors */
-      }
-    }, 25000);
-
-    return () => {
-      clearInterval(clock);
-      clearTimeout(pump);
-      clearInterval(refresh);
-    };
+    scheduleDemo();
+    return () => { cancelled = true; clearInterval(refresh); clearInterval(clock); clearTimeout(demoTimer); };
   }, []);
 
   return (
@@ -199,19 +112,14 @@ export default function LiveFeed() {
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-boom-400 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-boom-400" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-hood-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-hood-500" />
           </span>
-          <span className="text-sm font-semibold text-fg">Live activity</span>
+          <span className="text-sm font-semibold text-ink">Live activity</span>
         </div>
-        <span className="chip">Auto-updating</span>
+        <span className="chip">{demo ? 'Preview' : 'Auto-updating'}</span>
       </div>
-
-      <ul>
-        {events.map((e) => (
-          <Row key={e.id} event={e} now={now} meta={meta} />
-        ))}
-      </ul>
+      <ul>{events.map((e) => <Row key={e.id} event={e} now={now} meta={meta} />)}</ul>
     </div>
   );
 }

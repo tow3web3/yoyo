@@ -1,250 +1,164 @@
+// One dividend cycle for one config:
+//   claim fees -> ETH available -> pick reward -> buy it (fair-price guarded)
+//   -> eligible holders -> pro-rata split -> pay (or burn) -> log + notify.
+import { parseEther } from 'viem';
 import * as db from '../db/queries.js';
 import { decryptPrivateKey } from '../services/encryption.js';
-import { getCreatorFees, claimCreatorFees } from '../services/pumpfun.js';
-import { swapSolForToken } from '../services/jupiter.js';
+import { accountFromKey, explorerTx, formatEth, formatUnits, short } from '../chain/config.js';
+import { claimFees, availableEth } from '../services/fees.js';
+import { swapEthForToken } from '../services/swap.js';
 import { getTokenHolders } from '../services/holders.js';
-import { distributeTokens, distributeSol, calculateDistributions } from '../services/airdrop.js';
-import { pickRandomReward, TROLL_REWARD_POOL } from '../services/trollMode.js';
-import { getCurrentRewardToken } from '../services/voteService.js';
+import { distributeTokens, distributeEth, burnTokens, calculateDistributions } from '../services/airdrop.js';
+import { resolveReward, describeReward } from '../services/rewards.js';
+import { stockOracle } from '../services/oracle.js';
+import { isMarketOpen, scheduleLabel } from '../services/schedule.js';
 import { sendNotification } from '../bot/telegram.js';
 
-const SOL_MINT = 'So11111111111111111111111111111111111111112';
-
-// Tracks configs whose pipeline is currently running, so a cron tick that
-// fires while the previous run is still in flight is skipped rather than
-// double-claiming/double-swapping the same fees.
+const MIN_DISTRIBUTE_WEI = parseEther(process.env.MIN_DISTRIBUTE_ETH || '0.0005');
 const runningConfigs = new Set();
 
-/**
- * Execute bot configuration - claim fees, swap, and airdrop
- * @param {Object} config - Bot configuration from database
- */
-export async function executeBotConfig(config) {
+export async function executeBotConfig(config, { force = false } = {}) {
   if (runningConfigs.has(config.id)) {
-    console.log(`⏭️  Config ${config.id} is still running from a previous tick, skipping`);
+    console.log(`Config ${config.id} is still running from a previous tick, skipping`);
     return;
   }
   runningConfigs.add(config.id);
+  console.log(`\nCycle for config ${config.id} (${short(config.source_token_address)}, ${scheduleLabel(config)})`);
 
-  console.log(`\n🚀 Executing bot for config ID: ${config.id}`);
-  console.log(`   User ID: ${config.user_id}`);
-  console.log(`   Interval: ${config.interval_minutes} minutes`);
-
-  let executionLog = {
-    configId: config.id,
-    claimedSolAmount: 0n,
-    boughtTokenAmount: 0n,
-    holderCount: 0,
-    totalAirdropped: 0n,
-    status: 'failed',
-    errorMessage: null,
-    rewardTokenUsed: null,
+  const log = {
+    configId: config.id, claimedEthWei: 0n, boughtTokenAmount: 0n, holderCount: 0, totalAirdropped: 0n,
+    status: 'failed', errorMessage: null, rewardTokenUsed: null, rewardModeUsed: config.reward_mode || 'fixed',
+    swapTx: null, claimTx: null, destination: config.destination || 'holders',
   };
 
   try {
-    // Step 1: Decrypt private key
-    console.log('🔐 Decrypting private key...');
+    if (config.market_hours_only && !force && !isMarketOpen()) {
+      console.log('   Market closed, cycle skipped (market hours only)');
+      runningConfigs.delete(config.id);
+      return;
+    }
+
     const privateKey = decryptPrivateKey(config.dev_wallet_encrypted);
+    const account = accountFromKey(privateKey);
 
-    // Step 2: Check available fees
-    console.log('💰 Checking available creator fees...');
-    const feeBalance = await getCreatorFees(config.dev_wallet_public);
-    console.log(`   Available fees: ${feeBalance.toString()} lamports (${Number(feeBalance) / 1e9} SOL)`);
+    // 1. Claim
+    console.log('1. Claiming fees');
+    const claim = await claimFees(config, privateKey);
+    log.claimTx = claim.claimTx;
+    for (const n of claim.notes) console.log(`   note: ${n}`);
 
-    if (feeBalance === 0n) {
-      console.log('⏭️  No fees to claim, skipping execution');
-      executionLog.status = 'success';
-      executionLog.errorMessage = 'No fees to claim';
-      await db.createExecutionLog(executionLog);
+    // 2. Budget
+    const { balance, spendable } = await availableEth(account.address, config.gas_reserve_wei);
+    console.log(`2. Wallet ${formatEth(balance)} ETH, ${formatEth(spendable)} ETH above the gas reserve`);
+    if (spendable < MIN_DISTRIBUTE_WEI) {
+      log.status = 'success';
+      log.errorMessage = 'Nothing to distribute yet';
+      await db.createExecutionLog(log);
       await db.updateLastExecution(config.id);
       return;
     }
+    log.claimedEthWei = spendable;
 
-    // Step 3: Claim fees
-    console.log('💸 Claiming creator fees...');
-    const claimSignature = await claimCreatorFees(privateKey);
-    console.log(`   Claim TX: ${claimSignature}`);
+    // 3. Reward
+    let reward = await resolveReward(config);
+    console.log(`3. Reward: ${reward.symbol}${reward.note ? ` (${reward.note})` : ''}`);
 
-    // Only record the claimed amount once the claim tx has actually
-    // confirmed, so a failed claim isn't logged as a successful one.
-    executionLog.claimedSolAmount = feeBalance.toString();
-
-    // Keep 5% of the claimed SOL as a buffer for transaction fees.
-    const reserved = Number(feeBalance) * 0.95;
-    const reservedLamports = BigInt(Math.floor(reserved));
-
-    // Reward token precedence: 🗳️ Community Vote winner > 🎲 Troll random >
-    // fixed config token.
-    let rewardMint = config.target_token_address;
-    if (config.vote_mode) {
-      const voted = await getCurrentRewardToken(config.id);
-      if (voted) {
-        rewardMint = voted;
-        console.log(`🗳️  VOTE MODE — community-chosen reward: ${voted}`);
-      } else {
-        console.log('🗳️  VOTE MODE — no resolved cycle yet, using fixed reward token');
+    // 4. Buy
+    let amountToDistribute = spendable;
+    if (!reward.isNative) {
+      const oracle = reward.isStock ? await stockOracle(reward.ticker) : null;
+      if (reward.isStock && !oracle) console.log('   Oracle unavailable, swap will run unguarded');
+      try {
+        console.log(`4. Buying ${reward.symbol} with ${formatEth(spendable)} ETH`);
+        const swap = await swapEthForToken({
+          privateKey, token: reward.address, decimals: reward.decimals, amountWei: spendable,
+          slippageBps: config.slippage_bps || 150, oracle,
+        });
+        log.swapTx = swap.hash;
+        log.boughtTokenAmount = swap.outputAmount;
+        amountToDistribute = swap.outputAmount;
+      } catch (e) {
+        // No fair route: holders still get paid, in ETH, and the run says why.
+        console.log(`   Swap skipped: ${e.shortMessage || e.message}. Paying ETH instead.`);
+        log.errorMessage = `Paid ETH: ${e.shortMessage || e.message}`;
+        reward = { ...(await describeReward(null)), mode: reward.mode, note: 'ETH fallback' };
+        amountToDistribute = spendable;
       }
-    } else if (config.troll_mode) {
-      const pick = pickRandomReward();
-      rewardMint = pick.mint;
-      console.log(`👹 TROLL MODE — this cycle's surprise reward: $${pick.symbol} (${pick.mint})`);
     }
-    executionLog.rewardTokenUsed = rewardMint;
-    const rewardIsSol = rewardMint === SOL_MINT;
+    log.rewardTokenUsed = reward.address;
 
-    // Step 4–5: Get the amount to distribute. If the reward is SOL itself,
-    // there is nothing to swap — distribute the claimed SOL directly.
-    // Otherwise swap the SOL into the reward token first.
-    let amountToDistribute;
-    if (rewardIsSol) {
-      console.log(`💸 Reward is SOL — skipping swap, distributing ${reservedLamports} lamports directly`);
-      amountToDistribute = reservedLamports;
-    } else {
-      console.log(`💱 Swapping ${reservedLamports} lamports for ${rewardMint}...`);
-      const swapResult = await swapSolForToken(
-        privateKey,
-        rewardMint,
-        Number(reservedLamports),
-        config.slippage_bps
-      );
-      executionLog.boughtTokenAmount = swapResult.outputAmount.toString();
-      amountToDistribute = swapResult.outputAmount;
-      console.log(`   Bought ${swapResult.outputAmount.toString()} tokens`);
-      console.log(`   Swap TX: ${swapResult.signature}`);
+    // 5. Burn destination short-circuits the holder scan.
+    if (log.destination === 'burn' && !reward.isNative) {
+      console.log('5. Burning the bought tokens');
+      const hash = await burnTokens(privateKey, reward.address, amountToDistribute);
+      log.totalAirdropped = amountToDistribute;
+      log.status = 'success';
+      const saved = await db.createExecutionLog(log);
+      await db.createAirdropTransactionsBatch([{ executionLogId: saved.id, holderAddress: '0x000000000000000000000000000000000000dEaD', holderBalance: '0', airdropAmount: amountToDistribute.toString(), txHash: hash, status: 'success' }]);
+      await db.updateLastExecution(config.id);
+      await notifyUser(config.user_id, `🔥 *Buyback and burn done*\n\n💰 Spent: ${formatEth(spendable, 4)} ETH\n🔥 Burned: ${formatUnits(amountToDistribute, reward.decimals, 4)} ${reward.symbol}\n🔗 ${explorerTx(hash)}`);
+      return;
     }
 
-    // Step 6: Get token holders
-    console.log(`👥 Fetching holders of ${config.source_token_address}...`);
-    const holders = await getTokenHolders(
-      config.source_token_address,
-      Number(config.min_holder_amount)
-    );
-
-    executionLog.holderCount = holders.length;
-    console.log(`   Found ${holders.length} holders`);
-
+    // 6. Holders
+    console.log(`5. Fetching holders of ${short(config.source_token_address)}`);
+    const holders = await getTokenHolders(config.source_token_address, {
+      minBalance: BigInt(config.min_holder_amount || 0),
+      exclude: [account.address],
+      startBlock: config.index_start_block || null,
+    });
+    log.holderCount = holders.length;
     if (holders.length === 0) {
-      console.log('⚠️  No holders found, cannot distribute');
-      executionLog.status = 'success';
-      executionLog.errorMessage = 'No holders to airdrop to';
-      await db.createExecutionLog(executionLog);
+      log.status = 'success';
+      log.errorMessage = 'No eligible holders';
+      await db.createExecutionLog(log);
       await db.updateLastExecution(config.id);
       return;
     }
 
-    // Step 7: Calculate distributions
-    console.log('📊 Calculating proportional distributions...');
-    const distributions = calculateDistributions(
-      holders,
-      amountToDistribute,
-      1n // Min 1 base unit per holder
-    );
+    // 7. Split + pay
+    const distributions = calculateDistributions(holders, amountToDistribute, 1n);
+    console.log(`6. Paying ${distributions.length} holders in ${reward.symbol}`);
+    const results = reward.isNative
+      ? await distributeEth(privateKey, distributions)
+      : await distributeTokens(privateKey, reward.address, distributions);
 
-    // Step 8: Execute airdrops (native SOL or SPL/Token-2022 transfer)
-    console.log('🎁 Starting airdrop distribution...');
-    const airdropResults = rewardIsSol
-      ? await distributeSol(privateKey, distributions)
-      : await distributeTokens(privateKey, rewardMint, distributions);
+    log.totalAirdropped = results.totalSent;
+    log.status = 'success';
+    const saved = await db.createExecutionLog(log);
 
-    executionLog.totalAirdropped = airdropResults.totalSent.toString();
-    executionLog.status = 'success';
-
-    // Step 9: Save execution log
-    const savedLog = await db.createExecutionLog(executionLog);
-
-    // Step 10: Save individual airdrop transactions
-    const airdropTxs = [];
-
-    // Successful transactions
-    for (const tx of airdropResults.successful) {
-      airdropTxs.push({
-        executionLogId: savedLog.id,
-        holderAddress: tx.address,
-        holderBalance: tx.holderBalance?.toString() || '0',
-        airdropAmount: tx.amount.toString(),
-        txSignature: tx.signature,
-        status: 'success',
-      });
-    }
-
-    // Failed transactions
-    for (const tx of airdropResults.failed) {
-      airdropTxs.push({
-        executionLogId: savedLog.id,
-        holderAddress: tx.address,
-        holderBalance: tx.holderBalance?.toString() || '0',
-        airdropAmount: tx.amount?.toString() || '0',
-        txSignature: null,
-        status: 'failed',
-      });
-    }
-
-    if (airdropTxs.length > 0) {
-      await db.createAirdropTransactionsBatch(airdropTxs);
-    }
-
-    // Step 11: Update last execution time
+    const rows = [];
+    for (const tx of results.successful) rows.push({ executionLogId: saved.id, holderAddress: tx.address, holderBalance: tx.holderBalance.toString(), airdropAmount: tx.amount.toString(), txHash: tx.hash, status: 'success' });
+    for (const tx of results.failed) rows.push({ executionLogId: saved.id, holderAddress: tx.address, holderBalance: tx.holderBalance?.toString() || '0', airdropAmount: tx.amount?.toString() || '0', txHash: null, status: 'failed' });
+    if (rows.length) await db.createAirdropTransactionsBatch(rows);
     await db.updateLastExecution(config.id);
 
-    // Step 12: Notify user
-    const rewardSym = (TROLL_REWARD_POOL.find((t) => t.mint === rewardMint) || {}).symbol
-      || (rewardIsSol ? 'SOL' : 'tokens');
-    const rewardLabel = rewardIsSol ? 'SOL (lamports)' : `tokens ($${rewardSym})`;
-    const trollLine = config.troll_mode ? `\n👹 *Troll Mode* — this cycle's surprise reward was *$${rewardSym}*` : '';
-    const successMessage = `
-✅ *Execution Complete!*${trollLine}
-
-💰 Claimed: ${(Number(feeBalance) / 1e9).toFixed(4)} SOL
-🎁 Airdropped: ${airdropResults.totalSent.toString()} ${rewardLabel}
-👥 Recipients: ${airdropResults.successful.length}/${holders.length} holders
-⏰ Next run: ${config.interval_minutes} minutes
-
-${airdropResults.failed.length > 0 ? `⚠️ ${airdropResults.failed.length} transfers failed` : ''}
-    `;
-
-    await notifyUser(config.user_id, successMessage);
-
-    console.log('✅ Execution completed successfully!');
-    console.log(`   Total airdropped: ${airdropResults.totalSent.toString()}`);
-    console.log(`   Successful: ${airdropResults.successful.length}`);
-    console.log(`   Failed: ${airdropResults.failed.length}`);
-
+    const modeLine = reward.note ? `\n${reward.mode === 'roulette' ? '🎰' : reward.mode === 'gainer' ? '🚀' : reward.mode === 'portfolio' ? '📊' : reward.mode === 'vote' ? '🗳️' : 'ℹ️'} ${reward.note}` : '';
+    await notifyUser(config.user_id,
+      `✅ *Dividend paid*${modeLine}\n\n` +
+      `💰 Fees used: ${formatEth(spendable, 4)} ETH\n` +
+      `📈 Paid out: ${formatUnits(results.totalSent, reward.decimals, 4)} ${reward.symbol}\n` +
+      `👥 Recipients: ${results.successful.length}/${holders.length} holders\n` +
+      `⏰ Next: ${scheduleLabel(config)}` +
+      (results.failed.length ? `\n⚠️ ${results.failed.length} transfers failed` : '') +
+      (log.errorMessage ? `\n⚠️ ${log.errorMessage}` : '')
+    );
+    console.log(`   Done: ${results.successful.length} paid, ${results.failed.length} failed`);
   } catch (error) {
-    console.error('❌ Execution failed:', error);
-    executionLog.status = 'failed';
-    executionLog.errorMessage = error.message;
-
-    // Save error log
-    await db.createExecutionLog(executionLog);
-
-    // Notify user of failure
-    const errorMessage = `
-❌ *Execution Failed*
-
-Error: ${error.message}
-
-Please check your configuration or contact support.
-    `;
-
-    await notifyUser(config.user_id, errorMessage);
+    console.error('Cycle failed:', error);
+    log.status = 'failed';
+    log.errorMessage = error.shortMessage || error.message;
+    await db.createExecutionLog(log).catch(() => {});
+    await notifyUser(config.user_id, `❌ *Cycle failed*\n\n${log.errorMessage}\n\nCheck the dev wallet has ETH for gas, or contact support.`);
   } finally {
     runningConfigs.delete(config.id);
   }
 }
 
-/**
- * Notify user via Telegram
- * @param {number} userId - Database user ID
- * @param {string} message - Message to send
- */
 async function notifyUser(userId, message) {
   try {
-    // Get user's telegram ID
     const result = await db.pool.query('SELECT telegram_id FROM users WHERE id = $1', [userId]);
-    if (result.rows.length > 0) {
-      const telegramId = result.rows[0].telegram_id;
-      await sendNotification(telegramId, message);
-    }
+    if (result.rows.length) await sendNotification(result.rows[0].telegram_id, message);
   } catch (error) {
     console.error('Error notifying user:', error);
   }

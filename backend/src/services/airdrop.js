@@ -1,285 +1,135 @@
-import {
-  Connection,
-  Keypair,
-  PublicKey,
-  Transaction,
-  SystemProgram,
-  sendAndConfirmTransaction,
-} from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress,
-  createAssociatedTokenAccountInstruction,
-  createTransferCheckedInstruction,
-  getMint,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
-import bs58 from 'bs58';
-import dotenv from 'dotenv';
+// Distribution: ERC-20 or native ETH to many holders. If a Disperse contract is
+// configured (contracts/BoomerangDisperse.sol), one transaction pays up to
+// DISPERSE_BATCH holders; otherwise transfers go out one per recipient with
+// sequential nonces, in parallel waves, which is cheap on this L2.
+import { parseAbi, maxUint256 } from 'viem';
+import { publicClient, walletFor, erc20Abi, DEAD, isAddress, explorerTx } from '../chain/config.js';
 
-dotenv.config();
+const DISPERSE_ADDRESS = isAddress(process.env.DISPERSE_ADDRESS) ? process.env.DISPERSE_ADDRESS : null;
+const DISPERSE_BATCH = 150;
+const WAVE = 20; // parallel single transfers per wave
 
-const connection = new Connection(process.env.SOLANA_RPC_URL, 'confirmed');
+const DISPERSE_ABI = parseAbi([
+  'function disperseEther(address[] recipients, uint256[] values) payable',
+  'function disperseToken(address token, address[] recipients, uint256[] values)',
+]);
 
-// SPL transfers (+ possible ATA creation) are heavy, so keep batches small;
-// native SOL transfers are tiny, so a batch can hold many more.
-const SPL_BATCH_SIZE = 5;
-const SOL_BATCH_SIZE = 12;
-const DELAY_BETWEEN_BATCHES = 1000;
-
-/** Whichever token program owns a mint (classic SPL or Token-2022). */
-async function getMintProgramId(mintPubkey) {
-  const info = await connection.getAccountInfo(mintPubkey);
-  return info?.owner ?? TOKEN_PROGRAM_ID;
+async function waitAll(hashes) {
+  const client = publicClient();
+  return Promise.all(hashes.map((hash) => client.waitForTransactionReceipt({ hash, timeout: 180_000 }).then((r) => r.status === 'success').catch(() => false)));
 }
 
-/**
- * Distribute an SPL / Token-2022 token to many holders proportionally.
- * Works for either token program — it detects the one owning the mint.
- * @param {string} privateKey - Sender's private key
- * @param {string} tokenMint - Reward token mint address
- * @param {Array<{address: string, amount: bigint}>} distributions
- * @returns {Promise<{successful: Array, failed: Array, totalSent: bigint}>}
- */
-export async function distributeTokens(privateKey, tokenMint, distributions) {
-  const wallet = getKeypairFromPrivateKey(privateKey);
-  const mintPubkey = new PublicKey(tokenMint);
-  const programId = await getMintProgramId(mintPubkey);
-  const mint = await getMint(connection, mintPubkey, 'confirmed', programId);
-
-  console.log(`🎁 Airdropping ${tokenMint} (program ${programId.toBase58()}) to ${distributions.length} holders...`);
-
-  const senderATA = await getAssociatedTokenAddress(
-    mintPubkey,
-    wallet.publicKey,
-    false,
-    programId,
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  );
-
-  const results = { successful: [], failed: [], totalSent: 0n };
-
-  for (let i = 0; i < distributions.length; i += SPL_BATCH_SIZE) {
-    const batch = distributions.slice(i, i + SPL_BATCH_SIZE);
-    const batchNumber = Math.floor(i / SPL_BATCH_SIZE) + 1;
-    const totalBatches = Math.ceil(distributions.length / SPL_BATCH_SIZE);
-    console.log(`📦 Token batch ${batchNumber}/${totalBatches} (${batch.length})...`);
-
-    const transaction = new Transaction();
-    const included = [];
-
-    for (const dist of batch) {
-      try {
-        if (BigInt(dist.amount) <= 0n) {
-          results.failed.push({ ...dist, error: 'Amount must be greater than 0' });
-          continue;
-        }
-        const recipient = new PublicKey(dist.address);
-        const recipientATA = await getAssociatedTokenAddress(
-          mintPubkey,
-          recipient,
-          false,
-          programId,
-          ASSOCIATED_TOKEN_PROGRAM_ID
-        );
-
-        const accountInfo = await connection.getAccountInfo(recipientATA);
-        if (!accountInfo) {
-          transaction.add(
-            createAssociatedTokenAccountInstruction(
-              wallet.publicKey,
-              recipientATA,
-              recipient,
-              mintPubkey,
-              programId,
-              ASSOCIATED_TOKEN_PROGRAM_ID
-            )
-          );
-        }
-
-        transaction.add(
-          createTransferCheckedInstruction(
-            senderATA,
-            mintPubkey,
-            recipientATA,
-            wallet.publicKey,
-            BigInt(dist.amount),
-            mint.decimals,
-            [],
-            programId
-          )
-        );
-        included.push(dist);
-      } catch (error) {
-        results.failed.push({ ...dist, error: error.message });
-      }
-    }
-
-    await sendBatch(transaction, wallet, included, results, batchNumber);
-
-    if (i + SPL_BATCH_SIZE < distributions.length) await sleep(DELAY_BETWEEN_BATCHES);
-  }
-
-  logAirdropSummary(results);
-  return results;
-}
-
-/**
- * Distribute native SOL to many holders proportionally (used when the reward
- * token is SOL itself — no swap, no token accounts, just system transfers).
- * @param {string} privateKey - Sender's private key
- * @param {Array<{address: string, amount: bigint}>} distributions
- * @returns {Promise<{successful: Array, failed: Array, totalSent: bigint}>}
- */
-export async function distributeSol(privateKey, distributions) {
-  const wallet = getKeypairFromPrivateKey(privateKey);
-  console.log(`🎁 Airdropping native SOL to ${distributions.length} holders...`);
-
-  const results = { successful: [], failed: [], totalSent: 0n };
-
-  for (let i = 0; i < distributions.length; i += SOL_BATCH_SIZE) {
-    const batch = distributions.slice(i, i + SOL_BATCH_SIZE);
-    const batchNumber = Math.floor(i / SOL_BATCH_SIZE) + 1;
-    const totalBatches = Math.ceil(distributions.length / SOL_BATCH_SIZE);
-    console.log(`📦 SOL batch ${batchNumber}/${totalBatches} (${batch.length})...`);
-
-    const transaction = new Transaction();
-    const included = [];
-
-    for (const dist of batch) {
-      try {
-        if (BigInt(dist.amount) <= 0n) {
-          results.failed.push({ ...dist, error: 'Amount must be greater than 0' });
-          continue;
-        }
-        transaction.add(
-          SystemProgram.transfer({
-            fromPubkey: wallet.publicKey,
-            toPubkey: new PublicKey(dist.address),
-            lamports: BigInt(dist.amount),
-          })
-        );
-        included.push(dist);
-      } catch (error) {
-        results.failed.push({ ...dist, error: error.message });
-      }
-    }
-
-    await sendBatch(transaction, wallet, included, results, batchNumber);
-
-    if (i + SOL_BATCH_SIZE < distributions.length) await sleep(DELAY_BETWEEN_BATCHES);
-  }
-
-  logAirdropSummary(results);
-  return results;
-}
-
-/** Send one prepared batch and record per-recipient success/failure. */
-async function sendBatch(transaction, wallet, included, results, batchNumber) {
-  if (transaction.instructions.length === 0) return;
-  try {
-    const signature = await sendAndConfirmTransaction(connection, transaction, [wallet], {
-      commitment: 'confirmed',
-      skipPreflight: false,
-    });
-    console.log(`   ✅ Batch ${batchNumber} confirmed: ${signature}`);
-    for (const dist of included) {
-      results.successful.push({ ...dist, signature });
-      results.totalSent += BigInt(dist.amount);
-    }
-  } catch (error) {
-    console.error(`   ❌ Batch ${batchNumber} failed:`, error.message);
-    for (const dist of included) {
-      results.failed.push({ ...dist, error: `Transaction failed: ${error.message}` });
-    }
-  }
-}
-
-function logAirdropSummary(results) {
-  console.log('✅ Airdrop complete!');
-  console.log(`   Successful: ${results.successful.length}`);
-  console.log(`   Failed: ${results.failed.length}`);
-  console.log(`   Total sent: ${results.totalSent.toString()}`);
-}
-
-/**
- * Calculate proportional distribution amounts
- * @param {Array} holders - Array of {address, balance} objects
- * @param {bigint} totalToDistribute - Total amount to distribute
- * @param {bigint} minAmount - Minimum amount per holder (optional)
- * @returns {Array} - Array of {address, amount} distributions
- */
+/** Pure-integer pro-rata split; leftover dust goes to the largest holder. */
 export function calculateDistributions(holders, totalToDistribute, minAmount = 0n) {
   const total = BigInt(totalToDistribute);
   const totalHoldings = holders.reduce((sum, h) => sum + BigInt(h.balance), 0n);
+  if (totalHoldings === 0n) throw new Error('Total holdings cannot be zero');
 
-  if (totalHoldings === 0n) {
-    throw new Error('Total holdings cannot be zero');
-  }
-
-  // Pure integer math: amount = total * holderBalance / totalHoldings.
-  // Doing this with bigint avoids the precision loss of Number() on large
-  // token amounts (which silently rounds beyond 2^53).
-  let distributions = holders
-    .map(holder => {
+  const distributions = holders
+    .map((holder) => {
       const holderBalance = BigInt(holder.balance);
-      const amount = (total * holderBalance) / totalHoldings;
-
-      return {
-        address: holder.address,
-        holderBalance,
-        amount,
-      };
+      return { address: holder.address, holderBalance, amount: (total * holderBalance) / totalHoldings };
     })
-    .filter(dist => dist.amount >= BigInt(minAmount));
+    .filter((d) => d.amount >= BigInt(minAmount) && d.amount > 0n);
 
-  // Integer division leaves a remainder (dust). Assign it to the largest
-  // holder so the full received amount is distributed and nothing is stranded
-  // in the dev wallet.
   const allocated = distributions.reduce((sum, d) => sum + d.amount, 0n);
   const remainder = total - allocated;
   if (remainder > 0n && distributions.length > 0) {
     let largest = distributions[0];
-    for (const dist of distributions) {
-      if (dist.holderBalance > largest.holderBalance) largest = dist;
-    }
+    for (const d of distributions) if (d.holderBalance > largest.holderBalance) largest = d;
     largest.amount += remainder;
   }
-
-  console.log(`📊 Calculated ${distributions.length} distributions from ${holders.length} holders`);
-  console.log(`   Min amount: ${BigInt(minAmount).toString()}`);
-  console.log(`   Total to distribute: ${total.toString()}`);
-  console.log(`   Remainder reassigned: ${remainder.toString()}`);
-
+  console.log(`   ${distributions.length} distributions from ${holders.length} holders, ${total.toString()} raw total`);
   return distributions;
 }
 
-/**
- * Convert private key string to Keypair
- * @param {string} privateKey - Base58 or JSON array string
- * @returns {Keypair} - Solana Keypair object
- */
-function getKeypairFromPrivateKey(privateKey) {
-  try {
-    if (!privateKey.startsWith('[')) {
-      const decoded = bs58.decode(privateKey);
-      return Keypair.fromSecretKey(decoded);
+async function viaDisperse({ privateKey, token, distributions }) {
+  const { account, wallet } = walletFor(privateKey);
+  const client = publicClient();
+  const results = { successful: [], failed: [], totalSent: 0n, txHashes: [] };
+
+  if (token) {
+    const total = distributions.reduce((s, d) => s + d.amount, 0n);
+    const allowance = await client.readContract({ address: token, abi: erc20Abi, functionName: 'allowance', args: [account.address, DISPERSE_ADDRESS] });
+    if (allowance < total) {
+      const ah = await wallet.writeContract({ address: token, abi: erc20Abi, functionName: 'approve', args: [DISPERSE_ADDRESS, maxUint256] });
+      await client.waitForTransactionReceipt({ hash: ah });
     }
-
-    const secretKey = new Uint8Array(JSON.parse(privateKey));
-    return Keypair.fromSecretKey(secretKey);
-  } catch (error) {
-    throw new Error('Invalid private key format');
   }
+
+  for (let i = 0; i < distributions.length; i += DISPERSE_BATCH) {
+    const batch = distributions.slice(i, i + DISPERSE_BATCH);
+    const recipients = batch.map((d) => d.address);
+    const values = batch.map((d) => d.amount);
+    const value = values.reduce((s, v) => s + v, 0n);
+    try {
+      const hash = token
+        ? await wallet.writeContract({ address: DISPERSE_ADDRESS, abi: DISPERSE_ABI, functionName: 'disperseToken', args: [token, recipients, values] })
+        : await wallet.writeContract({ address: DISPERSE_ADDRESS, abi: DISPERSE_ABI, functionName: 'disperseEther', args: [recipients, values], value });
+      const [ok] = await waitAll([hash]);
+      results.txHashes.push(hash);
+      for (const d of batch) {
+        if (ok) { results.successful.push({ ...d, hash }); results.totalSent += d.amount; }
+        else results.failed.push({ ...d, error: `batch reverted ${hash}` });
+      }
+      console.log(`   Disperse batch ${Math.floor(i / DISPERSE_BATCH) + 1}: ${ok ? 'ok' : 'REVERTED'} ${explorerTx(hash)}`);
+    } catch (e) {
+      for (const d of batch) results.failed.push({ ...d, error: e.shortMessage || e.message });
+    }
+  }
+  return results;
 }
 
-/**
- * Sleep for specified milliseconds
- * @param {number} ms - Milliseconds to sleep
- * @returns {Promise<void>}
- */
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+async function viaSingles({ privateKey, token, distributions }) {
+  const { account, wallet } = walletFor(privateKey);
+  const client = publicClient();
+  const results = { successful: [], failed: [], totalSent: 0n, txHashes: [] };
+  let nonce = await client.getTransactionCount({ address: account.address, blockTag: 'pending' });
+
+  for (let i = 0; i < distributions.length; i += WAVE) {
+    const wave = distributions.slice(i, i + WAVE);
+    const sent = [];
+    for (const d of wave) {
+      try {
+        const hash = token
+          ? await wallet.writeContract({ address: token, abi: erc20Abi, functionName: 'transfer', args: [d.address, d.amount], nonce: nonce++ })
+          : await wallet.sendTransaction({ to: d.address, value: d.amount, nonce: nonce++ });
+        sent.push({ d, hash });
+      } catch (e) {
+        results.failed.push({ ...d, error: e.shortMessage || e.message });
+        // A failed send never consumed the nonce; re-read to stay aligned.
+        nonce = await client.getTransactionCount({ address: account.address, blockTag: 'pending' });
+      }
+    }
+    const oks = await waitAll(sent.map((s) => s.hash));
+    sent.forEach(({ d, hash }, j) => {
+      results.txHashes.push(hash);
+      if (oks[j]) { results.successful.push({ ...d, hash }); results.totalSent += d.amount; }
+      else results.failed.push({ ...d, error: `reverted ${hash}` });
+    });
+    console.log(`   Wave ${Math.floor(i / WAVE) + 1}/${Math.ceil(distributions.length / WAVE)}: ${oks.filter(Boolean).length}/${sent.length} confirmed`);
+  }
+  return results;
 }
 
-export { connection };
+export async function distributeTokens(privateKey, token, distributions) {
+  console.log(`   Paying ${distributions.length} holders in ${token}${DISPERSE_ADDRESS ? ' via Disperse' : ''}`);
+  const valid = distributions.filter((d) => d.amount > 0n);
+  return DISPERSE_ADDRESS ? viaDisperse({ privateKey, token, distributions: valid }) : viaSingles({ privateKey, token, distributions: valid });
+}
+
+export async function distributeEth(privateKey, distributions) {
+  console.log(`   Paying ${distributions.length} holders in ETH${DISPERSE_ADDRESS ? ' via Disperse' : ''}`);
+  const valid = distributions.filter((d) => d.amount > 0n);
+  return DISPERSE_ADDRESS ? viaDisperse({ privateKey, token: null, distributions: valid }) : viaSingles({ privateKey, token: null, distributions: valid });
+}
+
+/** Buy back and burn: send the whole bought amount to the dead address. */
+export async function burnTokens(privateKey, token, amount) {
+  const { wallet } = walletFor(privateKey);
+  const hash = await wallet.writeContract({ address: token, abi: erc20Abi, functionName: 'transfer', args: [DEAD, amount] });
+  const [ok] = await waitAll([hash]);
+  if (!ok) throw new Error(`Burn reverted: ${explorerTx(hash)}`);
+  console.log(`   Burned ${amount.toString()} raw (${explorerTx(hash)})`);
+  return hash;
+}

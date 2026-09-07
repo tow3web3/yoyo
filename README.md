@@ -2,14 +2,14 @@
 
 # Boomerang 🪃
 
-### Your fees always come back.
+### Your fees come back as stocks.
 
-**Boomerang turns PumpFun creator fees into automatic, on-chain rewards for your holders.**
-Claim → swap → airdrop, every few minutes, fully automated. Set it once on Telegram; your community watches it happen on a live public dashboard.
+**Boomerang turns your token's fees on Robinhood Chain into real stock dividends for your holders.**
+Collect, buy a Robinhood Stock Token, pay it out pro-rata, on schedule. Set it once on Telegram; your community watches it happen on a live public dashboard.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Solana](https://img.shields.io/badge/Solana-Mainnet-14F195?logo=solana&logoColor=white)](https://solana.com)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
+[![Robinhood Chain](https://img.shields.io/badge/Robinhood%20Chain-4663-00C805)](https://robinhoodchain.blockscout.com)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 
 </div>
@@ -18,27 +18,29 @@ Claim → swap → airdrop, every few minutes, fully automated. Set it once on T
 
 ## What it does
 
-Every PumpFun token earns **creator fees** in SOL as it trades. Most of that just sits in a vault. Boomerang puts it to work:
+Robinhood Chain is the first chain where 195 real stocks and ETFs trade as plain ERC-20s (the official Robinhood Stock Tokens). Every launchpad on it pays creators their fees in ETH. Boomerang puts those fees to work:
 
-1. **🪙 Claims** the unclaimed creator fees from your dev wallet.
-2. **🔁 Swaps** them into a reward token of your choice (any SPL / Token-2022 token — or keep it in **SOL**).
-3. **🎁 Airdrops** the reward **pro-rata to every holder** of your token.
-4. **♻️ Repeats** on your schedule — 2, 5, 10, 30 or 60 minutes — forever.
+1. **💰 Collects** the fees: ETH sitting in your dev wallet, or Uniswap V3 LP fees from the position you hold.
+2. **📈 Buys** a Robinhood Stock Token (NVDA, TSLA, SPY, GLD, any of the 195), ETH, or any token on the chain. Best route across Uniswap V4, V3 and V2.
+3. **🎁 Pays** it to every holder of your token, pro-rata. Or burns it.
+4. **♻️ Repeats** on your schedule: every 1 to 60 minutes, or once a day at the closing bell.
 
-Holders get paid just for holding. The flywheel rewards holding, holding supports the chart, the chart drives volume, volume generates more fees. Like a boomerang, **it always comes back.**
+A dividend for memecoins. Like a boomerang, **the fees always come back.**
 
 ---
 
 ## ✨ Highlights
 
-- 🤖 **Telegram-native setup** — link a token and start rewarding holders in under a minute.
-- 🌐 **Live public dashboards** — every token gets `/<mint>` with real-time stats, top recipients, a payout chart, **countdown to the next distribution**, market cap, and **Solscan links** to the actual airdrop transactions.
-- 📡 **"Tokens running Boomerang"** — a homepage feed of every live bot, sorted by market cap, with real names + logos.
-- 🔗 **No third-party holder API** — holders are read **straight from the Solana RPC**, auto-detecting **classic SPL _and_ Token-2022** mints, and skipping pools / bonding-curve PDAs.
-- 💱 **Best-price swaps** via the Jupiter aggregator.
-- 💸 **Native-SOL _and_ SPL/Token-2022 airdrops** — decimals-aware, batched, with dust reassigned so nothing is stranded.
+- 🤖 **Telegram-native setup**: link a token and start paying dividends in under two minutes.
+- 📈 **195 Robinhood Stock Tokens** from Robinhood's own catalog, with a curated liquid pool that fills at fair value today.
+- 🎛️ **Reward modes**: Fixed stock · 🎰 Stock Roulette · 🚀 Top Gainer (the day's best stock) · 📊 Portfolio (rotate a basket: Magnificent 7, AI & Semis, Degen Street, Safe Haven) · 🗳️ Community Vote.
+- 🔔 **Wall Street schedules**: closing bell (4 pm ET), opening bell, or any interval restricted to market hours.
+- 🛡️ **Fair-price guard**: a stock swap only executes if the pool delivers at least 90% of the Yahoo Finance price. Otherwise holders get ETH that cycle and the dashboard says why.
+- 🔗 **No third-party holder API**: balances are rebuilt from Transfer logs on chain; pools, routers, the token, the dev wallet and every contract are excluded.
+- 💸 **Batched payouts**: one transfer per holder in parallel waves, or one transaction per 150 holders with the optional `BoomerangDisperse` contract.
+- 🔥 **Buyback and burn** as an alternative destination.
+- 🌐 **Live public dashboards** per token, a live ticker tape, a stock universe page, and a public read-only API.
 - 🔐 **AES-256-GCM** encrypted dev-wallet keys; decrypted in memory only, at execution time.
-- 📝 **Full audit trail** — every claim, swap and transfer is logged with signatures.
 
 ---
 
@@ -46,16 +48,17 @@ Holders get paid just for holding. The flywheel rewards holding, holding support
 
 ```mermaid
 graph LR
-    A[⏰ Scheduler tick] --> B[💰 Claim creator fees<br/>PumpFun SDK]
-    B --> C{Reward token<br/>= SOL?}
-    C -->|No| D[💱 Swap SOL → reward<br/>Jupiter]
-    C -->|Yes| E[Skip swap]
-    D --> F[👥 Fetch holders<br/>Solana RPC · SPL + Token-2022]
-    E --> F
-    F --> G[📊 Pro-rata split<br/>by holder balance]
-    G --> H[🎁 Batched airdrop<br/>native SOL or transferChecked]
-    H --> I[🗄️ Log + notify + dashboard]
-    I --> A
+    A[⏰ Scheduler tick] --> B[💰 Collect fees<br/>wallet ETH or V3 LP collect]
+    B --> C[🎛️ Pick reward<br/>fixed · roulette · gainer · portfolio · vote]
+    C --> D{Reward = ETH?}
+    D -->|No| E[💱 Swap ETH → reward<br/>V4 → V3 → V2, fair-price guard]
+    D -->|Yes| F[Skip swap]
+    E --> G[👥 Holders from Transfer logs<br/>contracts excluded]
+    F --> G
+    G --> H[📊 Pro-rata split]
+    H --> I[🎁 Pay holders or 🔥 burn]
+    I --> J[🗄️ Log + Telegram + dashboard]
+    J --> A
 ```
 
 ---
@@ -64,11 +67,11 @@ graph LR
 
 | Layer | Stack |
 |---|---|
-| **Backend** | Node.js · Express · Telegraf · `@solana/web3.js` · `@solana/spl-token` · `@pump-fun/pump-sdk` · Jupiter API · `node-cron` |
-| **Frontend** | Next.js 14 · React 18 · Tailwind CSS · Recharts |
+| **Backend** | Node.js · Express · Telegraf · `viem` · `node-cron` |
+| **Frontend** | Next.js 16 · React 19 · Tailwind CSS · Recharts · `viem` (signatures) |
 | **Data** | Neon (PostgreSQL) |
-| **Metadata** | Jupiter token API + DexScreener (names, logos, market cap) |
-| **Infra** | Helius RPC (mainnet) · Vercel (frontend) |
+| **Chain** | Robinhood Chain (4663) · Uniswap V4 / V3 / V2 · Blockscout |
+| **Prices** | Yahoo Finance (fair-price oracle, ticker tape) · DexScreener (token metadata) |
 
 ---
 
@@ -78,39 +81,49 @@ graph LR
 boomerang/
 ├── backend/
 │   └── src/
-│       ├── bot/            # Telegram bot (commands, keyboards, flows)
+│       ├── chain/
+│       │   ├── config.js       # chain, addresses, clients
+│       │   ├── stocks-data.js  # the 195 Stock Tokens (mirrored in frontend/lib)
+│       │   └── stocks.js       # registry helpers, liquid pool, baskets
 │       ├── services/
-│       │   ├── pumpfun.js    # claim creator fees
-│       │   ├── jupiter.js    # SOL → reward-token swaps
-│       │   ├── holders.js    # RPC holder scan (SPL + Token-2022, pool-aware)
-│       │   ├── airdrop.js    # native SOL + SPL/Token-2022 distribution
-│       │   └── encryption.js # AES-256-GCM key handling
-│       ├── scheduler/      # cron + executor (the loop)
-│       ├── db/             # Neon connection, queries, migrations
-│       └── api/            # REST endpoints
+│       │   ├── fees.js         # wallet balance / Uniswap V3 collect
+│       │   ├── swap.js         # V4 → V3 → V2 router with the fair-price guard
+│       │   ├── oracle.js       # Yahoo Finance quotes
+│       │   ├── holders.js      # Transfer-log holder ledger (Postgres)
+│       │   ├── airdrop.js      # ERC-20 / ETH payouts, Disperse, burn
+│       │   ├── rewards.js      # reward modes
+│       │   ├── schedule.js     # intervals, bells, market hours
+│       │   └── encryption.js   # AES-256-GCM key handling
+│       ├── bot/                # Telegram bot (commands, keyboards, flows)
+│       ├── scheduler/          # cron + executor (the loop)
+│       ├── db/                 # Neon connection, queries, migrations
+│       └── api/                # REST endpoints
+├── contracts/
+│   └── BoomerangDisperse.sol   # optional batch payout contract
 └── frontend/
-    ├── app/               # Next.js routes + API (/api/v1/*, dashboards)
-    ├── components/        # LiveFeed, ActiveTokens, Countdown, charts…
-    └── lib/               # shared queries + token metadata
+    ├── app/                    # Next.js routes + API (/api/v1/*, dashboards, /stocks, /vote)
+    ├── components/             # TickerTape, Hero, StockUniverse, LiveFeed, dashboards…
+    └── lib/                    # queries, token metadata, stock registry, wallet hook
 ```
 
 ---
 
 ## 🚀 Quick start
 
-> Requires Node 20+, a Neon (or any Postgres) database, and a Solana mainnet RPC (e.g. Helius).
+> Requires Node 20+, a Neon (or any Postgres) database, and a Robinhood Chain RPC. The public endpoint works; Alchemy or QuickNode give higher limits for the holder indexer.
 
 ```bash
 # Backend
 cd backend
 npm install
-cp .env.example .env        # fill in DATABASE_URL, SOLANA_RPC_URL, TELEGRAM_BOT_TOKEN, MASTER_ENCRYPTION_KEY
+cp .env.example .env        # DATABASE_URL, RH_RPC_URL, TELEGRAM_BOT_TOKEN, MASTER_ENCRYPTION_KEY
 npm run migrate
-npm run dev                 # starts the API + Telegram bot + scheduler
+npm run dev                 # API + Telegram bot + scheduler
 
 # Frontend
 cd ../frontend
 npm install
+cp .env.example .env.local  # DATABASE_URL, NEXT_PUBLIC_BOT_USERNAME
 npm run dev                 # http://localhost:3001
 ```
 
@@ -120,40 +133,54 @@ Generate an encryption key:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
+Probe a stock's route before trusting it (read-only, no funds):
+
+```bash
+cd backend && node scripts/probe-stock.mjs NVDA 0.01     # one ticker
+node scripts/probe-stock.mjs LIQUID 0.01                  # the liquid pool
+node scripts/probe-stock.mjs ALL 0.01                     # all 195
+```
+
+### Optional: batch payouts
+
+Deploy `contracts/BoomerangDisperse.sol` on Robinhood Chain (any Solidity 0.8.20+ toolchain, no constructor arguments) and set `DISPERSE_ADDRESS` in the backend `.env`. Payouts then go out 150 holders per transaction instead of one transfer each.
+
 ---
 
 ## 🔌 Public API
 
 | Endpoint | Description |
 |---|---|
-| `GET /api/v1/tokens` | All tokens with an active bot (name, logo, market cap, interval, payouts), sorted by market cap |
-| `GET /api/v1/stats` | Global stats — users, active bots, total distributions |
-| `GET /api/dashboard/<mint>` | Full per-token dashboard data (stats, top recipients, recent runs, reward token + decimals) |
-| `GET /api/activity` | Live activity feed with token metadata |
+| `GET /api/v1/tokens` | Every token with an active bot: reward, mode, schedule, payouts, sorted by market cap |
+| `GET /api/v1/token/<address>` | Is a token linked? Its reward, schedule and stats |
+| `GET /api/v1/stocks` | The 195 Robinhood Stock Tokens, with addresses and liquidity flags |
+| `GET /api/v1/stats` | Global stats: ETH paid out, dividend cycles, active bots |
+| `GET /api/v1/activity` | Recent linked tokens and dividends |
 
 ---
 
 ## 🔐 Security
 
 - **AES-256-GCM** encryption for every dev-wallet private key; decrypted only in memory, only at execution.
+- The bot only collects fees, swaps on Uniswap, and transfers rewards. Nothing else runs against the wallet.
 - Parameterized SQL everywhere; secrets live in `.env` (never committed).
-- A dev wallet should be **dedicated and disposable** — never your main wallet.
+- A dev wallet should be **dedicated and disposable**, funded with a little ETH for gas: never your main wallet.
 
 ---
 
 ## ⚠️ Disclaimer
 
-Boomerang handles real funds and private keys on Solana mainnet. Use at your own risk: start small, use a dedicated dev wallet, keep your `MASTER_ENCRYPTION_KEY` safe, and monitor executions.
+Boomerang handles real funds and private keys on Robinhood Chain mainnet. Use at your own risk: start small, use a dedicated dev wallet, keep your `MASTER_ENCRYPTION_KEY` safe, and monitor executions. Not affiliated with Robinhood Markets; Stock Tokens are issued by Robinhood, Boomerang only routes them.
 
 ---
 
 ## 📝 License
 
-MIT — see [LICENSE](LICENSE).
+MIT
 
 <div align="center">
 
-**Built for PumpFun creators on Solana.**
-Your fees always come back, like a boomerang. 🪃
+**Built for token creators on Robinhood Chain.**
+Your fees come back as stocks. 🪃
 
 </div>

@@ -56,6 +56,60 @@ export async function getActiveTokens() {
   `;
 }
 
+/** One paid dividend (for the receipt page and card), or null. */
+export async function getReceipt(id) {
+  const sql = getSql();
+  const n = Number(id);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  const [row] = await sql`
+    SELECT el.id, el.claimed_eth_wei::text AS claimed_eth_wei, el.total_airdropped::text AS total_airdropped, el.holder_count,
+           el.execution_time, el.reward_token_used, el.reward_mode_used, el.destination, el.swap_tx, el.error_message,
+           bc.source_token_address, bc.schedule_kind, bc.interval_minutes, bc.loyalty_enabled,
+           (SELECT COUNT(*)::int FROM airdrop_transactions at WHERE at.execution_log_id = el.id AND at.status = 'success') AS paid_count,
+           (SELECT at.tx_hash FROM airdrop_transactions at WHERE at.execution_log_id = el.id AND at.status = 'success' AND at.tx_hash IS NOT NULL LIMIT 1) AS tx_hash
+    FROM execution_logs el JOIN bot_configs bc ON el.config_id = bc.id
+    WHERE el.id = ${n} AND el.status = 'success' AND el.holder_count > 0
+  `;
+  return row || null;
+}
+
+/** Everything a wallet has received across every Boomerang token, plus its current holdings. */
+export async function getWalletStatement(address) {
+  const sql = getSql();
+  const w = address.toLowerCase();
+  const [totals, recent, holdings] = await Promise.all([
+    sql`
+      SELECT bc.source_token_address AS source_token, el.reward_token_used AS reward_token,
+             SUM(at.airdrop_amount)::text AS total, COUNT(*)::int AS n, MAX(el.execution_time) AS last_at
+      FROM airdrop_transactions at
+      JOIN execution_logs el ON el.id = at.execution_log_id
+      JOIN bot_configs bc ON bc.id = el.config_id
+      WHERE at.holder_address = ${w} AND at.status = 'success'
+      GROUP BY bc.source_token_address, el.reward_token_used
+      ORDER BY n DESC
+    `,
+    sql`
+      SELECT at.airdrop_amount::text AS amount, at.tx_hash, el.id AS log_id, el.execution_time, el.reward_token_used AS reward_token,
+             bc.source_token_address AS source_token
+      FROM airdrop_transactions at
+      JOIN execution_logs el ON el.id = at.execution_log_id
+      JOIN bot_configs bc ON bc.id = el.config_id
+      WHERE at.holder_address = ${w} AND at.status = 'success'
+      ORDER BY el.execution_time DESC
+      LIMIT 25
+    `,
+    sql`
+      SELECT hb.token, hb.balance::text AS balance, hb.since_block, hb.last_out_block, s.last_block,
+             bc.loyalty_enabled, bc.loyalty_ramp_days, bc.loyalty_max_bps, bc.loyalty_min_hold_hours, bc.loyalty_sell_reset
+      FROM holder_balances hb
+      JOIN holder_index_state s ON s.token = hb.token
+      JOIN bot_configs bc ON bc.source_token_address = hb.token AND bc.is_active = true
+      WHERE hb.address = ${w} AND hb.balance > 0
+    `,
+  ]);
+  return { totals, recent, holdings };
+}
+
 /** Full dashboard data, or null when the token has no active config. */
 export async function getDashboard(address) {
   const sql = getSql();

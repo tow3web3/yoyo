@@ -266,6 +266,7 @@ export default function TokenDashboard() {
                         {e.note && <span className="text-gold-700" title={e.note}>· note</span>}
                       </span>
                       <span className="flex items-center gap-2">
+                        <Link href={`/receipt/${e.id}`} className="font-medium text-hood-700 hover:underline">receipt</Link>
                         {e.swapTx && <a href={explorerTx(e.swapTx)} target="_blank" rel="noopener noreferrer" className="font-medium text-mut hover:underline">swap ↗</a>}
                         {e.txHash && <a href={explorerTx(e.txHash)} target="_blank" rel="noopener noreferrer" className="font-medium text-hood-700 hover:underline">payout ↗</a>}
                       </span>

@@ -28,13 +28,13 @@ rm -f "/root/boomerang-$STAMP.tgz"
 
 echo "Backend deps + migrate"
 cd /root/boomerang/backend && npm ci --omit=dev --no-audit --no-fund 2>&1 | tail -1
-set -a; . ./.env; set +a
-node src/db/migrate.js | tail -1
+# Subshell: backend/.env sets NODE_ENV=production, which must not leak into the frontend install
+# (npm would skip tailwindcss and the build fails).
+( set -a; . ./.env; set +a; node src/db/migrate.js | tail -1 )
 
 echo "Frontend deps + build"
-cd /root/boomerang/frontend && npm ci --no-audit --no-fund 2>&1 | tail -1
-set -a; . ./.env.local; set +a
-npx next build 2>&1 | grep -E "Compiled|rror" | head -3
+cd /root/boomerang/frontend && npm ci --include=dev --no-audit --no-fund 2>&1 | tail -1
+( set -a; . ./.env.local; set +a; NODE_OPTIONS=--max-old-space-size=2048 npx next build 2>&1 | grep -E "Compiled|rror" | head -3 )
 # Standalone output needs the static assets next to server.js.
 SA="$(dirname "$(find .next/standalone -maxdepth 2 -name server.js | head -1)")"
 mkdir -p "$SA/.next" && cp -r .next/static "$SA/.next/" && cp -r public "$SA/"

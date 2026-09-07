@@ -25,14 +25,15 @@ export async function createBotConfig(c) {
     `INSERT INTO bot_configs (
        user_id, dev_wallet_encrypted, dev_wallet_public, source_token_address, target_token_address,
        fee_source, univ3_position_ids, reward_mode, basket, destination, schedule_kind, interval_minutes,
-       market_hours_only, slippage_bps, min_holder_amount, index_start_block
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+       market_hours_only, slippage_bps, min_holder_amount, index_start_block, launchpad_id, launch_code
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *`,
     [
       c.userId, JSON.stringify(c.devWalletEncrypted), c.devWalletPublic.toLowerCase(),
       c.sourceTokenAddress.toLowerCase(), c.targetTokenAddress.toLowerCase(),
       c.feeSource || 'wallet', JSON.stringify(c.univ3PositionIds || []), c.rewardMode || 'fixed', c.basket || null,
       c.destination || 'holders', c.scheduleKind || 'interval', c.intervalMinutes || 5,
       Boolean(c.marketHoursOnly), c.slippageBps || 150, c.minHolderAmount || 0, c.indexStartBlock || null,
+      c.launchpadId || null, c.launchCode || null,
     ]
   );
   return result.rows[0];
@@ -77,6 +78,26 @@ export const updateBotConfigTreasuryAsset = (id, address) => updateConfig(id, 't
 export async function insertTreasuryLedger({ configId, token, amount, ethSpent, txHash }) {
   await pool.query('INSERT INTO treasury_ledger (config_id, token, amount, eth_spent, tx_hash) VALUES ($1, $2, $3, $4, $5)',
     [configId, token.toLowerCase(), amount.toString(), (ethSpent ?? 0n).toString(), txHash || null]);
+}
+
+// ========== LAUNCHPAD HOOK ==========
+
+export async function getLaunchLink(code) {
+  const { rows } = await pool.query(
+    `SELECT ll.*, lp.name AS launchpad_name, lp.slug AS launchpad_slug FROM launch_links ll LEFT JOIN launchpads lp ON lp.id = ll.launchpad_id WHERE ll.code = $1`,
+    [code]
+  );
+  return rows[0] || null;
+}
+export async function markLaunchLinkLinked(code, configId) {
+  await pool.query(`UPDATE launch_links SET status = 'linked', config_id = $2, linked_at = NOW() WHERE code = $1`, [code, configId]);
+}
+export async function getLaunchpad(id) {
+  const { rows } = await pool.query('SELECT * FROM launchpads WHERE id = $1', [id]);
+  return rows[0] || null;
+}
+export async function recordWebhookDelivery(launchpadId, event, statusCode, ok) {
+  await pool.query('INSERT INTO webhook_deliveries (launchpad_id, event, status_code, ok) VALUES ($1, $2, $3, $4)', [launchpadId, event, statusCode, ok]);
 }
 
 export const setAnnounceChat = (id, chatId, threadId) => pool

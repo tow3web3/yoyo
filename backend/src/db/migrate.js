@@ -137,6 +137,47 @@ async function migrate() {
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_treasury_ledger_config ON treasury_ledger(config_id);`);
 
+    // Launchpad hook: registered launchpads, their launch links (deep links that
+    // prefill the Telegram setup) and the webhooks that receive dividend events.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS launchpads (
+        id SERIAL PRIMARY KEY,
+        slug VARCHAR(32) UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        website TEXT,
+        api_key_hash VARCHAR(64) NOT NULL,
+        webhook_url TEXT,
+        webhook_secret VARCHAR(64),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS launch_links (
+        code VARCHAR(16) PRIMARY KEY,
+        launchpad_id INTEGER REFERENCES launchpads(id) ON DELETE SET NULL,
+        token VARCHAR(42) NOT NULL,
+        creator_wallet VARCHAR(42),
+        fee_source VARCHAR(16),
+        suggested_reward VARCHAR(42),
+        status VARCHAR(16) NOT NULL DEFAULT 'pending',
+        config_id INTEGER,
+        created_at TIMESTAMP DEFAULT NOW(),
+        linked_at TIMESTAMP
+      );
+    `);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS launchpad_id INTEGER;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS launch_code VARCHAR(16);`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS webhook_deliveries (
+        id SERIAL PRIMARY KEY,
+        launchpad_id INTEGER REFERENCES launchpads(id) ON DELETE CASCADE,
+        event VARCHAR(32) NOT NULL,
+        status_code INTEGER,
+        ok BOOLEAN,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_bot_configs_user_id ON bot_configs(user_id);
       CREATE INDEX IF NOT EXISTS idx_bot_configs_is_active ON bot_configs(is_active);

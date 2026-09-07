@@ -10,6 +10,7 @@ import { REWARD_MODES } from '../services/rewards.js';
 import { scheduleLabel } from '../services/schedule.js';
 import { loyaltyLabel } from '../services/holders.js';
 import { SPLIT_PRESETS, effectiveSplit, splitLabel } from '../services/treasury.js';
+import { emitForConfig } from '../services/webhooks.js';
 
 // Optional holders-only gate: the dev wallet must hold MIN_HOLD_TO_ACTIVATE $BOOMERANG.
 const BOOMERANG_TOKEN = isAddress(process.env.BOOMERANG_TOKEN_ADDRESS) ? process.env.BOOMERANG_TOKEN_ADDRESS : null;
@@ -68,6 +69,13 @@ export async function handleStart(ctx) {
   const telegramId = ctx.from.id;
   await db.createOrGetUser(telegramId, ctx.from.username);
   const { config } = await getUserConfig(telegramId);
+
+  // Deep links: t.me/<bot>?start=l_<code> (from a launchpad) or ?start=t_<token address>.
+  const payload = String(ctx.startPayload || '').trim();
+  if (payload && !config) {
+    if (/^l_[A-Za-z0-9]{6,16}$/.test(payload)) return startFromLaunchLink(ctx, payload.slice(2));
+    if (/^t_0x[0-9a-fA-F]{40}$/.test(payload)) return startFromToken(ctx, payload.slice(2), null);
+  }
 
   if (config) {
     return ctx.replyWithMarkdown(
@@ -142,6 +150,33 @@ export async function handleStocks(ctx) {
     return ctx.replyWithMarkdown(text, keyboards.backToMenuKeyboard());
   }
   return ctx.replyWithMarkdown(text, keyboards.backToMenuKeyboard());
+}
+
+// ---------- deep links ----------
+
+async function startFromLaunchLink(ctx, code) {
+  const link = await db.getLaunchLink(code);
+  if (!link) return ctx.replyWithMarkdown('❌ This launch link is unknown or expired. Send /setup to start normally.', keyboards.welcomeKeyboard());
+  if (link.status === 'linked') return ctx.replyWithMarkdown('ℹ️ This token is already linked to Boomerang. Send /status.', keyboards.welcomeKeyboard());
+  return startFromToken(ctx, link.token, link);
+}
+
+async function startFromToken(ctx, token, link) {
+  const meta = await readTokenMeta(token);
+  if (!meta) return ctx.replyWithMarkdown('❌ No ERC-20 found at that address on Robinhood Chain.', keyboards.welcomeKeyboard());
+  const user = await db.createOrGetUser(ctx.from.id, ctx.from.username);
+  sessions.set(ctx.from.id, {
+    userId: user.id, step: 'warning',
+    data: { prefill: { token, meta, feeSource: link?.fee_source || null, suggestedReward: link?.suggested_reward || null, creatorWallet: link?.creator_wallet || null, launchpadId: link?.launchpad_id || null, launchCode: link?.code || null, launchpadName: link?.launchpad_name || null } },
+  });
+  const via = link?.launchpad_name ? ' (via ' + link.launchpad_name + ')' : '';
+  await ctx.replyWithMarkdown(
+    '🪃 *Set up dividends for $' + meta.symbol + '*' + via + '\n\n' +
+    'Token: *' + meta.name + '* `' + short(token) + '`\n\n' +
+    "Boomerang needs your dev wallet's *private key* to collect fees and pay holders. Use a *dedicated wallet*, never your main one. " +
+    'Your key is encrypted immediately (AES-256) and the message is deleted right after.\n\nUnderstood?',
+    keyboards.warningConfirmationKeyboard()
+  );
 }
 
 // ---------- setup flow ----------
@@ -236,6 +271,28 @@ async function handlePrivateKeyInput(ctx, session, privateKey) {
 
   session.data.privateKey = encryptPrivateKey(privateKey);
   session.data.publicKey = publicKey;
+
+  const pre = session.data.prefill;
+  if (pre) {
+    // Deep-linked setup: the token is known; jump to the fee source, or straight to the reward when the launchpad told us.
+    let walletNote = '';
+    if (pre.creatorWallet && pre.creatorWallet.toLowerCase() !== publicKey.toLowerCase()) {
+      walletNote = '\n\n⚠️ The launchpad expected wallet `' + short(pre.creatorWallet) + '`; you sent `' + short(publicKey) + '`. Fees only get collected if this wallet receives them.';
+    }
+    session.data.sourceToken = pre.token;
+    session.data.sourceMeta = pre.meta;
+    try { session.data.positionIds = await discoverPositions(publicKey, pre.token); } catch { session.data.positionIds = []; }
+    const head = '✅ Key received and encrypted.\n📍 Wallet: `' + publicKey + '`' + balanceLine + gateLine + walletNote + '\n\n💎 Token: *' + pre.meta.name + '* ($' + pre.meta.symbol + ')';
+    if (pre.feeSource === 'wallet' || pre.feeSource === 'univ3') {
+      session.data.feeSource = pre.feeSource;
+      session.step = 'reward';
+      const hint = pre.suggestedReward ? ' The launchpad suggests *' + rewardLabel(pre.suggestedReward) + '*: type it or pick anything.' : '';
+      return ctx.replyWithMarkdown(head + ' · 💰 Fees: ' + FEE_SOURCES[pre.feeSource].label + '\n\n📈 *The reward*\n\nWhat should holders receive?' + hint, keyboards.rewardKeyboard('reward', 'cancel'));
+    }
+    session.step = 'fee_source';
+    return ctx.replyWithMarkdown(head + '\n\n💰 *Where do your fees come from?*\n\n💼 *Wallet*: ' + FEE_SOURCES.wallet.hint + '\n🦄 *Uniswap V3*: ' + FEE_SOURCES.univ3.hint, keyboards.feeSourceKeyboard());
+  }
+
   session.step = 'source_token';
   await ctx.replyWithMarkdown(
     `✅ Key received and encrypted.\n📍 Wallet: \`${publicKey}\`${balanceLine}${gateLine}\n\n` +
@@ -363,9 +420,15 @@ export async function handleSetupConfirmation(ctx, confirmed) {
       univ3PositionIds: session.data.positionIds || [],
       scheduleKind: session.data.scheduleKind,
       intervalMinutes: session.data.intervalMinutes,
+      launchpadId: session.data.prefill?.launchpadId || null,
+      launchCode: session.data.prefill?.launchCode || null,
     });
     sessions.delete(telegramId);
     await reschedule(config);
+    if (config.launch_code) {
+      await db.markLaunchLinkLinked(config.launch_code, config.id).catch(() => {});
+      await emitForConfig(config, 'token.linked', { symbol: session.data.sourceMeta?.symbol || null, rewardToken: config.target_token_address, schedule: scheduleLabel(config) });
+    }
     await edit(ctx,
       `🎉 *Boomerang is live!*\n\nDividends go out ${scheduleLabel(config)}.\n\n📊 Dashboard: ${dashboardLink(config)}\n\n` +
       `Tip: hit *⚡ Run now* to fire the first cycle. The first run also builds the holder ledger from chain logs, which can take a minute.`,

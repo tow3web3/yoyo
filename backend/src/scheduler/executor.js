@@ -7,6 +7,7 @@ import { decryptPrivateKey } from '../services/encryption.js';
 import { accountFromKey, explorerTx, formatEth, formatUnits, short, readTokenMeta } from '../chain/config.js';
 import { announceDividend } from '../services/announce.js';
 import { effectiveSplit, splitLabel, legWei, runBurnLeg, runTreasuryLeg } from '../services/treasury.js';
+import { emitForConfig } from '../services/webhooks.js';
 import { claimFees, availableEth } from '../services/fees.js';
 import { swapEthForToken } from '../services/swap.js';
 import { getTokenHolders, applyLoyalty, loyaltyLabel } from '../services/holders.js';
@@ -153,6 +154,22 @@ export async function executeBotConfig(config, { force = false } = {}) {
     for (const tx of results.failed) rows.push({ executionLogId: saved.id, holderAddress: tx.address, holderBalance: tx.holderBalance?.toString() || '0', airdropAmount: tx.amount?.toString() || '0', txHash: null, status: 'failed' });
     if (rows.length) await db.createAirdropTransactionsBatch(rows);
     await db.updateLastExecution(config.id);
+
+    // Launchpad webhook (only for tokens linked through a launchpad).
+    if (results.successful.length > 0) {
+      await emitForConfig(config, 'dividend.paid', {
+        executionId: saved.id,
+        reward: { address: reward.address, symbol: reward.symbol, decimals: reward.decimals, isStock: Boolean(reward.isStock), mode: reward.mode, note: reward.note || null },
+        amount: results.totalSent.toString(),
+        holdersPaid: results.successful.length,
+        holdersEligible: holders.length,
+        ethUsedWei: holdersWei.toString(),
+        burnAmount: log.burnAmount.toString(),
+        treasuryAmount: log.treasuryAmount.toString(),
+        txHash: results.txHashes[0] || null,
+        receiptUrl: (process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun') + '/receipt/' + saved.id,
+      });
+    }
 
     // Receipt into the creator's group (bound with /announce), never fatal.
     if (results.successful.length > 0) {

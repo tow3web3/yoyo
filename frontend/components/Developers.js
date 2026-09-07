@@ -10,6 +10,7 @@ const ENDPOINTS = [
   { path: '/api/v1/token/{address}', desc: 'Is a token linked? Its reward, schedule and payout stats.' },
   { path: '/api/v1/stocks', desc: 'The 195 Robinhood Stock Tokens with addresses and liquidity flags.' },
   { path: '/api/v1/activity?limit=20', desc: 'Recent linked tokens and dividends.' },
+  { path: '/api/v1/launchpads', desc: 'Integrated launchpads and how many tokens each linked.' },
   { path: '/api/badge/{address}', desc: 'Embeddable SVG badge with the live dividend yield of a token (?style=reward for the reward badge).' },
 ];
 
@@ -46,6 +47,35 @@ export default function Developers() {
         <a href="/api/v1" target="_blank" rel="noopener noreferrer" className="btn-ghost shrink-0 self-start">View API root</a>
       </div>
       <div className="grid gap-3">{ENDPOINTS.map((e) => <Endpoint key={e.path} {...e} />)}</div>
+      {/* Launchpad integration */}
+      <div id="launchpads" className="panel-gold mt-8 scroll-mt-20 p-6">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-gold-700">For launchpads</div>
+            <h3 className="font-display text-xl font-bold tracking-tight text-ink">Ship dividends as a default</h3>
+            <p className="mt-1 max-w-xl text-sm text-mut">One call per launch. The creator gets a Telegram link that pre-fills the whole setup; you get a signed webhook for every dividend and a live badge for the token page.</p>
+          </div>
+          <a href="mailto:hello@boomerang.fun?subject=Launchpad%20integration" className="btn-ink shrink-0 self-start text-xs">Request an API key</a>
+        </div>
+        <ol className="grid gap-3 text-sm text-mut sm:grid-cols-3">
+          <li className="rounded-xl border border-line bg-paper p-4"><span className="font-mono text-xs font-bold text-hood-700">1 · POST /api/v1/hooks/launch</span><br />Send the token address (plus the creator wallet and fee source if you know them). Get back <span className="font-mono">telegramUrl</span>, <span className="font-mono">dashboardUrl</span>, <span className="font-mono">badgeUrl</span>.</li>
+          <li className="rounded-xl border border-line bg-paper p-4"><span className="font-mono text-xs font-bold text-hood-700">2 · Show the link</span><br />The creator opens Telegram, sends the dev key, picks a stock and a schedule. Token and fee source are already filled in.</li>
+          <li className="rounded-xl border border-line bg-paper p-4"><span className="font-mono text-xs font-bold text-hood-700">3 · Receive webhooks</span><br /><span className="font-mono">token.linked</span> and <span className="font-mono">dividend.paid</span>, HMAC-signed (<span className="font-mono">X-Boomerang-Signature</span>). Poll <span className="font-mono">GET ?code=</span> if you prefer.</li>
+        </ol>
+        <div className="mt-4 overflow-x-auto rounded-xl border border-ink bg-tape p-4">
+          <pre className="font-mono text-xs leading-relaxed text-gold-200">
+{`$ curl -X POST ${BASE || ''}/api/v1/hooks/launch \\
+    -H "Authorization: Bearer bmr_…" -H "Content-Type: application/json" \\
+    -d '{"token":"0x322F…3b2d","creatorWallet":"0xaC97…030b","feeSource":"wallet","reward":"NVDA"}'
+
+{ "code": "K7Q2MX4P", "status": "pending",
+  "telegramUrl": "https://t.me/boomerangtekbot?start=l_K7Q2MX4P",
+  "dashboardUrl": "${BASE || ''}/0x322f…3b2d", "badgeUrl": "${BASE || ''}/api/badge/0x322f…3b2d" }`}
+          </pre>
+        </div>
+        <p className="mt-3 text-xs text-mut">No API key? Any site can still link <span className="font-mono">https://t.me/boomerangtekbot?start=t_&lt;tokenAddress&gt;</span> to pre-fill the token.</p>
+      </div>
+
       <div className="mt-4 overflow-x-auto rounded-xl border border-ink bg-tape p-4">
         <pre className="font-mono text-xs leading-relaxed text-hood-300">
 {`$ curl ${BASE || ''}/api/v1/token/0x322F…3b2d

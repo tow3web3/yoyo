@@ -1,4 +1,5 @@
-import { getDashboard, scheduleLabel } from '../../../../lib/queries';
+import { getDashboard, scheduleLabel, getTreasuryLedger } from '../../../../lib/queries';
+import { treasurySheet } from '../../../../lib/treasury';
 import { fetchTokenMeta } from '../../../../lib/tokenMeta';
 import { getQuotes } from '../../../../lib/prices';
 import { getStock, EVM_ADDR, BASKETS } from '../../../../lib/stocks';
@@ -29,6 +30,17 @@ export async function GET(request, { params }) {
     const tgt = config.target_token_address;
     const used = recentExecutions.map((e) => e.reward_token_used).filter(Boolean);
     const meta = await fetchTokenMeta([src, tgt, ...used, ...topRecipients.map((r) => r.reward_token).filter(Boolean)]);
+
+    // Fee split (legacy destination=burn means 100% burn) and the treasury balance sheet.
+    let sh = Number(config.split_holders_bps ?? 10000), sb = Number(config.split_burn_bps ?? 0), st = Number(config.split_treasury_bps ?? 0);
+    if (config.destination === 'burn' && sh === 10000 && sb === 0 && st === 0) { sh = 0; sb = 10000; }
+    if (st > 0 && !config.treasury_address) { sh += st; st = 0; }
+    let treasury = null;
+    if (config.treasury_address) {
+      const ledger = await getTreasuryLedger(config.id);
+      const sheet = await treasurySheet({ treasuryAddress: config.treasury_address, tokens: ledger.map((l) => l.token), sourceToken: src, marketCap: meta[src]?.marketCap ?? null }).catch(() => null);
+      treasury = sheet ? { ...sheet, ledger: ledger.map((l) => ({ token: l.token, amount: l.amount, ethSpent: l.eth_spent, buys: l.buys, lastAt: l.last_at })), asset: config.treasury_asset || null } : null;
+    }
 
     // Live quote for the reward when it is a stock.
     const stock = getStock(tgt);
@@ -86,6 +98,8 @@ export async function GET(request, { params }) {
         basket: config.basket ? { key: config.basket, ...(BASKETS[config.basket] || {}) } : null,
         destination: config.destination,
         feeSource: config.fee_source,
+        split: { holders: sh, burn: sb, treasury: st },
+        treasuryAddress: config.treasury_address || null,
         loyalty: {
           enabled: Boolean(config.loyalty_enabled),
           minHoldHours: Number(config.loyalty_min_hold_hours || 0),
@@ -94,6 +108,7 @@ export async function GET(request, { params }) {
           sellReset: Boolean(config.loyalty_sell_reset),
         },
       },
+      treasury,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

@@ -56,6 +56,16 @@ export async function getActiveTokens() {
   `;
 }
 
+/** What Boomerang has bought for a config's treasury, grouped by asset. */
+export async function getTreasuryLedger(configId) {
+  const sql = getSql();
+  return await sql`
+    SELECT token, SUM(amount)::text AS amount, SUM(eth_spent)::text AS eth_spent, COUNT(*)::int AS buys, MAX(created_at) AS last_at
+    FROM treasury_ledger WHERE config_id = ${configId}
+    GROUP BY token ORDER BY buys DESC
+  `;
+}
+
 /** One paid dividend (for the receipt page and card), or null. */
 export async function getReceipt(id) {
   const sql = getSql();

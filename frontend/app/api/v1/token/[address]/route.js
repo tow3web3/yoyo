@@ -29,6 +29,8 @@ export async function GET(request, { params }) {
       rewardMode: config.reward_mode,
       basket: config.basket,
       destination: config.destination,
+      split: { holders: Number(config.split_holders_bps ?? 10000), burn: Number(config.split_burn_bps ?? 0), treasury: Number(config.split_treasury_bps ?? 0) },
+      treasuryAddress: config.treasury_address || null,
       schedule: scheduleLabel(config),
       marketHoursOnly: Boolean(config.market_hours_only),
       active: config.is_active,

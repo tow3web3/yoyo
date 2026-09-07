@@ -1,4 +1,4 @@
-import { Target, Dice, TrendUp, Layers, Vote, Bell, Clock, Flame, Scale, Chart, Lock, Medal } from './Icons';
+import { Target, Dice, TrendUp, Layers, Vote, Bell, Clock, Flame, Scale, Chart, Lock, Medal, Bank } from './Icons';
 
 const MODES = [
   { Icon: Target, title: 'Fixed stock', body: 'Pick one of 195 Robinhood Stock Tokens, ETH, or any token on the chain. Same reward, every cycle.', tile: 'bg-hood-100 text-hood-700', ring: 'hover:border-hood-300' },
@@ -10,7 +10,8 @@ const MODES = [
   { Icon: Bell, title: 'Closing bell', body: 'Pay once a day at 4:00 pm New York time, weekdays only. A real dividend calendar.', tile: 'bg-hood-100 text-hood-700', ring: 'hover:border-hood-300' },
   { Icon: Clock, title: 'Market hours only', body: 'Or run every 1 to 60 minutes and skip the cycles when Wall Street is closed.', tile: 'bg-tile text-ink', ring: 'hover:border-ink' },
   { Icon: Scale, title: 'Fair-price guard', body: 'Every stock swap is checked against Yahoo Finance. Thin pool, no fill: holders get ETH that cycle instead of a bad price.', tile: 'bg-gold-100 text-gold-700', ring: 'hover:border-gold-300' },
-  { Icon: Flame, title: 'Buy back & burn', body: 'Point the fees at your own token and burn what they buy. Supply shrinks every run.', tile: 'bg-orange-100 text-orange-700', ring: 'hover:border-orange-300' },
+  { Icon: Flame, title: 'Fee split & burn', body: 'Cut each cycle three ways: dividends to holders, buyback and burn of your own token, and a stock treasury. Presets from 100% holders to 100% burn.', tile: 'bg-orange-100 text-orange-700', ring: 'hover:border-orange-300' },
+  { Icon: Bank, title: 'Stock treasury & book value', body: 'Route a share of fees into SPY, GLD or NVDA held by your treasury wallet. The dashboard publishes the balance sheet, book value per token and how much of the market cap is backed.', tile: 'bg-gold-100 text-gold-700', ring: 'hover:border-gold-300', badge: 'New' },
   { Icon: Lock, title: 'AES-256 encrypted keys', body: 'Wallet keys are encrypted at rest and decrypted in memory only, at run time.', tile: 'bg-tile text-ink', ring: 'hover:border-ink' },
   { Icon: Chart, title: 'Public dashboard', body: 'Every token gets a live transparency page with Blockscout links to each payout.', tile: 'bg-hood-100 text-hood-700', ring: 'hover:border-hood-300' },
 ];

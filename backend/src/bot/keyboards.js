@@ -26,20 +26,26 @@ export function settingsKeyboard(config) {
   const hours = config.market_hours_only
     ? Markup.button.callback('🕰️ Market hours only: ON', 'market_hours')
     : Markup.button.callback('🕰️ Market hours only: off', 'market_hours');
-  const dest = config.destination === 'burn'
-    ? Markup.button.callback('🔥 Destination: burn (switch to holders)', 'destination')
-    : Markup.button.callback('🎁 Destination: holders (switch to burn)', 'destination');
   return Markup.inlineKeyboard([
     [Markup.button.callback('📈 Change reward', 'change_target')],
     [Markup.button.callback('🎛️ Reward mode', 'reward_mode')],
     [Markup.button.callback(config.loyalty_enabled ? '🏅 Loyalty rewards: ON' : '🏅 Loyalty rewards', 'loyalty')],
+    [Markup.button.callback('💼 Fee split and treasury', 'split')],
     [Markup.button.callback('⏱️ Schedule', 'change_interval')],
     [hours],
-    [dest],
     [toggle],
     [Markup.button.callback('🗑️ Delete configuration', 'stop')],
     [Markup.button.callback('⬅️ Back', 'menu')],
   ]);
+}
+
+/** Fee split submenu: presets plus treasury address and asset. */
+export function splitKeyboard(config, presets, currentKey) {
+  const rows = presets.map((p) => [Markup.button.callback(`${p.key === currentKey ? '✅ ' : ''}${p.label}`, `split_${p.key}`)]);
+  rows.push([Markup.button.callback(config.treasury_address ? `🏦 Treasury address: ${config.treasury_address.slice(0, 6)}…${config.treasury_address.slice(-4)}` : '🏦 Set treasury address', 'treasury_address')]);
+  rows.push([Markup.button.callback('📈 Treasury asset (default SPY)', 'treasury_asset')]);
+  rows.push([Markup.button.callback('⬅️ Back', 'settings')]);
+  return Markup.inlineKeyboard(rows);
 }
 
 /** Loyalty submenu: each button cycles its value. */

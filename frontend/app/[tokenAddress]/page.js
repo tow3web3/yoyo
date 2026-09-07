@@ -174,6 +174,71 @@ export default function TokenDashboard() {
           </div>
         </div>
 
+        {/* Fee split + balance sheet */}
+        {(data.config.split && (data.config.split.holders < 10000 || data.treasury)) && (
+          <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_1.4fr]">
+            <div className="panel p-5">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-mut">Fee split per cycle</h3>
+              <div className="flex h-3 w-full overflow-hidden rounded-full bg-tile">
+                <div className="bg-hood-500" style={{ width: `${data.config.split.holders / 100}%` }} title="holders" />
+                <div className="bg-orange-500" style={{ width: `${data.config.split.burn / 100}%` }} title="burn" />
+                <div className="bg-gold-400" style={{ width: `${data.config.split.treasury / 100}%` }} title="treasury" />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                {[['Holders', data.config.split.holders, 'bg-hood-500'], ['Burn', data.config.split.burn, 'bg-orange-500'], ['Treasury', data.config.split.treasury, 'bg-gold-400']].map(([l, v, c]) => (
+                  <div key={l}>
+                    <div className="mx-auto mb-1 h-1.5 w-6 rounded-full" style={{}}><span className={`block h-full w-full rounded-full ${c}`} /></div>
+                    <div className="figure font-display text-xl font-extrabold text-ink">{v / 100}%</div>
+                    <div className="text-[10px] uppercase tracking-wider text-mut">{l}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {data.treasury ? (
+              <div className="panel-gold p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gold-700">🏦 Balance sheet</h3>
+                    <div className="figure font-display text-3xl font-extrabold text-ink">${data.treasury.totalUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+                    <a href={explorerAddress(data.treasury.treasuryAddress)} target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] text-mut hover:text-ink">{short(data.treasury.treasuryAddress)} ↗</a>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-right">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-mut">Book value / token</div>
+                      <div className="figure text-sm font-bold text-ink">{data.treasury.bookValuePerToken != null ? `$${data.treasury.bookValuePerToken < 0.01 ? data.treasury.bookValuePerToken.toExponential(2) : data.treasury.bookValuePerToken.toFixed(4)}` : '-'}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-mut">Backed</div>
+                      <div className={`figure text-sm font-bold ${data.treasury.backedPct != null && data.treasury.backedPct >= 100 ? 'text-hood-700' : 'text-ink'}`}>{data.treasury.backedPct != null ? `${data.treasury.backedPct.toFixed(1)}% of mcap` : '-'}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  {data.treasury.holdings.length === 0 && <div className="text-sm text-mut">Treasury is empty so far. The next cycle starts filling it.</div>}
+                  {data.treasury.holdings.map((h) => (
+                    <div key={h.address} className="flex items-center justify-between rounded-lg border border-line/70 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <StockLogo address={h.address} meta={{ symbol: h.symbol }} size="h-7 w-7" text="text-[8px]" />
+                        <div>
+                          <div className="font-mono text-sm font-semibold text-ink">{h.symbol}</div>
+                          <div className="text-[11px] text-mut">{h.name}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="figure text-sm font-semibold text-ink">{h.amount < 1 ? h.amount.toFixed(4) : h.amount.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                        <div className="figure text-[11px] text-mut">${h.usd.toLocaleString('en-US', { maximumFractionDigits: 0 })}{typeof h.changePct === 'number' ? <span className={h.changePct >= 0 ? ' up' : ' dn'}> {h.changePct >= 0 ? '▲' : '▼'}{Math.abs(h.changePct).toFixed(1)}%</span> : null}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="panel flex items-center p-5 text-sm text-mut">No treasury address set. The creator can route a share of fees into a stock treasury from Telegram (Settings, Fee split).</div>
+            )}
+          </div>
+        )}
+
         {/* Chart + side */}
         <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="panel p-6 lg:col-span-2">

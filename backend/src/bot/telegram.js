@@ -48,7 +48,11 @@ export function initBot() {
   bot.action('market_hours', commands.handleToggleMarketHours);
   bot.action('loyalty', commands.handleLoyaltyMenu);
   bot.action(/^loy_(toggle|min|ramp|max|reset)$/, (ctx) => commands.handleLoyaltySetting(ctx, ctx.match[1]));
-  bot.action('destination', commands.handleToggleDestination);
+  bot.action('split', commands.handleSplitMenu);
+  bot.action(/^split_(\d+-\d+-\d+)$/, (ctx) => commands.handleSplitPreset(ctx, ctx.match[1]));
+  bot.action('treasury_address', commands.handleTreasuryAddressPrompt);
+  bot.action('treasury_asset', commands.handleTreasuryAssetPrompt);
+  bot.action(/^tasset_(.+)$/, (ctx) => commands.handleTreasuryAssetSelection(ctx, ctx.match[1]));
 
   // Delete
   bot.action('stop', commands.handleStop);

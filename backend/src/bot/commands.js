@@ -9,6 +9,7 @@ import { discoverPositions, FEE_SOURCES } from '../services/fees.js';
 import { REWARD_MODES } from '../services/rewards.js';
 import { scheduleLabel } from '../services/schedule.js';
 import { loyaltyLabel } from '../services/holders.js';
+import { SPLIT_PRESETS, effectiveSplit, splitLabel } from '../services/treasury.js';
 
 // Optional holders-only gate: the dev wallet must hold MIN_HOLD_TO_ACTIVATE $BOOMERANG.
 const BOOMERANG_TOKEN = isAddress(process.env.BOOMERANG_TOKEN_ADDRESS) ? process.env.BOOMERANG_TOKEN_ADDRESS : null;
@@ -194,6 +195,8 @@ export async function handleSetupMessage(ctx) {
       case 'source_token': return await handleSourceTokenInput(ctx, session, text);
       case 'reward_custom': return await handleRewardCustomInput(ctx, session, text, false);
       case 'edit_target': return await handleRewardCustomInput(ctx, session, text, true);
+      case 'treasury_address': return await handleTreasuryAddressInput(ctx, session, text);
+      case 'treasury_asset': return await handleTreasuryAssetInput(ctx, session, text);
       default: return;
     }
   } catch (error) {
@@ -404,7 +407,7 @@ export async function handleStatus(ctx) {
     `📊 *Your Boomerang*\n\n📍 Status: ${config.is_active ? '🟢 Running' : '⏸️ Paused'}\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n` +
     `🔐 Wallet: \`${config.dev_wallet_public}\`${balanceLine}\n💎 Your token: \`${short(config.source_token_address)}\`\n` +
     `💰 Fees: ${FEE_SOURCES[config.fee_source]?.label || config.fee_source}\n${modeLine(config)}\n` +
-    `${config.destination === 'burn' ? '🔥 Destination: buyback and burn' : '🎁 Destination: holders'}${lastLine}\n\n📈 Dashboard: ${dashboardLink(config)}\n🔎 ${explorerAddress(config.dev_wallet_public)}`,
+    `💼 Split: ${splitLabel(config)}${lastLine}\n\n📈 Dashboard: ${dashboardLink(config)}\n🔎 ${explorerAddress(config.dev_wallet_public)}`,
     keyboards.statusKeyboard()
   );
   if (ctx.callbackQuery) await ctx.answerCbQuery();
@@ -417,7 +420,7 @@ export async function handleSettings(ctx) {
   if (!config) { if (ctx.callbackQuery) await ctx.answerCbQuery('No config yet.'); return ctx.replyWithMarkdown('You have no bot yet.', keyboards.welcomeKeyboard()); }
   await edit(ctx,
     `⚙️ *Settings*\n\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n${modeLine(config)}\n🏅 Loyalty: ${loyaltyLabel(config)}\n` +
-    `${config.destination === 'burn' ? '🔥 Buyback and burn' : '🎁 Paid to holders'}\n📍 ${config.is_active ? '🟢 Running' : '⏸️ Paused'}`,
+    `💼 Split: ${splitLabel(config)}\n📍 ${config.is_active ? '🟢 Running' : '⏸️ Paused'}`,
     keyboards.settingsKeyboard(config)
   );
 }
@@ -486,6 +489,88 @@ export async function handleBasketSelection(ctx, key) {
   const updated = await db.updateBotConfigRewardMode(config.id, 'portfolio', key);
   await reschedule(updated);
   await edit(ctx, `✅ Mode: 📊 *Portfolio*, ${basket.emoji} ${basket.label}: ${basket.tickers.join(' > ')} then repeat.`, keyboards.settingsKeyboard(updated));
+}
+
+// ---------- fee split + treasury ----------
+
+function splitText(config) {
+  const s = effectiveSplit(config);
+  const asset = config.treasury_asset ? rewardLabel(config.treasury_asset) : 'SPY (default)';
+  return (
+    `💼 *Fee split and treasury*\n\n` +
+    `Each cycle's ETH is cut three ways:\n🎁 *Holders*: the dividend\n🔥 *Burn*: buys your own token and sends it to the dead address\n🏦 *Treasury*: buys a stock and sends it to your treasury address. Your token gets a real balance sheet, and the dashboard publishes its book value per token.\n\n` +
+    `Current: *${splitLabel(config)}*\n🏦 Treasury: ${config.treasury_address ? `\`${config.treasury_address}\`` : '_not set (treasury share goes to holders until you set one)_'}\n📈 Treasury asset: ${asset}` +
+    (s.treasury > 0 && !config.treasury_address ? '\n\n⚠️ Set a treasury address to activate the treasury share.' : '')
+  );
+}
+
+function currentPresetKey(config) {
+  const s = effectiveSplit({ ...config, treasury_address: config.treasury_address || '0x0000000000000000000000000000000000000001' });
+  return `${s.holders / 100}-${s.burn / 100}-${s.treasury / 100}`;
+}
+
+export async function handleSplitMenu(ctx) {
+  const { config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  await edit(ctx, splitText(config), keyboards.splitKeyboard(config, SPLIT_PRESETS, currentPresetKey(config)));
+}
+
+export async function handleSplitPreset(ctx, key) {
+  const { config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  const p = SPLIT_PRESETS.find((x) => x.key === key);
+  if (!p) return ctx.answerCbQuery('Unknown split.');
+  const updated = await db.updateBotConfigSplit(config.id, p.holders, p.burn, p.treasury);
+  await reschedule(updated);
+  await edit(ctx, splitText(updated), keyboards.splitKeyboard(updated, SPLIT_PRESETS, currentPresetKey(updated)));
+}
+
+export async function handleTreasuryAddressPrompt(ctx) {
+  const { user, config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  sessions.set(ctx.from.id, { userId: user.id, step: 'treasury_address', data: { configId: config.id } });
+  await edit(ctx, `🏦 *Treasury address*\n\nSend the wallet that will hold the treasury stocks (a cold wallet or multisig, *not* the dev wallet). Send \`off\` to clear it.`, keyboards.cancelKeyboard());
+}
+
+async function handleTreasuryAddressInput(ctx, session, text) {
+  const t = text.trim();
+  if (/^off$/i.test(t)) {
+    const updated = await db.updateBotConfigTreasuryAddress(session.data.configId, null);
+    sessions.delete(ctx.from.id);
+    return ctx.replyWithMarkdown(splitText(updated), keyboards.splitKeyboard(updated, SPLIT_PRESETS, currentPresetKey(updated)));
+  }
+  if (!isAddress(t)) return ctx.replyWithMarkdown('❌ Not a valid 0x address. Try again, or send `off`.', keyboards.cancelKeyboard());
+  const updated = await db.updateBotConfigTreasuryAddress(session.data.configId, t);
+  sessions.delete(ctx.from.id);
+  await reschedule(updated);
+  await ctx.replyWithMarkdown(`✅ Treasury address set.\n\n${splitText(updated)}`, keyboards.splitKeyboard(updated, SPLIT_PRESETS, currentPresetKey(updated)));
+}
+
+export async function handleTreasuryAssetPrompt(ctx) {
+  const { config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  await edit(ctx, `📈 *Treasury asset*\n\nWhich stock should the treasury accumulate? Pick one or type a ticker.`, keyboards.rewardKeyboard('tasset', 'split'));
+}
+
+export async function handleTreasuryAssetSelection(ctx, pick) {
+  const { user, config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  if (pick === 'custom') {
+    sessions.set(ctx.from.id, { userId: user.id, step: 'treasury_asset', data: { configId: config.id } });
+    return edit(ctx, `✍️ Send a *ticker* (like SPY, GLD, NVDA) or a token address.`, keyboards.cancelKeyboard());
+  }
+  if (pick === 'ETH') return ctx.answerCbQuery('The treasury accumulates stocks, not ETH. Pick a ticker.', { show_alert: true });
+  const r = await resolveRewardInput(pick);
+  const updated = await db.updateBotConfigTreasuryAsset(config.id, r.address);
+  await edit(ctx, `✅ Treasury asset: *${r.label}*\n\n${splitText(updated)}`, keyboards.splitKeyboard(updated, SPLIT_PRESETS, currentPresetKey(updated)));
+}
+
+async function handleTreasuryAssetInput(ctx, session, text) {
+  const r = await resolveRewardInput(text);
+  if (isNative(r.address)) return ctx.replyWithMarkdown('❌ The treasury accumulates stocks, not ETH. Send a ticker.', keyboards.cancelKeyboard());
+  const updated = await db.updateBotConfigTreasuryAsset(session.data.configId, r.address);
+  sessions.delete(ctx.from.id);
+  await ctx.replyWithMarkdown(`✅ Treasury asset: *${r.label}*\n\n${splitText(updated)}`, keyboards.splitKeyboard(updated, SPLIT_PRESETS, currentPresetKey(updated)));
 }
 
 // ---------- receipts: /announce ----------

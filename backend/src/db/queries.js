@@ -68,6 +68,17 @@ export const updateBotConfigDestination = (id, destination) => updateConfig(id, 
 export const updateBotConfigMarketHours = (id, flag) => updateConfig(id, 'market_hours_only', flag);
 export const advancePortfolioCursor = (id, cursor) => updateConfig(id, 'portfolio_cursor', cursor);
 
+export const updateBotConfigSplit = (id, holders, burn, treasury) => pool
+  .query(`UPDATE bot_configs SET split_holders_bps = $1, split_burn_bps = $2, split_treasury_bps = $3,
+          destination = CASE WHEN $2 = 10000 THEN 'burn' ELSE 'holders' END, updated_at = NOW() WHERE id = $4 RETURNING *`, [holders, burn, treasury, id])
+  .then((r) => r.rows[0]);
+export const updateBotConfigTreasuryAddress = (id, address) => updateConfig(id, 'treasury_address', address ? address.toLowerCase() : null);
+export const updateBotConfigTreasuryAsset = (id, address) => updateConfig(id, 'treasury_asset', address ? address.toLowerCase() : null);
+export async function insertTreasuryLedger({ configId, token, amount, ethSpent, txHash }) {
+  await pool.query('INSERT INTO treasury_ledger (config_id, token, amount, eth_spent, tx_hash) VALUES ($1, $2, $3, $4, $5)',
+    [configId, token.toLowerCase(), amount.toString(), (ethSpent ?? 0n).toString(), txHash || null]);
+}
+
 export const setAnnounceChat = (id, chatId, threadId) => pool
   .query(`UPDATE bot_configs SET announce_chat_id = $1, announce_thread_id = $2, updated_at = NOW() WHERE id = $3 RETURNING *`, [chatId, threadId, id])
   .then((r) => r.rows[0]);
@@ -92,13 +103,16 @@ export async function createExecutionLog(log) {
   const result = await pool.query(
     `INSERT INTO execution_logs (
        config_id, claimed_eth_wei, bought_token_amount, holder_count, total_airdropped, status, error_message,
-       reward_token_used, reward_mode_used, destination, swap_tx, claim_tx
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+       reward_token_used, reward_mode_used, destination, swap_tx, claim_tx,
+       burn_amount, burn_tx, treasury_amount, treasury_token, treasury_tx
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
     [
       log.configId, (log.claimedEthWei ?? 0n).toString(), (log.boughtTokenAmount ?? 0n).toString(), log.holderCount || 0,
       (log.totalAirdropped ?? 0n).toString(), log.status, log.errorMessage || null,
       log.rewardTokenUsed ? log.rewardTokenUsed.toLowerCase() : null, log.rewardModeUsed || null, log.destination || null,
       log.swapTx || null, log.claimTx || null,
+      (log.burnAmount ?? 0n).toString(), log.burnTx || null, (log.treasuryAmount ?? 0n).toString(),
+      log.treasuryToken ? log.treasuryToken.toLowerCase() : null, log.treasuryTx || null,
     ]
   );
   return result.rows[0];

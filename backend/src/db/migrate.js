@@ -113,6 +113,29 @@ async function migrate() {
     // Receipts: the Telegram group (and topic) where each dividend gets announced.
     await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS announce_chat_id BIGINT;`);
     await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS announce_thread_id INTEGER;`);
+    // Fee split: each cycle's ETH goes to holders, buyback-and-burn of the project token, and a stock treasury.
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS split_holders_bps INTEGER NOT NULL DEFAULT 10000;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS split_burn_bps INTEGER NOT NULL DEFAULT 0;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS split_treasury_bps INTEGER NOT NULL DEFAULT 0;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS treasury_address VARCHAR(42);`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS treasury_asset VARCHAR(42);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS burn_amount NUMERIC(78,0);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS burn_tx VARCHAR(66);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS treasury_amount NUMERIC(78,0);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS treasury_token VARCHAR(42);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS treasury_tx VARCHAR(66);`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS treasury_ledger (
+        id SERIAL PRIMARY KEY,
+        config_id INTEGER REFERENCES bot_configs(id) ON DELETE CASCADE,
+        token VARCHAR(42) NOT NULL,
+        amount NUMERIC(78,0) NOT NULL,
+        eth_spent NUMERIC(78,0) NOT NULL DEFAULT 0,
+        tx_hash VARCHAR(66),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_treasury_ledger_config ON treasury_ledger(config_id);`);
 
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_bot_configs_user_id ON bot_configs(user_id);

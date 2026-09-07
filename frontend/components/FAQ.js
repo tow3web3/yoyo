@@ -11,7 +11,7 @@ const ITEMS = [
   { q: 'What is loyalty weighting?', a: 'An optional rule set per token. Because Boomerang rebuilds every wallet\'s history from Transfer logs, it knows how long each wallet has held and whether it sold. With loyalty on, a wallet\'s dividend weight ramps from 1x to 2x (creator\'s choice up to 5x) over the ramp period, wallets younger than the minimum hold get nothing that cycle, and any sell restarts the clock. Voting weight follows the same rules.' },
   { q: 'Who counts as a holder?', a: 'Real wallets only. Balances are rebuilt from Transfer logs on chain. Liquidity pools, routers, the token contract, the dev wallet and any smart contract are excluded, so dividends go to people.' },
   { q: 'How often does it run?', a: 'Every 1, 2, 5, 10, 30 or 60 minutes, or once a day at the closing bell (4:00 pm New York time, weekdays). You can also restrict any schedule to market hours.' },
-  { q: 'Can it burn instead of paying holders?', a: 'Yes. Set the destination to burn and each cycle sends the bought tokens to the dead address. Point the reward at your own token for a classic buyback and burn.' },
+  { q: 'Can it burn, or build a treasury, instead of paying holders?', a: 'Both, in any mix. The fee split cuts every cycle into dividends, buyback and burn of your own token, and a treasury share that buys a stock (SPY by default) and sends it to a treasury wallet you control. The dashboard then shows the balance sheet, book value per token, and what share of the market cap the treasury backs.' },
   { q: 'Is there an API?', a: 'Yes, a free public read-only API at /api/v1: global stats, linked tokens, recent dividends and the stock registry. See the Developers section.' },
 ];
 

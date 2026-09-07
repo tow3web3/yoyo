@@ -10,6 +10,7 @@ const ENDPOINTS = [
   { path: '/api/v1/token/{address}', desc: 'Is a token linked? Its reward, schedule and payout stats.' },
   { path: '/api/v1/stocks', desc: 'The 195 Robinhood Stock Tokens with addresses and liquidity flags.' },
   { path: '/api/v1/activity?limit=20', desc: 'Recent linked tokens and dividends.' },
+  { path: '/api/badge/{address}', desc: 'Embeddable SVG badge with the live dividend yield of a token (?style=reward for the reward badge).' },
 ];
 
 function Endpoint({ path, desc }) {
@@ -56,6 +57,7 @@ export default function Developers() {
   "rewardMode": "fixed",
   "schedule": "at the closing bell",
   "active": true,
+  "yield": { "apy": 12.4, "eth30d": 1.284, "cycles30d": 31 },
   "stats": { "feesUsedEth": "1.2840", "dividends": 31, "holdersPaid": 412, ... }
 }`}
         </pre>

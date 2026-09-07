@@ -1,5 +1,6 @@
 import { getDashboard, scheduleLabel, getTreasuryLedger } from '../../../../lib/queries';
 import { treasurySheet } from '../../../../lib/treasury';
+import { tokenYield } from '../../../../lib/yield';
 import { fetchTokenMeta } from '../../../../lib/tokenMeta';
 import { getQuotes } from '../../../../lib/prices';
 import { getStock, EVM_ADDR, BASKETS } from '../../../../lib/stocks';
@@ -41,6 +42,8 @@ export async function GET(request, { params }) {
       const sheet = await treasurySheet({ treasuryAddress: config.treasury_address, tokens: ledger.map((l) => l.token), sourceToken: src, marketCap: meta[src]?.marketCap ?? null }).catch(() => null);
       treasury = sheet ? { ...sheet, ledger: ledger.map((l) => ({ token: l.token, amount: l.amount, ethSpent: l.eth_spent, buys: l.buys, lastAt: l.last_at })), asset: config.treasury_asset || null } : null;
     }
+
+    const yieldStats = await tokenYield(src, meta[src]?.marketCap ?? null).catch(() => null);
 
     // Live quote for the reward when it is a stock.
     const stock = getStock(tgt);
@@ -109,6 +112,7 @@ export async function GET(request, { params }) {
         },
       },
       treasury,
+      yield: yieldStats,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

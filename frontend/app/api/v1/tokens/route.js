@@ -1,6 +1,7 @@
 import { getActiveTokens, scheduleLabel } from '../../../../lib/queries';
 import { fetchTokenMeta } from '../../../../lib/tokenMeta';
 import { apiJson, apiOptions } from '../../../../lib/apiResponse';
+import { allYields } from '../../../../lib/yield';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ export async function GET() {
   try {
     const rows = await getActiveTokens();
     const meta = await fetchTokenMeta(rows.flatMap((r) => [r.address, r.reward_token]));
+    const yields = await allYields((a) => meta[a]?.marketCap ?? null).catch(() => ({}));
     const tokens = rows
       .map((r) => ({
         address: r.address,
@@ -32,6 +34,8 @@ export async function GET() {
         scheduleLabel: scheduleLabel(r),
         marketHoursOnly: Boolean(r.market_hours_only),
         distributions: r.distributions,
+        yieldApy: yields[r.address]?.apy ?? null,
+        eth30d: yields[r.address]?.eth30d ?? 0,
         lastExecution: r.last_execution,
         dashboardUrl: SITE ? `${SITE}/${r.address}` : `/${r.address}`,
       }))

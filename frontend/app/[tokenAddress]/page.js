@@ -120,6 +120,11 @@ export default function TokenDashboard() {
               <span className={`h-1.5 w-1.5 rounded-full ${data.config.isActive ? 'bg-hood-500' : 'bg-mut'}`} />
               {data.config.isActive ? 'Active' : 'Paused'} · {data.config.scheduleLabel}
             </span>
+            {data.yield?.apy ? (
+              <span className="chip-gold" title={`${data.yield.eth30d.toFixed(4)} ETH returned over the last ${data.yield.windowDays} days, annualized against market cap`}>
+                📈 {data.yield.apy >= 100 ? Math.round(data.yield.apy) : data.yield.apy >= 10 ? data.yield.apy.toFixed(1) : data.yield.apy.toFixed(2)}% dividend yield
+              </span>
+            ) : data.yield?.cycles30d ? <span className="chip">{data.yield.eth30d.toFixed(4)} ETH returned / 30d</span> : null}
             {data.config.marketHoursOnly && <span className="chip">🕰️ Market hours only</span>}
             {data.config.destination === 'burn' && <span className="chip border-orange-200 bg-orange-50 text-orange-700">🔥 Buyback and burn</span>}
             {data.config.rewardMode === 'vote' && (
@@ -344,6 +349,16 @@ export default function TokenDashboard() {
           </div>
         </div>
 
+        <div className="panel mt-6 flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold text-ink">Embed the yield badge</div>
+            <div className="text-xs text-mut">Live SVG for your README, website or X bio link. Add <span className="font-mono">?style=reward</span> for the reward badge.</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <img src={`/api/badge/${tokenAddress}`} alt="dividend yield badge" className="h-[22px]" />
+            <code className="rounded-md bg-tile px-2 py-1 font-mono text-[11px] text-ink">{`${typeof window !== 'undefined' ? window.location.origin : ''}/api/badge/${tokenAddress}`}</code>
+          </div>
+        </div>
         <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-mut">
           <span>Robinhood Chain (4663)</span>
           <span>·</span>

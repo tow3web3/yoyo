@@ -61,6 +61,7 @@ export default function ActiveTokens() {
                   <div className="truncate text-xs text-mut">
                     {badge ? badge[0] : <>pays <span className="font-mono font-semibold text-ink">{reward.symbol}</span></>} · {t.scheduleLabel}
                     {t.marketCap ? ` · MC $${compact(t.marketCap)}` : ''}
+                    {t.yieldApy ? ` · ${t.yieldApy >= 10 ? t.yieldApy.toFixed(1) : t.yieldApy.toFixed(2)}% APY` : ''}
                     {t.distributions > 0 ? ` · ${t.distributions} dividends` : ''}
                   </div>
                 </div>

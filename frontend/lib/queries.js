@@ -56,6 +56,35 @@ export async function getActiveTokens() {
   `;
 }
 
+/**
+ * Raw yield inputs per active token: ETH returned in the last 30 days (holders,
+ * burn and treasury legs together), number of cycles, and the first cycle date
+ * so young tokens are annualized over their real age.
+ */
+export async function getYieldInputs(address = null) {
+  const sql = getSql();
+  const rows = address
+    ? await sql`
+        SELECT bc.source_token_address AS address,
+               COALESCE(SUM(el.claimed_eth_wei) FILTER (WHERE el.execution_time > NOW() - INTERVAL '30 days'), 0)::text AS eth_30d,
+               COALESCE(SUM(el.claimed_eth_wei) FILTER (WHERE el.execution_time > NOW() - INTERVAL '7 days'), 0)::text AS eth_7d,
+               COUNT(*) FILTER (WHERE el.execution_time > NOW() - INTERVAL '30 days')::int AS cycles_30d,
+               MIN(el.execution_time) AS first_at
+        FROM bot_configs bc JOIN execution_logs el ON el.config_id = bc.id
+        WHERE bc.source_token_address = ${address.toLowerCase()} AND el.status = 'success' AND (el.holder_count > 0 OR el.burn_amount > 0 OR el.treasury_amount > 0)
+        GROUP BY bc.source_token_address`
+    : await sql`
+        SELECT bc.source_token_address AS address,
+               COALESCE(SUM(el.claimed_eth_wei) FILTER (WHERE el.execution_time > NOW() - INTERVAL '30 days'), 0)::text AS eth_30d,
+               COALESCE(SUM(el.claimed_eth_wei) FILTER (WHERE el.execution_time > NOW() - INTERVAL '7 days'), 0)::text AS eth_7d,
+               COUNT(*) FILTER (WHERE el.execution_time > NOW() - INTERVAL '30 days')::int AS cycles_30d,
+               MIN(el.execution_time) AS first_at
+        FROM bot_configs bc JOIN execution_logs el ON el.config_id = bc.id
+        WHERE bc.is_active = true AND el.status = 'success' AND (el.holder_count > 0 OR el.burn_amount > 0 OR el.treasury_amount > 0)
+        GROUP BY bc.source_token_address`;
+  return rows;
+}
+
 /** What Boomerang has bought for a config's treasury, grouped by asset. */
 export async function getTreasuryLedger(configId) {
   const sql = getSql();

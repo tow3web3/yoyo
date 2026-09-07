@@ -1,5 +1,5 @@
 import pool from '../db/connection.js';
-import { getTokenHolders } from './holders.js';
+import { getTokenHolders, applyLoyalty } from './holders.js';
 import { LIQUID_STOCKS } from '../chain/stocks.js';
 import { NATIVE_ETH } from '../chain/config.js';
 
@@ -23,11 +23,13 @@ export async function openCycle(config) {
   );
   const cycle = rows[0];
 
+  // Voting weight follows the same loyalty rules as the dividend itself.
   let holders = [];
   try {
-    holders = await getTokenHolders(config.source_token_address, {
+    const { holders: raw, head } = await getTokenHolders(config.source_token_address, {
       minBalance: BigInt(config.min_holder_amount || 0), exclude: [config.dev_wallet_public], startBlock: config.index_start_block || null,
     });
+    holders = applyLoyalty(raw, config, head);
   } catch (e) {
     console.error(`Vote snapshot failed for config ${config.id}:`, e.message);
   }
@@ -35,7 +37,7 @@ export async function openCycle(config) {
   for (let i = 0; i < holders.length; i += CHUNK) {
     const slice = holders.slice(i, i + CHUNK);
     const ph = slice.map((_, j) => `($1, $${j * 2 + 2}, $${j * 2 + 3})`).join(',');
-    const vals = slice.flatMap((h) => [h.address, h.balance.toString()]);
+    const vals = slice.flatMap((h) => [h.address, (h.weight ?? h.balance).toString()]);
     await pool.query(`INSERT INTO vote_snapshots (cycle_id, holder_address, weight) VALUES ${ph} ON CONFLICT DO NOTHING`, [cycle.id, ...vals]);
   }
 

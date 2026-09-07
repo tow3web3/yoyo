@@ -199,6 +199,18 @@ export default function TokenDashboard() {
               )}
               <div><p className="text-xs text-mut">Schedule</p><p className="text-sm font-medium text-ink">{data.config.scheduleLabel}{data.config.marketHoursOnly ? ', market hours only' : ''}</p></div>
               <div><p className="text-xs text-mut">Fee source</p><p className="text-sm font-medium text-ink">{data.config.feeSource === 'univ3' ? 'Uniswap V3 LP fees' : 'Dev wallet balance (ETH)'}</p></div>
+              <div>
+                <p className="text-xs text-mut">🏅 Loyalty weighting</p>
+                {data.config.loyalty?.enabled ? (
+                  <p className="text-sm font-medium text-ink">
+                    1x to {data.config.loyalty.maxMultiplier.toFixed(1)}x over {data.config.loyalty.rampDays} days
+                    {data.config.loyalty.minHoldHours > 0 ? `, min hold ${data.config.loyalty.minHoldHours}h` : ''}
+                    {data.config.loyalty.sellReset ? ', selling resets the clock' : ''}
+                  </p>
+                ) : (
+                  <p className="text-sm font-medium text-mut">off, weight = balance</p>
+                )}
+              </div>
               <div className="border-t border-line pt-4"><p className="text-xs text-mut">Last dividend</p><p className="text-sm font-medium text-ink">{data.stats.lastExecution ? new Date(data.stats.lastExecution).toLocaleString() : 'Never'}</p></div>
               <div><p className="text-xs text-mut">Bought back</p><p className="figure text-sm font-medium text-ink">{mode ? '(varies per cycle)' : `${compact(units(data.stats.totalBoughtBack, rewardDecimals))} ${reward.symbol}`}</p></div>
             </div>
@@ -221,7 +233,10 @@ export default function TokenDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="figure text-sm font-semibold text-ink">{compact(units(r.totalReceived, r.rewardDecimals ?? rewardDecimals))} {r.rewardSymbol || reward.symbol}</p>
-                    <p className="text-xs text-mut">{r.airdropCount} dividends</p>
+                    <p className="text-xs text-mut">
+                      {r.airdropCount} dividends
+                      {r.heldDays != null ? ` · holding ${r.heldDays < 1 ? `${Math.max(1, Math.round(r.heldDays * 24))}h` : `${Math.floor(r.heldDays)}d`}` : ''}
+                    </p>
                   </div>
                 </a>
               ))}

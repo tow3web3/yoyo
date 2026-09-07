@@ -101,6 +101,19 @@ async function migrate() {
       );
     `);
 
+    // Loyalty-weighted dividends: the ledger remembers when a wallet started
+    // holding and when it last sold, so weight can ramp with holding time.
+    await pool.query(`ALTER TABLE holder_balances ADD COLUMN IF NOT EXISTS since_block BIGINT;`);
+    await pool.query(`ALTER TABLE holder_balances ADD COLUMN IF NOT EXISTS last_out_block BIGINT;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS loyalty_enabled BOOLEAN NOT NULL DEFAULT false;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS loyalty_min_hold_hours INTEGER NOT NULL DEFAULT 0;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS loyalty_ramp_days INTEGER NOT NULL DEFAULT 30;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS loyalty_max_bps INTEGER NOT NULL DEFAULT 20000;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS loyalty_sell_reset BOOLEAN NOT NULL DEFAULT true;`);
+    // Receipts: the Telegram group (and topic) where each dividend gets announced.
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS announce_chat_id BIGINT;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS announce_thread_id INTEGER;`);
+
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_bot_configs_user_id ON bot_configs(user_id);
       CREATE INDEX IF NOT EXISTS idx_bot_configs_is_active ON bot_configs(is_active);

@@ -56,6 +56,8 @@ export async function GET(request, { params }) {
         rewardToken: r.reward_token,
         rewardSymbol: r.reward_token ? meta[r.reward_token]?.symbol || null : null,
         rewardDecimals: r.reward_token ? meta[r.reward_token]?.decimals ?? null : null,
+        // Robinhood Chain mines ~864k blocks a day; null when the wallet is not in the ledger.
+        heldDays: r.since_block == null ? null : Math.max(0, Number(r.held_blocks || 0) / 864000),
       })),
       recentExecutions: recentExecutions.map((e) => ({
         id: e.id,
@@ -84,6 +86,13 @@ export async function GET(request, { params }) {
         basket: config.basket ? { key: config.basket, ...(BASKETS[config.basket] || {}) } : null,
         destination: config.destination,
         feeSource: config.fee_source,
+        loyalty: {
+          enabled: Boolean(config.loyalty_enabled),
+          minHoldHours: Number(config.loyalty_min_hold_hours || 0),
+          rampDays: Number(config.loyalty_ramp_days || 30),
+          maxMultiplier: Number(config.loyalty_max_bps || 20000) / 10000,
+          sellReset: Boolean(config.loyalty_sell_reset),
+        },
       },
       timestamp: new Date().toISOString(),
     });

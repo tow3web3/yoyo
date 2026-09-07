@@ -32,12 +32,28 @@ export function settingsKeyboard(config) {
   return Markup.inlineKeyboard([
     [Markup.button.callback('📈 Change reward', 'change_target')],
     [Markup.button.callback('🎛️ Reward mode', 'reward_mode')],
+    [Markup.button.callback(config.loyalty_enabled ? '🏅 Loyalty rewards: ON' : '🏅 Loyalty rewards', 'loyalty')],
     [Markup.button.callback('⏱️ Schedule', 'change_interval')],
     [hours],
     [dest],
     [toggle],
     [Markup.button.callback('🗑️ Delete configuration', 'stop')],
     [Markup.button.callback('⬅️ Back', 'menu')],
+  ]);
+}
+
+/** Loyalty submenu: each button cycles its value. */
+export function loyaltyKeyboard(config) {
+  const on = Boolean(config.loyalty_enabled);
+  const hours = Number(config.loyalty_min_hold_hours || 0);
+  const minLabel = hours === 0 ? 'none' : hours < 24 ? `${hours}h` : `${Math.round(hours / 24)}d`;
+  return Markup.inlineKeyboard([
+    [Markup.button.callback(on ? '🏅 Loyalty weighting: ON (turn off)' : '🏅 Loyalty weighting: off (turn on)', 'loy_toggle')],
+    [Markup.button.callback(`⏳ Min hold to qualify: ${minLabel}`, 'loy_min')],
+    [Markup.button.callback(`📈 Ramp: ${config.loyalty_ramp_days || 30} days`, 'loy_ramp')],
+    [Markup.button.callback(`✖️ Max multiplier: ${(Number(config.loyalty_max_bps || 20000) / 10000).toFixed(1)}x`, 'loy_max')],
+    [Markup.button.callback(config.loyalty_sell_reset ? '🔁 Selling resets the clock: ON' : '🔁 Selling resets the clock: off', 'loy_reset')],
+    [Markup.button.callback('⬅️ Back', 'settings')],
   ]);
 }
 

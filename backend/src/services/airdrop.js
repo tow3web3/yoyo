@@ -19,17 +19,23 @@ async function waitAll(hashes) {
   return Promise.all(hashes.map((hash) => client.waitForTransactionReceipt({ hash, timeout: 180_000 }).then((r) => r.status === 'success').catch(() => false)));
 }
 
-/** Pure-integer pro-rata split; leftover dust goes to the largest holder. */
+/**
+ * Pure-integer pro-rata split by weight (loyalty-adjusted balance, or the plain
+ * balance when weights are absent); leftover dust goes to the largest holder.
+ */
 export function calculateDistributions(holders, totalToDistribute, minAmount = 0n) {
   const total = BigInt(totalToDistribute);
-  const totalHoldings = holders.reduce((sum, h) => sum + BigInt(h.balance), 0n);
-  if (totalHoldings === 0n) throw new Error('Total holdings cannot be zero');
+  const weightOf = (h) => BigInt(h.weight ?? h.balance);
+  const totalWeight = holders.reduce((sum, h) => sum + weightOf(h), 0n);
+  if (totalWeight === 0n) throw new Error('Total holdings cannot be zero');
 
   const distributions = holders
-    .map((holder) => {
-      const holderBalance = BigInt(holder.balance);
-      return { address: holder.address, holderBalance, amount: (total * holderBalance) / totalHoldings };
-    })
+    .map((holder) => ({
+      address: holder.address,
+      holderBalance: BigInt(holder.balance),
+      multiplierBps: holder.multiplierBps ?? 10000,
+      amount: (total * weightOf(holder)) / totalWeight,
+    }))
     .filter((d) => d.amount >= BigInt(minAmount) && d.amount > 0n);
 
   const allocated = distributions.reduce((sum, d) => sum + d.amount, 0n);

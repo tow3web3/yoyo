@@ -4,10 +4,11 @@
 import { parseEther } from 'viem';
 import * as db from '../db/queries.js';
 import { decryptPrivateKey } from '../services/encryption.js';
-import { accountFromKey, explorerTx, formatEth, formatUnits, short } from '../chain/config.js';
+import { accountFromKey, explorerTx, formatEth, formatUnits, short, readTokenMeta } from '../chain/config.js';
+import { announceDividend } from '../services/announce.js';
 import { claimFees, availableEth } from '../services/fees.js';
 import { swapEthForToken } from '../services/swap.js';
-import { getTokenHolders } from '../services/holders.js';
+import { getTokenHolders, applyLoyalty, loyaltyLabel } from '../services/holders.js';
 import { distributeTokens, distributeEth, burnTokens, calculateDistributions } from '../services/airdrop.js';
 import { resolveReward, describeReward } from '../services/rewards.js';
 import { stockOracle } from '../services/oracle.js';
@@ -102,11 +103,13 @@ export async function executeBotConfig(config, { force = false } = {}) {
 
     // 6. Holders
     console.log(`5. Fetching holders of ${short(config.source_token_address)}`);
-    const holders = await getTokenHolders(config.source_token_address, {
+    const { holders: rawHolders, head } = await getTokenHolders(config.source_token_address, {
       minBalance: BigInt(config.min_holder_amount || 0),
       exclude: [account.address],
       startBlock: config.index_start_block || null,
     });
+    const holders = applyLoyalty(rawHolders, config, head);
+    if (config.loyalty_enabled) console.log(`   Loyalty weighting: ${loyaltyLabel(config)} (${holders.length}/${rawHolders.length} eligible)`);
     log.holderCount = holders.length;
     if (holders.length === 0) {
       log.status = 'success';
@@ -132,6 +135,15 @@ export async function executeBotConfig(config, { force = false } = {}) {
     for (const tx of results.failed) rows.push({ executionLogId: saved.id, holderAddress: tx.address, holderBalance: tx.holderBalance?.toString() || '0', airdropAmount: tx.amount?.toString() || '0', txHash: null, status: 'failed' });
     if (rows.length) await db.createAirdropTransactionsBatch(rows);
     await db.updateLastExecution(config.id);
+
+    // Receipt into the creator's group (bound with /announce), never fatal.
+    if (results.successful.length > 0) {
+      const sourceMeta = await readTokenMeta(config.source_token_address).catch(() => null);
+      await announceDividend({
+        config, log: saved, reward, sourceSymbol: sourceMeta?.symbol || short(config.source_token_address),
+        results, spendableWei: spendable, holdersTotal: holders.length,
+      });
+    }
 
     const modeLine = reward.note ? `\n${reward.mode === 'roulette' ? '🎰' : reward.mode === 'gainer' ? '🚀' : reward.mode === 'portfolio' ? '📊' : reward.mode === 'vote' ? '🗳️' : 'ℹ️'} ${reward.note}` : '';
     await notifyUser(config.user_id,

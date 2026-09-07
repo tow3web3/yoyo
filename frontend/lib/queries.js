@@ -76,12 +76,16 @@ export async function getDashboard(address) {
     sql`
       SELECT at.holder_address, COUNT(*)::int AS airdrop_count,
              SUM(at.airdrop_amount)::text AS total_received,
-             MAX(el.reward_token_used) AS reward_token
+             MAX(el.reward_token_used) AS reward_token,
+             hb.balance::text AS balance,
+             GREATEST(0, (SELECT last_block FROM holder_index_state WHERE token = ${addr}) - GREATEST(hb.since_block, COALESCE(hb.last_out_block, 0)))::bigint AS held_blocks,
+             hb.since_block
       FROM airdrop_transactions at
       JOIN execution_logs el ON at.execution_log_id = el.id
       JOIN bot_configs bc ON el.config_id = bc.id
+      LEFT JOIN holder_balances hb ON hb.token = bc.source_token_address AND hb.address = at.holder_address
       WHERE bc.source_token_address = ${addr} AND at.status = 'success'
-      GROUP BY at.holder_address
+      GROUP BY at.holder_address, hb.balance, hb.since_block, hb.last_out_block
       ORDER BY airdrop_count DESC, total_received DESC
       LIMIT 10
     `,

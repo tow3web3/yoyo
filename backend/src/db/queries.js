@@ -68,6 +68,16 @@ export const updateBotConfigDestination = (id, destination) => updateConfig(id, 
 export const updateBotConfigMarketHours = (id, flag) => updateConfig(id, 'market_hours_only', flag);
 export const advancePortfolioCursor = (id, cursor) => updateConfig(id, 'portfolio_cursor', cursor);
 
+export const setAnnounceChat = (id, chatId, threadId) => pool
+  .query(`UPDATE bot_configs SET announce_chat_id = $1, announce_thread_id = $2, updated_at = NOW() WHERE id = $3 RETURNING *`, [chatId, threadId, id])
+  .then((r) => r.rows[0]);
+
+const LOYALTY_COLUMNS = new Set(['loyalty_enabled', 'loyalty_min_hold_hours', 'loyalty_ramp_days', 'loyalty_max_bps', 'loyalty_sell_reset']);
+export function updateBotConfigLoyalty(id, column, value) {
+  if (!LOYALTY_COLUMNS.has(column)) throw new Error(`Not a loyalty setting: ${column}`);
+  return updateConfig(id, column, value);
+}
+
 export async function updateLastExecution(configId) {
   await pool.query('UPDATE bot_configs SET last_execution = NOW(), updated_at = NOW() WHERE id = $1', [configId]);
 }

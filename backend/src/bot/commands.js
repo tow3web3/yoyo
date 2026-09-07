@@ -8,6 +8,7 @@ import { getStock, BASKETS, LIQUID_TICKERS, STOCKS } from '../chain/stocks.js';
 import { discoverPositions, FEE_SOURCES } from '../services/fees.js';
 import { REWARD_MODES } from '../services/rewards.js';
 import { scheduleLabel } from '../services/schedule.js';
+import { loyaltyLabel } from '../services/holders.js';
 
 // Optional holders-only gate: the dev wallet must hold MIN_HOLD_TO_ACTIVATE $BOOMERANG.
 const BOOMERANG_TOKEN = isAddress(process.env.BOOMERANG_TOKEN_ADDRESS) ? process.env.BOOMERANG_TOKEN_ADDRESS : null;
@@ -101,7 +102,7 @@ export async function handleHelp(ctx) {
     `*Commands*\n/start: open the menu\n/setup: configure your bot\n/status: view your bot\n/stocks: the stock universe\n/help: this message\n\n` +
     `*The loop*\nOn schedule, Boomerang takes the ETH fees in your dev wallet (or collects your Uniswap V3 LP fees), buys the reward on Uniswap, ` +
     `and pays it to holders of your token in proportion to what they hold.\n\n` +
-    `*Modes*\n🎯 Fixed: one stock (or ETH, or any token)\n🎰 Roulette: a random liquid stock each cycle\n🚀 Top Gainer: the day's best stock\n📊 Portfolio: rotate through a basket\n🗳️ Community Vote: holders choose\n\n` +
+    `*Modes*\n🎯 Fixed: one stock (or ETH, or any token)\n🎰 Roulette: a random liquid stock each cycle\n🚀 Top Gainer: the day's best stock\n📊 Portfolio: rotate through a basket\n🗳️ Community Vote: holders choose\n🏅 Loyalty: weight dividends by holding time, snipers earn less\n\n` +
     `*Good to know*\n🔐 Your key is AES-256 encrypted, decrypted only at run time\n🛡️ Swaps are guarded against the real market price (Yahoo Finance)\n⏸️ Pause, resume or delete anytime`,
     keyboards.backToMenuKeyboard()
   );
@@ -415,7 +416,7 @@ export async function handleSettings(ctx) {
   const { config } = await getUserConfig(ctx.from.id);
   if (!config) { if (ctx.callbackQuery) await ctx.answerCbQuery('No config yet.'); return ctx.replyWithMarkdown('You have no bot yet.', keyboards.welcomeKeyboard()); }
   await edit(ctx,
-    `⚙️ *Settings*\n\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n${modeLine(config)}\n` +
+    `⚙️ *Settings*\n\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n${modeLine(config)}\n🏅 Loyalty: ${loyaltyLabel(config)}\n` +
     `${config.destination === 'burn' ? '🔥 Buyback and burn' : '🎁 Paid to holders'}\n📍 ${config.is_active ? '🟢 Running' : '⏸️ Paused'}`,
     keyboards.settingsKeyboard(config)
   );
@@ -485,6 +486,67 @@ export async function handleBasketSelection(ctx, key) {
   const updated = await db.updateBotConfigRewardMode(config.id, 'portfolio', key);
   await reschedule(updated);
   await edit(ctx, `✅ Mode: 📊 *Portfolio*, ${basket.emoji} ${basket.label}: ${basket.tickers.join(' > ')} then repeat.`, keyboards.settingsKeyboard(updated));
+}
+
+// ---------- receipts: /announce ----------
+
+/**
+ * /announce inside a group or channel topic binds it as the place where this
+ * creator's dividends get posted (card + Share on X). /announce off in DM unbinds.
+ */
+export async function handleAnnounce(ctx) {
+  const { config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.reply('You have no Boomerang yet. Set one up in a private chat with me first (/setup).');
+  const arg = (ctx.message.text || '').split(/\s+/)[1];
+  const chat = ctx.chat;
+
+  if (chat.type === 'private') {
+    if (arg === 'off') {
+      await db.setAnnounceChat(config.id, null, null);
+      return ctx.replyWithMarkdown('🔕 Dividend receipts are no longer posted anywhere.');
+    }
+    return ctx.replyWithMarkdown(
+      `📣 *Dividend receipts*\n\nAdd me to your project's Telegram group, then send */announce* there (inside the topic you want, if the group uses topics). ` +
+      `Every dividend will be posted as a card with a *Share on X* button.\n\n` +
+      (config.announce_chat_id ? `Currently posting to chat \`${config.announce_chat_id}\`. Send \`/announce off\` here to stop.` : 'Not bound to any group yet.')
+    );
+  }
+  const threadId = ctx.message.message_thread_id || null;
+  await db.setAnnounceChat(config.id, chat.id, threadId);
+  await ctx.replyWithMarkdown(`📣 *Bound.* Dividend receipts for \`${short(config.source_token_address)}\` will be posted here${threadId ? ' (this topic)' : ''}.`);
+}
+
+// ---------- loyalty ----------
+
+const LOYALTY_TEXT =
+  `🏅 *Loyalty rewards*\n\n` +
+  `Dividends weighted by *holding time*, not just balance. The multiplier ramps from 1x to the max over the ramp period; ` +
+  `wallets younger than the minimum hold get nothing this cycle; with the reset on, any sell restarts a wallet's clock.\n\n` +
+  `Snipers who buy right before the record date earn less than the holders who have been there for weeks. Voting weight follows the same rules.`;
+
+export async function handleLoyaltyMenu(ctx) {
+  const { config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  await edit(ctx, `${LOYALTY_TEXT}\n\nCurrent: _${loyaltyLabel(config)}_`, keyboards.loyaltyKeyboard(config));
+}
+
+const MIN_HOLD_CYCLE = [0, 1, 6, 24, 72, 168];
+const RAMP_CYCLE = [7, 14, 30, 60, 90];
+const MAX_CYCLE = [15000, 20000, 30000, 50000];
+const next = (cycle, current) => cycle[(Math.max(0, cycle.indexOf(Number(current))) + 1) % cycle.length];
+
+export async function handleLoyaltySetting(ctx, key) {
+  const { config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  let updated;
+  if (key === 'toggle') updated = await db.updateBotConfigLoyalty(config.id, 'loyalty_enabled', !config.loyalty_enabled);
+  else if (key === 'min') updated = await db.updateBotConfigLoyalty(config.id, 'loyalty_min_hold_hours', next(MIN_HOLD_CYCLE, config.loyalty_min_hold_hours));
+  else if (key === 'ramp') updated = await db.updateBotConfigLoyalty(config.id, 'loyalty_ramp_days', next(RAMP_CYCLE, config.loyalty_ramp_days));
+  else if (key === 'max') updated = await db.updateBotConfigLoyalty(config.id, 'loyalty_max_bps', next(MAX_CYCLE, config.loyalty_max_bps));
+  else if (key === 'reset') updated = await db.updateBotConfigLoyalty(config.id, 'loyalty_sell_reset', !config.loyalty_sell_reset);
+  else return ctx.answerCbQuery('Unknown setting.');
+  await reschedule(updated);
+  await edit(ctx, `${LOYALTY_TEXT}\n\nCurrent: _${loyaltyLabel(updated)}_`, keyboards.loyaltyKeyboard(updated));
 }
 
 export async function handleToggleMarketHours(ctx) {

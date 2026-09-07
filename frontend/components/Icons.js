@@ -31,6 +31,7 @@ export const Layers = (p) => (<svg {...base} {...p}><path d="M12 4 3 9l9 5 9-5z"
 export const Vote = (p) => (<svg {...base} {...p}><path d="M5 11h14v9H5z" /><path d="M8 11V6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v5" /><path d="M10 8l1.5 1.5L15 6" /></svg>);
 export const Scale = (p) => (<svg {...base} {...p}><path d="M12 4v16M4 20h16" /><path d="M6 8l-3 6h6zM18 8l-3 6h6z" /><path d="M6 8h12" /></svg>);
 export const Wallet = (p) => (<svg {...base} {...p}><rect x="3" y="7" width="18" height="12" rx="2" /><path d="M16 12h4v3h-4z" /><path d="M3 9V6a1 1 0 0 1 1-1h12" /></svg>);
+export const Medal = (p) => (<svg {...base} {...p}><circle cx="12" cy="14" r="6" /><path d="M9 8.5 6 3h4l2 3.5L14 3h4l-3 5.5" /><path d="M12 11.5v3l1.8 1" /></svg>);
 export const Check = (p) => (<svg {...base} {...p}><path d="M5 12l4 4 10-10" /></svg>);
 export const Copy = (p) => (<svg {...base} {...p}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>);
 

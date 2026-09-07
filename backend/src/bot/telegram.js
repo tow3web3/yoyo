@@ -12,6 +12,7 @@ export function initBot() {
   bot.command('setup', commands.handleSetupStart);
   bot.command('status', commands.handleStatus);
   bot.command('stocks', commands.handleStocks);
+  bot.command('announce', commands.handleAnnounce);
 
   bot.action('menu', commands.handleMenu);
   bot.action('help', commands.handleHelp);
@@ -45,6 +46,8 @@ export function initBot() {
   bot.action(/^mode_(fixed|roulette|gainer|portfolio|vote)$/, (ctx) => commands.handleRewardModeSelection(ctx, ctx.match[1]));
   bot.action(/^basket_(\w+)$/, (ctx) => commands.handleBasketSelection(ctx, ctx.match[1]));
   bot.action('market_hours', commands.handleToggleMarketHours);
+  bot.action('loyalty', commands.handleLoyaltyMenu);
+  bot.action(/^loy_(toggle|min|ramp|max|reset)$/, (ctx) => commands.handleLoyaltySetting(ctx, ctx.match[1]));
   bot.action('destination', commands.handleToggleDestination);
 
   // Delete
@@ -52,7 +55,8 @@ export function initBot() {
   bot.action('confirm_delete', commands.handleConfirmDelete);
   bot.action('cancel', commands.handleCancel);
 
-  bot.on('text', commands.handleSetupMessage);
+  // Free-text setup input only in private chats; group chatter is ignored.
+  bot.on('text', (ctx, next) => (ctx.chat?.type === 'private' ? commands.handleSetupMessage(ctx) : next()));
 
   bot.catch((err, ctx) => {
     console.error('Bot error:', err);

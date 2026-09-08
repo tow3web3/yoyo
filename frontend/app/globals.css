@@ -240,3 +240,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .peek-dash, .peek-fill { animation: none; }
 }
+
+/* Policy option scenes: SMIL cannot read prefers-reduced-motion, so pause them there. */
+@media (prefers-reduced-motion: reduce) {
+  .mode-stage svg * { animation: none !important; }
+}

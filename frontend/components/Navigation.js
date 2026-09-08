@@ -24,18 +24,18 @@ export default function Navigation() {
           </Link>
 
           <div className="hidden items-center gap-0.5 lg:flex">
-            <a href="/#how" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">How it works</a>
-            <Link href="/stocks" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">Stocks</Link>
-            <a href="/#modes" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">Modes</a>
-            <a href="/#screener" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">Screener</a>
-            <Link href="/wallet" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">My dividends</Link>
-            <Link href="/vote" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-hood-700 transition hover:text-hood-600">Vote</Link>
-            <Link href="/missions" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-gold-700 transition hover:text-gold-600">Missions</Link>
-            <a href="/#developers" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">API</a>
+            <a href="/#how" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">How it works</a>
+            <Link href="/stocks" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">Stocks</Link>
+            <a href="/#modes" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">Modes</a>
+            <a href="/#screener" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">Screener</a>
+            <Link href="/wallet" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">My dividends</Link>
+            <Link href="/vote" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-hood-700 transition hover:text-hood-600">Vote</Link>
+            <Link href="/missions" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-gold-700 transition hover:text-gold-600">Missions</Link>
+            <a href="/#developers" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">API</a>
           </div>
 
-          <div className="flex items-center gap-3">
-            <CopyCA className="hidden sm:inline-flex" />
+          <div className="flex items-center gap-2">
+            <CopyCA className="hidden xl:inline-flex" />
             <a href="https://x.com/Boomerang_tek" target="_blank" rel="noopener noreferrer" aria-label="Boomerang on X" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
               <X className="h-[18px] w-[18px]" />
             </a>

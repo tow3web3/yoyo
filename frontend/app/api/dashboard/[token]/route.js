@@ -33,9 +33,10 @@ export async function GET(request, { params }) {
     const meta = await fetchTokenMeta([src, tgt, ...used, ...topRecipients.map((r) => r.reward_token).filter(Boolean)]);
 
     // Fee split (legacy destination=burn means 100% burn) and the treasury balance sheet.
-    let sh = Number(config.split_holders_bps ?? 10000), sb = Number(config.split_burn_bps ?? 0), st = Number(config.split_treasury_bps ?? 0);
-    if (config.destination === 'burn' && sh === 10000 && sb === 0 && st === 0) { sh = 0; sb = 10000; }
+    let sh = Number(config.split_holders_bps ?? 10000), sc = Number(config.split_creator_bps ?? 0), sb = Number(config.split_burn_bps ?? 0), st = Number(config.split_treasury_bps ?? 0);
+    if (config.destination === 'burn' && sh === 10000 && sc === 0 && sb === 0 && st === 0) { sh = 0; sb = 10000; }
     if (st > 0 && !config.treasury_address) { sh += st; st = 0; }
+    if (sc > 0 && !config.creator_address) { sh += sc; sc = 0; }
     let treasury = null;
     if (config.treasury_address) {
       const ledger = await getTreasuryLedger(config.id);
@@ -101,7 +102,8 @@ export async function GET(request, { params }) {
         basket: config.basket ? { key: config.basket, ...(BASKETS[config.basket] || {}) } : null,
         destination: config.destination,
         feeSource: config.fee_source,
-        split: { holders: sh, burn: sb, treasury: st },
+        split: { holders: sh, creator: sc, burn: sb, treasury: st },
+        payoutMode: config.payout_mode || 'in_kind',
         treasuryAddress: config.treasury_address || null,
         loyalty: {
           enabled: Boolean(config.loyalty_enabled),

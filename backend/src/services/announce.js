@@ -29,13 +29,13 @@ async function fetchCard(logId) {
  * Announce a paid dividend in the creator's group. Never throws: a failed
  * announcement must not mark the cycle as failed.
  */
-export async function announceDividend({ config, log, reward, sourceSymbol, results, spendableWei, holdersTotal }) {
+export async function announceDividend({ config, log, reward, sourceSymbol, results, feesLabel, holdersTotal }) {
   if (!config.announce_chat_id) return;
-  const amountLabel = formatUnits(results.totalSent, reward.decimals, reward.isNative ? 4 : 4);
+  const amountLabel = formatUnits(results.totalSent, reward.decimals, 4);
   const caption =
     `🎁 *Dividend paid to $${sourceSymbol} holders*\n\n` +
     `📈 ${amountLabel} ${reward.symbol}${reward.note ? ` (${reward.note})` : ''}\n` +
-    `💰 From ${formatEth(spendableWei, 4)} ETH of fees\n` +
+    `💰 From ${feesLabel}\n` +
     `👥 ${results.successful.length}/${holdersTotal} wallets, pro-rata${config.loyalty_enabled ? ', loyalty-weighted' : ''}\n` +
     `⏰ Next dividend ${scheduleLabel(config)}`;
   const keyboard = Markup.inlineKeyboard([

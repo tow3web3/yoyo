@@ -180,17 +180,19 @@ export default function TokenDashboard() {
         </div>
 
         {/* Fee split + balance sheet */}
-        {(data.config.split && (data.config.split.holders < 10000 || data.treasury)) && (
+        {data.config.split && (
           <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_1.4fr]">
             <div className="panel p-5">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-mut">Fee split per cycle</h3>
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-mut">Dividend policy</h3>
+              <p className="mb-3 text-[11px] text-mut">{data.config.payoutMode === 'convert' ? 'Stock fees converted to the reward before payout.' : 'Stock fees paid in kind: what the launchpad pays, holders receive.'}</p>
               <div className="flex h-3 w-full overflow-hidden rounded-full bg-tile">
                 <div className="bg-hood-500" style={{ width: `${data.config.split.holders / 100}%` }} title="holders" />
+                <div className="bg-ink" style={{ width: `${(data.config.split.creator || 0) / 100}%` }} title="creator" />
                 <div className="bg-orange-500" style={{ width: `${data.config.split.burn / 100}%` }} title="burn" />
                 <div className="bg-gold-400" style={{ width: `${data.config.split.treasury / 100}%` }} title="treasury" />
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                {[['Holders', data.config.split.holders, 'bg-hood-500'], ['Burn', data.config.split.burn, 'bg-orange-500'], ['Treasury', data.config.split.treasury, 'bg-gold-400']].map(([l, v, c]) => (
+              <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+                {[['Payout ratio', data.config.split.holders, 'bg-hood-500'], ['Creator', data.config.split.creator || 0, 'bg-ink'], ['Buyback', data.config.split.burn, 'bg-orange-500'], ['Retained', data.config.split.treasury, 'bg-gold-400']].map(([l, v, c]) => (
                   <div key={l}>
                     <div className="mx-auto mb-1 h-1.5 w-6 rounded-full" style={{}}><span className={`block h-full w-full rounded-full ${c}`} /></div>
                     <div className="figure font-display text-xl font-extrabold text-ink">{v / 100}%</div>

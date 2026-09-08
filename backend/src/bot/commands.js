@@ -231,6 +231,7 @@ export async function handleSetupMessage(ctx) {
       case 'reward_custom': return await handleRewardCustomInput(ctx, session, text, false);
       case 'edit_target': return await handleRewardCustomInput(ctx, session, text, true);
       case 'treasury_address': return await handleTreasuryAddressInput(ctx, session, text);
+      case 'creator_address': return await handleCreatorAddressInput(ctx, session, text);
       case 'treasury_asset': return await handleTreasuryAssetInput(ctx, session, text);
       default: return;
     }
@@ -470,7 +471,7 @@ export async function handleStatus(ctx) {
     `📊 *Your Boomerang*\n\n📍 Status: ${config.is_active ? '🟢 Running' : '⏸️ Paused'}\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n` +
     `🔐 Wallet: \`${config.dev_wallet_public}\`${balanceLine}\n💎 Your token: \`${short(config.source_token_address)}\`\n` +
     `💰 Fees: ${FEE_SOURCES[config.fee_source]?.label || config.fee_source}\n${modeLine(config)}\n` +
-    `💼 Split: ${splitLabel(config)}${lastLine}\n\n📈 Dashboard: ${dashboardLink(config)}\n🔎 ${explorerAddress(config.dev_wallet_public)}`,
+    `💼 Policy: ${splitLabel(config)}${lastLine}\n\n📈 Dashboard: ${dashboardLink(config)}\n🔎 ${explorerAddress(config.dev_wallet_public)}`,
     keyboards.statusKeyboard()
   );
   if (ctx.callbackQuery) await ctx.answerCbQuery();
@@ -483,7 +484,7 @@ export async function handleSettings(ctx) {
   if (!config) { if (ctx.callbackQuery) await ctx.answerCbQuery('No config yet.'); return ctx.replyWithMarkdown('You have no bot yet.', keyboards.welcomeKeyboard()); }
   await edit(ctx,
     `⚙️ *Settings*\n\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n${modeLine(config)}\n🏅 Loyalty: ${loyaltyLabel(config)}\n` +
-    `💼 Split: ${splitLabel(config)}\n📍 ${config.is_active ? '🟢 Running' : '⏸️ Paused'}`,
+    `💼 Policy: ${splitLabel(config)}\n📍 ${config.is_active ? '🟢 Running' : '⏸️ Paused'}`,
     keyboards.settingsKeyboard(config)
   );
 }
@@ -559,17 +560,48 @@ export async function handleBasketSelection(ctx, key) {
 function splitText(config) {
   const s = effectiveSplit(config);
   const asset = config.treasury_asset ? rewardLabel(config.treasury_asset) : 'SPY (default)';
+  const inKind = (config.payout_mode || 'in_kind') !== 'convert';
   return (
-    `💼 *Fee split and treasury*\n\n` +
-    `Each cycle's ETH is cut three ways:\n🎁 *Holders*: the dividend\n🔥 *Burn*: buys your own token and sends it to the dead address\n🏦 *Treasury*: buys a stock and sends it to your treasury address. Your token gets a real balance sheet, and the dashboard publishes its book value per token.\n\n` +
-    `Current: *${splitLabel(config)}*\n🏦 Treasury: ${config.treasury_address ? `\`${config.treasury_address}\`` : '_not set (treasury share goes to holders until you set one)_'}\n📈 Treasury asset: ${asset}` +
-    (s.treasury > 0 && !config.treasury_address ? '\n\n⚠️ Set a treasury address to activate the treasury share.' : '')
+    `💼 *Dividend policy*\n\n` +
+    `Your launchpad pays you in stocks. Each cycle, everything that landed in the dev wallet is split:\n` +
+    `🎁 *Holders*: the payout ratio, the dividend itself\n👤 *You*: what you keep, sent to your payout address\n🔥 *Burn*: buys your own token and burns it\n🏦 *Treasury*: retained earnings, stocks kept in your treasury wallet (book value published on the dashboard)\n\n` +
+    `${inKind ? '📦 Stocks are paid *in kind*: NVDA fees become NVDA dividends, no swap.' : '🔁 Stocks are *converted* to your chosen reward before the payout.'} ETH fees are converted to the reward.\n\n` +
+    `Current: *${splitLabel(config)}*\n👤 Payout address: ${config.creator_address ? `\`${config.creator_address}\`` : '_not set (your share goes to holders until you set one)_'}\n` +
+    `🏦 Treasury: ${config.treasury_address ? `\`${config.treasury_address}\`` : '_not set (treasury share goes to holders until you set one)_'}\n📈 Treasury asset: ${asset}` +
+    (s.treasury > 0 && !config.treasury_address ? '\n\n⚠️ Set a treasury address to activate the treasury share.' : '') +
+    (Number(config.split_creator_bps) > 0 && !config.creator_address ? '\n\n⚠️ Set your payout address to activate your share.' : '')
   );
 }
 
 function currentPresetKey(config) {
-  const s = effectiveSplit({ ...config, treasury_address: config.treasury_address || '0x0000000000000000000000000000000000000001' });
-  return `${s.holders / 100}-${s.burn / 100}-${s.treasury / 100}`;
+  const s = effectiveSplit({ ...config, treasury_address: config.treasury_address || '0x0000000000000000000000000000000000000001', creator_address: config.creator_address || '0x0000000000000000000000000000000000000001' });
+  return `${s.holders / 100}-${s.creator / 100}-${s.burn / 100}-${s.treasury / 100}`;
+}
+
+export async function handleCreatorAddressPrompt(ctx) {
+  const { user, config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  sessions.set(ctx.from.id, { userId: user.id, step: 'creator_address', data: { configId: config.id } });
+  await edit(ctx, `👤 *Your payout address*\n\nWhere your share of the fees goes each cycle (a wallet you control, *not* the dev wallet, or it would be paid out again next cycle). Send \`off\` to clear it.`, keyboards.cancelKeyboard());
+}
+
+async function handleCreatorAddressInput(ctx, session, text) {
+  const t = text.trim();
+  let updated;
+  if (/^off$/i.test(t)) updated = await db.updateBotConfigCreatorAddress(session.data.configId, null);
+  else if (!isAddress(t)) return ctx.replyWithMarkdown('❌ Not a valid 0x address. Try again, or send `off`.', keyboards.cancelKeyboard());
+  else updated = await db.updateBotConfigCreatorAddress(session.data.configId, t);
+  sessions.delete(ctx.from.id);
+  await reschedule(updated);
+  await ctx.replyWithMarkdown(splitText(updated), keyboards.splitKeyboard(updated, SPLIT_PRESETS, currentPresetKey(updated)));
+}
+
+export async function handleTogglePayoutMode(ctx) {
+  const { config } = await getUserConfig(ctx.from.id);
+  if (!config) return ctx.answerCbQuery('No config found.');
+  const updated = await db.updateBotConfigPayoutMode(config.id, (config.payout_mode || 'in_kind') === 'convert' ? 'in_kind' : 'convert');
+  await reschedule(updated);
+  await edit(ctx, splitText(updated), keyboards.splitKeyboard(updated, SPLIT_PRESETS, currentPresetKey(updated)));
 }
 
 export async function handleSplitMenu(ctx) {
@@ -583,7 +615,7 @@ export async function handleSplitPreset(ctx, key) {
   if (!config) return ctx.answerCbQuery('No config found.');
   const p = SPLIT_PRESETS.find((x) => x.key === key);
   if (!p) return ctx.answerCbQuery('Unknown split.');
-  const updated = await db.updateBotConfigSplit(config.id, p.holders, p.burn, p.treasury);
+  const updated = await db.updateBotConfigSplit(config.id, p.holders, p.creator, p.burn, p.treasury);
   await reschedule(updated);
   await edit(ctx, splitText(updated), keyboards.splitKeyboard(updated, SPLIT_PRESETS, currentPresetKey(updated)));
 }

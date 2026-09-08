@@ -49,7 +49,9 @@ export function initBot() {
   bot.action('loyalty', commands.handleLoyaltyMenu);
   bot.action(/^loy_(toggle|min|ramp|max|reset)$/, (ctx) => commands.handleLoyaltySetting(ctx, ctx.match[1]));
   bot.action('split', commands.handleSplitMenu);
-  bot.action(/^split_(\d+-\d+-\d+)$/, (ctx) => commands.handleSplitPreset(ctx, ctx.match[1]));
+  bot.action(/^split_(\d+-\d+-\d+-\d+)$/, (ctx) => commands.handleSplitPreset(ctx, ctx.match[1]));
+  bot.action('creator_address', commands.handleCreatorAddressPrompt);
+  bot.action('payout_mode', commands.handleTogglePayoutMode);
   bot.action('treasury_address', commands.handleTreasuryAddressPrompt);
   bot.action('treasury_asset', commands.handleTreasuryAssetPrompt);
   bot.action(/^tasset_(.+)$/, (ctx) => commands.handleTreasuryAssetSelection(ctx, ctx.match[1]));

@@ -30,7 +30,7 @@ export function settingsKeyboard(config) {
     [Markup.button.callback('📈 Change reward', 'change_target')],
     [Markup.button.callback('🎛️ Reward mode', 'reward_mode')],
     [Markup.button.callback(config.loyalty_enabled ? '🏅 Loyalty rewards: ON' : '🏅 Loyalty rewards', 'loyalty')],
-    [Markup.button.callback('💼 Fee split and treasury', 'split')],
+    [Markup.button.callback('💼 Dividend policy', 'split')],
     [Markup.button.callback('⏱️ Schedule', 'change_interval')],
     [hours],
     [toggle],
@@ -39,11 +39,14 @@ export function settingsKeyboard(config) {
   ]);
 }
 
-/** Fee split submenu: presets plus treasury address and asset. */
+/** Dividend policy submenu: payout presets, payout address, treasury, in-kind vs convert. */
 export function splitKeyboard(config, presets, currentKey) {
   const rows = presets.map((p) => [Markup.button.callback(`${p.key === currentKey ? '✅ ' : ''}${p.label}`, `split_${p.key}`)]);
-  rows.push([Markup.button.callback(config.treasury_address ? `🏦 Treasury address: ${config.treasury_address.slice(0, 6)}…${config.treasury_address.slice(-4)}` : '🏦 Set treasury address', 'treasury_address')]);
+  const shortAddr = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+  rows.push([Markup.button.callback(config.creator_address ? `👤 Your payout address: ${shortAddr(config.creator_address)}` : '👤 Set your payout address', 'creator_address')]);
+  rows.push([Markup.button.callback(config.treasury_address ? `🏦 Treasury address: ${shortAddr(config.treasury_address)}` : '🏦 Set treasury address', 'treasury_address')]);
   rows.push([Markup.button.callback('📈 Treasury asset (default SPY)', 'treasury_asset')]);
+  rows.push([Markup.button.callback((config.payout_mode || 'in_kind') === 'convert' ? '🔁 Stocks: convert to the reward (switch to in kind)' : '📦 Stocks: paid in kind (switch to convert)', 'payout_mode')]);
   rows.push([Markup.button.callback('⬅️ Back', 'settings')]);
   return Markup.inlineKeyboard(rows);
 }

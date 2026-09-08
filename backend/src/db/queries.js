@@ -69,10 +69,12 @@ export const updateBotConfigDestination = (id, destination) => updateConfig(id, 
 export const updateBotConfigMarketHours = (id, flag) => updateConfig(id, 'market_hours_only', flag);
 export const advancePortfolioCursor = (id, cursor) => updateConfig(id, 'portfolio_cursor', cursor);
 
-export const updateBotConfigSplit = (id, holders, burn, treasury) => pool
-  .query(`UPDATE bot_configs SET split_holders_bps = $1, split_burn_bps = $2, split_treasury_bps = $3,
-          destination = CASE WHEN $2 = 10000 THEN 'burn' ELSE 'holders' END, updated_at = NOW() WHERE id = $4 RETURNING *`, [holders, burn, treasury, id])
+export const updateBotConfigSplit = (id, holders, creator, burn, treasury) => pool
+  .query(`UPDATE bot_configs SET split_holders_bps = $1, split_creator_bps = $2, split_burn_bps = $3, split_treasury_bps = $4,
+          destination = CASE WHEN $3 = 10000 THEN 'burn' ELSE 'holders' END, updated_at = NOW() WHERE id = $5 RETURNING *`, [holders, creator, burn, treasury, id])
   .then((r) => r.rows[0]);
+export const updateBotConfigCreatorAddress = (id, address) => updateConfig(id, 'creator_address', address ? address.toLowerCase() : null);
+export const updateBotConfigPayoutMode = (id, mode) => updateConfig(id, 'payout_mode', mode === 'convert' ? 'convert' : 'in_kind');
 export const updateBotConfigTreasuryAddress = (id, address) => updateConfig(id, 'treasury_address', address ? address.toLowerCase() : null);
 export const updateBotConfigTreasuryAsset = (id, address) => updateConfig(id, 'treasury_asset', address ? address.toLowerCase() : null);
 export async function insertTreasuryLedger({ configId, token, amount, ethSpent, txHash }) {
@@ -125,8 +127,9 @@ export async function createExecutionLog(log) {
     `INSERT INTO execution_logs (
        config_id, claimed_eth_wei, bought_token_amount, holder_count, total_airdropped, status, error_message,
        reward_token_used, reward_mode_used, destination, swap_tx, claim_tx,
-       burn_amount, burn_tx, treasury_amount, treasury_token, treasury_tx
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
+       burn_amount, burn_tx, treasury_amount, treasury_token, treasury_tx,
+       cycle_key, asset_token, asset_amount, creator_amount, creator_tx
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING *`,
     [
       log.configId, (log.claimedEthWei ?? 0n).toString(), (log.boughtTokenAmount ?? 0n).toString(), log.holderCount || 0,
       (log.totalAirdropped ?? 0n).toString(), log.status, log.errorMessage || null,
@@ -134,6 +137,8 @@ export async function createExecutionLog(log) {
       log.swapTx || null, log.claimTx || null,
       (log.burnAmount ?? 0n).toString(), log.burnTx || null, (log.treasuryAmount ?? 0n).toString(),
       log.treasuryToken ? log.treasuryToken.toLowerCase() : null, log.treasuryTx || null,
+      log.cycleKey || null, log.assetToken ? log.assetToken.toLowerCase() : null, (log.assetAmount ?? 0n).toString(),
+      (log.creatorAmount ?? 0n).toString(), log.creatorTx || null,
     ]
   );
   return result.rows[0];

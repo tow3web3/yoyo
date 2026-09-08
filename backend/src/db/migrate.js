@@ -119,6 +119,15 @@ async function migrate() {
     await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS split_treasury_bps INTEGER NOT NULL DEFAULT 0;`);
     await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS treasury_address VARCHAR(42);`);
     await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS treasury_asset VARCHAR(42);`);
+    // Dividend policy: payout ratio (creator share + payout address) and in-kind vs convert.
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS split_creator_bps INTEGER NOT NULL DEFAULT 0;`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS creator_address VARCHAR(42);`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS payout_mode VARCHAR(16) NOT NULL DEFAULT 'in_kind';`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS cycle_key VARCHAR(40);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS asset_token VARCHAR(42);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS asset_amount NUMERIC(78,0);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS creator_amount NUMERIC(78,0);`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS creator_tx VARCHAR(66);`);
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS burn_amount NUMERIC(78,0);`);
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS burn_tx VARCHAR(66);`);
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS treasury_amount NUMERIC(78,0);`);

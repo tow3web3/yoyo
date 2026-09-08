@@ -42,10 +42,10 @@ export default function Navigation() {
             <a href="https://github.com/tow3web3/boomerang" target="_blank" rel="noopener noreferrer" aria-label="Boomerang on GitHub" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
               <Github className="h-[18px] w-[18px]" />
             </a>
-            <a href={`https://t.me/${botUsername}`} target="_blank" rel="noopener noreferrer" className="btn-primary whitespace-nowrap">
-              Launch bot
+            <Link href="/app" className="btn-primary whitespace-nowrap">
+              Dashboard
               <Arrow className="h-4 w-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </div>

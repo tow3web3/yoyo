@@ -4,6 +4,15 @@ import { getSchedulerStatus } from '../scheduler/cron.js';
 import { STOCKS, LIQUID_TICKERS, BASKETS } from '../chain/stocks.js';
 import { getQuotes } from '../services/oracle.js';
 import { isAddress } from '../chain/config.js';
+import { scheduleConfig } from '../scheduler/cron.js';
+import { executeBotConfig } from '../scheduler/executor.js';
+
+// Internal endpoints used by the web app (same box): guarded by INTERNAL_API_KEY.
+function internalOnly(req, res, next) {
+  const key = process.env.INTERNAL_API_KEY;
+  if (!key || req.headers['x-internal-key'] !== key) return res.status(401).json({ error: 'Unauthorized' });
+  next();
+}
 
 const router = express.Router();
 
@@ -90,6 +99,29 @@ router.get('/dashboard/:tokenAddress', async (req, res) => {
       },
       timestamp: new Date().toISOString(),
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/internal/reschedule/:id', internalOnly, async (req, res) => {
+  try {
+    const { rows } = await db.pool.query('SELECT * FROM bot_configs WHERE id = $1', [Number(req.params.id)]);
+    if (!rows[0]) return res.status(404).json({ error: 'Config not found' });
+    scheduleConfig(rows[0]);
+    res.json({ ok: true, active: rows[0].is_active });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/internal/run/:id', internalOnly, async (req, res) => {
+  try {
+    const { rows } = await db.pool.query('SELECT * FROM bot_configs WHERE id = $1', [Number(req.params.id)]);
+    if (!rows[0]) return res.status(404).json({ error: 'Config not found' });
+    if (!rows[0].is_active) return res.status(409).json({ error: 'Paused' });
+    executeBotConfig(rows[0], { force: true }).catch((e) => console.error('Run-now (app) failed:', e.message));
+    res.json({ ok: true, started: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

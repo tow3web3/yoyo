@@ -128,6 +128,17 @@ async function migrate() {
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS asset_amount NUMERIC(78,0);`);
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS creator_amount NUMERIC(78,0);`);
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS creator_tx VARCHAR(66);`);
+    // Web app accounts: a user may exist with a wallet only (no Telegram yet).
+    await pool.query(`ALTER TABLE users ALTER COLUMN telegram_id DROP NOT NULL;`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_address VARCHAR(42) UNIQUE;`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS link_code VARCHAR(16);`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP;`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS login_nonces (
+        nonce VARCHAR(64) PRIMARY KEY,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS burn_amount NUMERIC(78,0);`);
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS burn_tx VARCHAR(66);`);
     await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS treasury_amount NUMERIC(78,0);`);

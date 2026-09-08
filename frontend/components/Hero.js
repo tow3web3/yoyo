@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Arrow } from './Icons';
 import CopyCA from './CopyCA';
 import StockLogo from './StockLogo';
@@ -104,6 +105,7 @@ export default function Hero() {
                 Start on Telegram
                 <Arrow className="h-4 w-4" />
               </a>
+              <Link href="/app" className="btn-ink text-base">Open the dashboard</Link>
               <a href="#how" className="btn-ghost text-base">How it works</a>
             </div>
 

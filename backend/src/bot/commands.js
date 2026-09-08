@@ -72,6 +72,7 @@ export async function handleStart(ctx) {
 
   // Deep links: t.me/<bot>?start=l_<code> (from a launchpad) or ?start=t_<token address>.
   const payload = String(ctx.startPayload || '').trim();
+  if (payload && /^w_[A-Za-z0-9]{6,16}$/.test(payload)) return linkWebAccount(ctx, payload.slice(2));
   if (payload && !config) {
     if (/^l_[A-Za-z0-9]{6,16}$/.test(payload)) return startFromLaunchLink(ctx, payload.slice(2));
     if (/^t_0x[0-9a-fA-F]{40}$/.test(payload)) return startFromToken(ctx, payload.slice(2), null);
@@ -154,6 +155,27 @@ export async function handleStocks(ctx) {
 }
 
 // ---------- deep links ----------
+
+/** The web app issued a link code: attach this Telegram account to that user (receipts, alerts, same config). */
+async function linkWebAccount(ctx, code) {
+  const telegramId = ctx.from.id;
+  const { rows } = await db.pool.query('SELECT * FROM users WHERE link_code = $1', [code]);
+  const webUser = rows[0];
+  if (!webUser) return ctx.replyWithMarkdown('❌ This link code is unknown or already used. Generate a new one in the web app.', keyboards.welcomeKeyboard());
+  const { rows: mine } = await db.pool.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
+  const tgUser = mine[0];
+  if (tgUser && tgUser.id !== webUser.id) {
+    const { rows: cfg } = await db.pool.query('SELECT id FROM bot_configs WHERE user_id = $1', [tgUser.id]);
+    if (cfg.length) return ctx.replyWithMarkdown('⚠️ This Telegram account already runs a Boomerang. Delete it first (Settings) before linking a web account.', keyboards.welcomeKeyboard());
+    await db.pool.query('DELETE FROM users WHERE id = $1', [tgUser.id]);
+  }
+  await db.pool.query('UPDATE users SET telegram_id = $1, username = $2, link_code = NULL WHERE id = $3', [telegramId, ctx.from.username || null, webUser.id]);
+  const { config } = await getUserConfig(telegramId);
+  await ctx.replyWithMarkdown(
+    `🔗 *Linked.* This Telegram account now controls the same Boomerang as your web dashboard${config ? ` (\`${short(config.source_token_address)}\`)` : ''}. Alerts and receipts arrive here.`,
+    config ? keyboards.dashboardKeyboard(config) : keyboards.welcomeKeyboard()
+  );
+}
 
 async function startFromLaunchLink(ctx, code) {
   const link = await db.getLaunchLink(code);

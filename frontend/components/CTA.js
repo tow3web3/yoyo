@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Arrow } from './Icons';
 
 export default function CTA() {
@@ -11,10 +12,10 @@ export default function CTA() {
         <h2 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Give your memecoin a dividend policy.</h2>
         <p className="mt-2 text-sm text-white/70">Set it up in under 2 minutes. No code: pick the payout ratio, the schedule, and go.</p>
       </div>
-      <a href={`https://t.me/${botUsername}`} target="_blank" rel="noopener noreferrer" className="btn-primary relative shrink-0">
-        Launch Boomerang
-        <Arrow className="h-4 w-4" />
-      </a>
+      <div className="relative flex shrink-0 flex-wrap gap-2">
+        <Link href="/app" className="btn-primary">Open the dashboard <Arrow className="h-4 w-4" /></Link>
+        <a href={`https://t.me/${botUsername}`} target="_blank" rel="noopener noreferrer" className="btn-ghost">Or use Telegram</a>
+      </div>
     </div>
   );
 }

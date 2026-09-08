@@ -64,3 +64,31 @@ export async function stockOracle(ticker) {
   if (!stock?.price || !eth?.price) return null;
   return { stockUsd: stock.price, ethUsd: eth.price, changePct: stock.changePct };
 }
+
+/**
+ * Fair-value oracle for any other ERC-20 (a memecoin, a partner token) from its
+ * DexScreener price on Robinhood Chain. Same shape as stockOracle so the swap
+ * guard treats both alike. Null when DexScreener has no pair yet.
+ */
+export async function tokenOracle(address) {
+  if (!address) return null;
+  const key = `dex:${address.toLowerCase()}`;
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.ts < TTL) return hit.quote;
+  try {
+    const [res, eth] = await Promise.all([
+      fetch(`https://api.dexscreener.com/tokens/v1/robinhood/${address}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) }),
+      getQuote('ETH-USD'),
+    ]);
+    if (!res.ok || !eth?.price) return null;
+    const pairs = (await res.json()) || [];
+    const best = pairs.filter((p) => p?.baseToken?.address?.toLowerCase() === address.toLowerCase() && Number(p.priceUsd) > 0)
+      .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
+    if (!best) return null;
+    const quote = { stockUsd: Number(best.priceUsd), ethUsd: eth.price, changePct: best.priceChange?.h24 ?? null, liquidityUsd: best.liquidity?.usd || 0, dex: best.dexId || null };
+    cache.set(key, { quote, ts: Date.now() });
+    return quote;
+  } catch {
+    return null;
+  }
+}

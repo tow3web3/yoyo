@@ -20,7 +20,7 @@ import { swapEthForToken } from '../services/swap.js';
 import { getTokenHolders, applyLoyalty, loyaltyLabel } from '../services/holders.js';
 import { distributeTokens, distributeEth, calculateDistributions } from '../services/airdrop.js';
 import { resolveReward, describeReward } from '../services/rewards.js';
-import { stockOracle } from '../services/oracle.js';
+import { stockOracle, tokenOracle } from '../services/oracle.js';
 import { isMarketOpen, scheduleLabel } from '../services/schedule.js';
 import { sendNotification } from '../bot/telegram.js';
 
@@ -136,7 +136,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
       // Holders leg. ETH converts to the reward (guarded); a stock goes out as is.
       let amountToDistribute = holdersAmount;
       if (asset.isNative && !reward.isNative) {
-        const oracle = reward.isStock ? await stockOracle(reward.ticker) : null;
+        const oracle = reward.isStock ? await stockOracle(reward.ticker) : await tokenOracle(reward.address);
         try {
           console.log(`   Buying ${reward.symbol} with ${formatEth(holdersAmount, 4)} ETH`);
           const swap = await swapEthForToken({ privateKey, token: reward.address, decimals: reward.decimals, amountWei: holdersAmount, slippageBps: config.slippage_bps || 150, oracle });

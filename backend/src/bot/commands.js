@@ -7,6 +7,8 @@ import {
 import { getStock, BASKETS, LIQUID_TICKERS, STOCKS } from '../chain/stocks.js';
 import { discoverPositions, FEE_SOURCES } from '../services/fees.js';
 import { REWARD_MODES } from '../services/rewards.js';
+import { quoteEthForToken } from '../services/swap.js';
+import { tokenOracle } from '../services/oracle.js';
 import { scheduleLabel } from '../services/schedule.js';
 import { loyaltyLabel } from '../services/holders.js';
 import { SPLIT_PRESETS, effectiveSplit, splitLabel } from '../services/treasury.js';
@@ -356,7 +358,7 @@ export async function handleFeeSourceSelection(ctx, source) {
   session.step = 'reward';
   await edit(ctx,
     `✅ Fee source: ${FEE_SOURCES[source].emoji} ${FEE_SOURCES[source].label}\n\n` +
-    `📈 *Step 4 of 5: the reward*\n\nWhat should holders receive? Pick a stock, ETH, or type any ticker (195 available) or token address.`,
+    `📈 *Step 4 of 5: the reward*\n\nWhat should holders receive? A stock (195 available), ETH, or *any token on Robinhood Chain*: paste its contract address and holders get paid in it, even another memecoin.`,
     keyboards.rewardKeyboard('reward', 'cancel')
   );
 }
@@ -370,7 +372,15 @@ async function resolveRewardInput(text) {
   if (isAddress(t)) {
     const meta = await readTokenMeta(t);
     if (!meta) throw new Error('No ERC-20 found at that address.');
-    return { address: t, label: `${meta.symbol} (${meta.name})` };
+    // Probe a route so the creator knows up front whether this token can actually be bought.
+    let liquidity = '';
+    try {
+      const oracle = await tokenOracle(t);
+      const quoted = await quoteEthForToken({ token: t, amountWei: 10n ** 15n, recipient: '0x000000000000000000000000000000000000dEaD', fairOut: null });
+      if (!quoted) liquidity = ' ⚠️ no Uniswap route found yet: holders would receive ETH until a pool exists';
+      else liquidity = ` · route ${quoted.route.label}${oracle?.liquidityUsd ? `, $${Math.round(oracle.liquidityUsd).toLocaleString('en-US')} liquidity` : ''}`;
+    } catch { liquidity = ''; }
+    return { address: t, label: `${meta.symbol} (${meta.name})${liquidity}` };
   }
   throw new Error(`Unknown ticker "${t}". Send one of the 195 Robinhood stock tickers, ETH, or a token address.`);
 }
@@ -380,7 +390,7 @@ export async function handleRewardSelection(ctx, pick) {
   if (!session || session.step !== 'reward') return ctx.answerCbQuery('Send /setup to start again.');
   if (pick === 'custom') {
     session.step = 'reward_custom';
-    return edit(ctx, `✍️ Send a *ticker* (like NVDA, SPY, GLD), *ETH*, or a *token address*.`, keyboards.cancelKeyboard());
+    return edit(ctx, `✍️ Send a *ticker* (like NVDA, SPY, GLD), *ETH*, or *any token contract address* (0x…). Fees are swapped into it on Uniswap each cycle; another memecoin works.`, keyboards.cancelKeyboard());
   }
   const r = await resolveRewardInput(pick);
   session.data.targetToken = r.address;

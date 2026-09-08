@@ -72,7 +72,7 @@ export function rewardKeyboard(prefix = 'reward', backAction = 'cancel') {
   for (let i = 0; i < FEATURED_TICKERS.length; i += 3) {
     rows.push(FEATURED_TICKERS.slice(i, i + 3).map((t) => Markup.button.callback(`📈 ${t}`, `${prefix}_${t}`)));
   }
-  rows.push([Markup.button.callback('⟠ ETH', `${prefix}_ETH`), Markup.button.callback('✍️ Type a ticker or address', `${prefix}_custom`)]);
+  rows.push([Markup.button.callback('⟠ ETH', `${prefix}_ETH`), Markup.button.callback('✍️ Any ticker or token CA', `${prefix}_custom`)]);
   rows.push([Markup.button.callback(backAction === 'cancel' ? '❌ Cancel' : '⬅️ Back', backAction)]);
   return Markup.inlineKeyboard(rows);
 }

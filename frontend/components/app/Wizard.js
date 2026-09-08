@@ -4,6 +4,7 @@ import { useState } from 'react';
 import StockLogo from '../StockLogo';
 import PolicyEditor from './PolicyEditor';
 import { RewardEditor, ScheduleEditor, LoyaltyEditor } from './Editors';
+import { getStock } from '../../lib/stocks';
 import { Button, Field, inputCls, useToast, parseSchedule, shortAddr } from './ui';
 
 const STEPS = ['Token', 'Dev wallet', 'Policy', 'Reward & schedule', 'Record date', 'Review'];
@@ -153,7 +154,7 @@ export default function Wizard({ onCreated }) {
                 ['Dev wallet', wallet.mode === 'generate' ? 'Created for you' : 'Imported'],
                 ['Policy', `${policy.holders}% holders · ${policy.creator}% you · ${policy.burn}% burn · ${policy.treasury}% treasury`],
                 ['Stock fees', policy.payoutMode === 'convert' ? 'Converted to the reward' : 'Paid in kind'],
-                ['ETH fees', reward.rewardMode === 'fixed' ? `Converted to ${reward.reward === 'ETH' ? 'ETH (no conversion)' : reward.reward}` : reward.rewardMode],
+                ['ETH fees', reward.rewardMode === 'fixed' ? `Converted to ${reward.reward === 'ETH' ? 'ETH (no conversion)' : getStock(reward.reward)?.ticker || `${reward.reward.slice(0, 6)}…${reward.reward.slice(-4)} (custom token)`}` : reward.rewardMode],
                 ['Schedule', `${schedule.schedule.replace('interval:', 'every ').replace('_', ' ')}${schedule.marketHoursOnly ? ', market hours only' : ''}`],
                 ['Record date', loyalty.enabled ? `Loyalty 1x to ${(loyalty.maxBps / 10000).toFixed(1)}x over ${loyalty.rampDays}d, min hold ${loyalty.minHoldHours}h` : 'Pro-rata by balance'],
                 ['Fee source', schedule.feeSource === 'univ3' ? 'Uniswap V3 LP fees' : 'Wallet balance'],

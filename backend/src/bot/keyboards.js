@@ -98,7 +98,7 @@ export function basketKeyboard() {
 
 export function feeSourceKeyboard() {
   return Markup.inlineKeyboard([
-    [Markup.button.callback('💼 Fees land in my wallet (ETH)', 'source_wallet')],
+    [Markup.button.callback('💼 Fees land in my wallet (stocks or ETH)', 'source_wallet')],
     [Markup.button.callback('🦄 Uniswap V3 LP fees', 'source_univ3')],
     [Markup.button.callback('❌ Cancel', 'cancel')],
   ]);

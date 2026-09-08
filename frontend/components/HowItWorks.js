@@ -1,9 +1,9 @@
-import { Coins, Swap, Gift } from './Icons';
+import { Coins, Scale, Gift } from './Icons';
 
 const STEPS = [
-  { n: '01', Icon: Coins, title: 'Collect the fees', body: 'Your fees arrive as ETH in the dev wallet, or sit inside your Uniswap V3 position. Boomerang gathers them every cycle.', tile: 'bg-hood-100 text-hood-700', ring: 'hover:border-hood-300' },
-  { n: '02', Icon: Swap, title: 'Buy the stock', body: 'That ETH is swapped into the reward on Uniswap V4, V3 or V2, best route wins. Stock swaps only execute above 90% of the real market price.', tile: 'bg-gold-100 text-gold-700', ring: 'hover:border-gold-300' },
-  { n: '03', Icon: Gift, title: 'Pay the dividend', body: 'The stock is sent to every holder, proportional to their balance. Or burned, if you run a buyback and burn instead.', tile: 'bg-tile text-ink', ring: 'hover:border-ink' },
+  { n: '01', Icon: Coins, title: 'Sweep the fees', body: 'Your launchpad pays you in stock tokens (or ETH). Every cycle Boomerang sweeps the dev wallet: all 195 Robinhood Stock Tokens and ETH above a small gas reserve.', tile: 'bg-hood-100 text-hood-700', ring: 'hover:border-hood-300' },
+  { n: '02', Icon: Scale, title: 'Apply the policy', body: 'Payout ratio to holders, the share you keep, buyback and burn, retained earnings into a stock treasury. Loyalty sets the record date: who qualifies and with what weight.', tile: 'bg-gold-100 text-gold-700', ring: 'hover:border-gold-300' },
+  { n: '03', Icon: Gift, title: 'Pay in kind', body: 'NVDA fees become NVDA dividends, pro-rata, no swap. ETH fees are converted to the stock you chose, with a fair-price guard. Receipts, statements and yield follow automatically.', tile: 'bg-tile text-ink', ring: 'hover:border-ink' },
 ];
 
 export default function HowItWorks() {
@@ -11,7 +11,7 @@ export default function HowItWorks() {
     <div id="how" className="scroll-mt-20">
       <div className="mb-8">
         <div className="eyebrow mb-2">How it works</div>
-        <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Three steps, fully automated</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Three steps, every cycle</h2>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {STEPS.map(({ n, Icon, title, body, tile, ring }) => (

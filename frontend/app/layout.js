@@ -8,23 +8,23 @@ const jetbrains = JetBrains_Mono({ subsets: ['latin'], weight: ['500', '600'], v
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://boomerang.fun'
 const DESCRIPTION =
-  'Boomerang turns your token fees on Robinhood Chain into real stock dividends: NVDA, TSLA, SPY, GLD and 190 more Robinhood Stock Tokens, paid to every holder on schedule.'
+  'Launchpads on Robinhood Chain pay creators in real stocks. Boomerang gives your memecoin a dividend policy: payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury with a published book value, and a yield anyone can compare.'
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Boomerang: your fees come back as stocks',
+  title: 'Boomerang: the dividend policy for memecoins',
   description: DESCRIPTION,
-  keywords: 'robinhood chain, stock tokens, dividends, telegram bot, airdrop, memecoin, NVDA, TSLA',
+  keywords: 'robinhood chain, stock tokens, dividend policy, payout ratio, memecoin dividends, telegram bot, NVDA, SPY, GLD',
   icons: { icon: '/newlogopng.png', apple: '/newlogopng.png' },
   openGraph: {
-    title: 'Boomerang: your fees come back as stocks',
+    title: 'Boomerang: the dividend policy for memecoins',
     description: DESCRIPTION,
     url: SITE_URL,
     siteName: 'Boomerang',
     images: [{ url: '/bannier.png', width: 1200, height: 630, alt: 'Boomerang' }],
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Boomerang: your fees come back as stocks', description: DESCRIPTION, images: ['/bannier.png'] },
+  twitter: { card: 'summary_large_image', title: 'Boomerang: the dividend policy for memecoins', description: DESCRIPTION, images: ['/bannier.png'] },
 }
 
 export default function RootLayout({ children }) {

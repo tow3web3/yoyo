@@ -86,12 +86,13 @@ export async function handleStart(ctx) {
   }
 
   await ctx.replyWithMarkdown(
-    `🪃 *Boomerang on Robinhood Chain*\n\n` +
-    `Your fees come back to your holders as *real stocks*.\n\n` +
-    `Every cycle, fully automated:\n` +
-    `💰 Collect your token's fees (ETH in your wallet, or Uniswap V3 LP fees)\n` +
-    `📈 Buy a Robinhood Stock Token: NVDA, TSLA, AAPL, GLD, SPY... 195 to choose from\n` +
-    `🎁 Pay it to every holder, pro-rata. A dividend for your memecoin.\n\n` +
+    `🪃 *Boomerang: the dividend policy for your memecoin*\n\n` +
+    `Your launchpad pays you in real stocks. Boomerang decides what happens next, every cycle:\n` +
+    `🎁 *Payout ratio*: a share to your holders, paid in kind (NVDA fees become NVDA dividends)\n` +
+    `👤 *Your share*: sent to your own payout address\n` +
+    `🔥 *Buyback*: buy your token and burn it\n` +
+    `🏦 *Retained earnings*: a stock treasury with a published book value\n` +
+    `🏅 *Record date*: loyalty weighting, snipers earn less\n\n` +
     `Ready when you are 👇`,
     keyboards.welcomeKeyboard()
   );
@@ -109,8 +110,8 @@ export async function handleHelp(ctx) {
   await edit(ctx,
     `❓ *Boomerang, help*\n\n` +
     `*Commands*\n/start: open the menu\n/setup: configure your bot\n/status: view your bot\n/stocks: the stock universe\n/help: this message\n\n` +
-    `*The loop*\nOn schedule, Boomerang takes the ETH fees in your dev wallet (or collects your Uniswap V3 LP fees), buys the reward on Uniswap, ` +
-    `and pays it to holders of your token in proportion to what they hold.\n\n` +
+    `*The loop*\nOn schedule, Boomerang sweeps the dev wallet (stock tokens and ETH, plus Uniswap V3 LP fees), applies your dividend policy ` +
+    `(payout ratio, your share, buyback, treasury) and pays holders in proportion to what they hold, weighted by loyalty if enabled. Stocks go out in kind; ETH is converted to your reward.\n\n` +
     `*Modes*\n🎯 Fixed: one stock (or ETH, or any token)\n🎰 Roulette: a random liquid stock each cycle\n🚀 Top Gainer: the day's best stock\n📊 Portfolio: rotate through a basket\n🗳️ Community Vote: holders choose\n🏅 Loyalty: weight dividends by holding time, snipers earn less\n\n` +
     `*Good to know*\n🔐 Your key is AES-256 encrypted, decrypted only at run time\n🛡️ Swaps are guarded against the real market price (Yahoo Finance)\n⏸️ Pause, resume or delete anytime`,
     keyboards.backToMenuKeyboard()
@@ -120,9 +121,9 @@ export async function handleHelp(ctx) {
 export async function handleHowItWorks(ctx) {
   await edit(ctx,
     `📖 *How Boomerang works*\n\n` +
-    `1️⃣ *Collect*: your token's fees arrive as ETH in the dev wallet, or sit in your Uniswap V3 position. Boomerang gathers them every cycle.\n\n` +
-    `2️⃣ *Buy*: that ETH is swapped into the reward on Uniswap (V4, V3 or V2, best route). For stocks, the swap only executes if the pool delivers at least 90% of the real market price.\n\n` +
-    `3️⃣ *Pay*: the tokens are sent to your holders, proportional to their balance. Or burned, if you prefer a buyback and burn.\n\n` +
+    `1️⃣ *Sweep*: your launchpad pays you in stock tokens (or ETH). Every cycle Boomerang sweeps the dev wallet: all 195 Robinhood Stock Tokens and ETH above the gas reserve.\n\n` +
+    `2️⃣ *Apply the policy*: payout ratio to holders, the share you keep, buyback and burn, retained earnings into the treasury. Loyalty sets the record date.\n\n` +
+    `3️⃣ *Pay in kind*: NVDA fees become NVDA dividends, pro-rata, no swap. ETH fees are converted to your chosen stock with a fair-price guard (at least 90% of the real market price).\n\n` +
     `Schedules: every 1 to 60 minutes, or once a day at the closing bell like a real dividend. 🪃`,
     keyboards.welcomeKeyboard()
   );
@@ -321,7 +322,7 @@ async function handleSourceTokenInput(ctx, session, address) {
   await ctx.replyWithMarkdown(
     `✅ Token: *${meta.name}* ($${meta.symbol})${positionsLine}\n\n` +
     `💰 *Step 3 of 5: where do your fees come from?*\n\n` +
-    `💼 *Wallet*: ${FEE_SOURCES.wallet.hint}\n🦄 *Uniswap V3*: ${FEE_SOURCES.univ3.hint}`,
+    `💼 *Wallet*: ${FEE_SOURCES.wallet.hint}\n🦄 *Uniswap V3*: ${FEE_SOURCES.univ3.hint}\n\n_Stock tokens in the wallet are always swept, whichever you pick._`,
     keyboards.feeSourceKeyboard()
   );
 }

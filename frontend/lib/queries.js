@@ -45,9 +45,11 @@ export async function getActivity(limit = 20) {
 export async function getActiveTokens() {
   const sql = getSql();
   return await sql`
-    SELECT bc.source_token_address AS address,
+    SELECT bc.id, bc.source_token_address AS address,
            bc.target_token_address AS reward_token,
            bc.reward_mode, bc.basket, bc.destination, bc.schedule_kind, bc.interval_minutes, bc.market_hours_only, bc.last_execution,
+           bc.split_holders_bps, bc.split_creator_bps, bc.split_burn_bps, bc.split_treasury_bps,
+           bc.treasury_address, bc.creator_address, bc.payout_mode, bc.loyalty_enabled, bc.loyalty_max_bps, bc.loyalty_ramp_days,
            COALESCE((SELECT COUNT(*) FROM execution_logs el WHERE el.config_id = bc.id AND el.status = 'success' AND el.holder_count > 0), 0)::int AS distributions
     FROM bot_configs bc
     WHERE bc.is_active = true

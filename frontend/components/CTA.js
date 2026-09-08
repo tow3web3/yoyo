@@ -8,8 +8,8 @@ export default function CTA() {
       <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-gold-400/15 blur-3xl" aria-hidden />
       <div className="relative">
         <div className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-hood-400">Ring the bell</div>
-        <h2 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Give your holders a dividend.</h2>
-        <p className="mt-2 text-sm text-white/70">Set it up in under 2 minutes. No code: pick the stock, the schedule, and go.</p>
+        <h2 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Give your memecoin a dividend policy.</h2>
+        <p className="mt-2 text-sm text-white/70">Set it up in under 2 minutes. No code: pick the payout ratio, the schedule, and go.</p>
       </div>
       <a href={`https://t.me/${botUsername}`} target="_blank" rel="noopener noreferrer" className="btn-primary relative shrink-0">
         Launch Boomerang

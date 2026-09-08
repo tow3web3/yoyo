@@ -27,7 +27,7 @@ export default function Navigation() {
             <a href="/#how" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">How it works</a>
             <Link href="/stocks" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">Stocks</Link>
             <a href="/#modes" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">Modes</a>
-            <a href="/#live" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">Live</a>
+            <a href="/#screener" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">Screener</a>
             <Link href="/wallet" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:text-ink">My dividends</Link>
             <Link href="/vote" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-hood-700 transition hover:text-hood-600">Vote</Link>
             <Link href="/missions" className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-gold-700 transition hover:text-gold-600">Missions</Link>

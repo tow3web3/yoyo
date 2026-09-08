@@ -2,10 +2,10 @@
 
 # Boomerang 🪃
 
-### Your fees come back as stocks.
+### The dividend policy for memecoins.
 
-**Boomerang turns your token's fees on Robinhood Chain into real stock dividends for your holders.**
-Collect, buy a Robinhood Stock Token, pay it out pro-rata, on schedule. Set it once on Telegram; your community watches it happen on a live public dashboard.
+**Launchpads on Robinhood Chain pay creators in real stocks. Boomerang decides what happens next.**
+A payout ratio to holders, paid in kind. A share you keep. Buybacks. Retained earnings in a stock treasury with a published book value. A record date that rewards real holders. A yield anyone can compare. Set it once on Telegram; your community watches it happen on a live public dashboard.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Robinhood Chain](https://img.shields.io/badge/Robinhood%20Chain-4663-00C805)](https://robinhoodchain.blockscout.com)
@@ -18,14 +18,14 @@ Collect, buy a Robinhood Stock Token, pay it out pro-rata, on schedule. Set it o
 
 ## What it does
 
-Robinhood Chain is the first chain where 195 real stocks and ETFs trade as plain ERC-20s (the official Robinhood Stock Tokens). Every launchpad on it pays creators their fees in ETH. Boomerang puts those fees to work:
+Robinhood Chain is the first chain where 195 real stocks and ETFs trade as plain ERC-20s (the official Robinhood Stock Tokens), and its launchpads pay creators their fees in those stocks. A memecoin with fees in NVDA is a company with revenue. Boomerang gives it a dividend policy, every cycle:
 
-1. **💰 Collects** the fees: ETH sitting in your dev wallet, or Uniswap V3 LP fees from the position you hold.
-2. **📈 Buys** a Robinhood Stock Token (NVDA, TSLA, SPY, GLD, any of the 195), ETH, or any token on the chain. Best route across Uniswap V4, V3 and V2.
-3. **🎁 Pays** it to every holder of your token, pro-rata. Or burns it.
+1. **💰 Sweeps** the dev wallet: every stock token balance (Multicall3, all 195) and ETH above a gas reserve, plus Uniswap V3 LP fees.
+2. **⚖️ Applies the policy**: payout ratio to holders, the share you keep (to your payout address), buyback and burn, retained earnings into a stock treasury.
+3. **🎁 Pays in kind**: stock fees go to holders as they are, pro-rata, weighted by loyalty. ETH fees are converted to the stock you chose (best route across Uniswap V4, V3 and V2, fair-price guarded).
 4. **♻️ Repeats** on your schedule: every 1 to 60 minutes, or once a day at the closing bell.
 
-A dividend for memecoins. Like a boomerang, **the fees always come back.**
+Like a boomerang, **the fees always come back.**
 
 ---
 

@@ -9,7 +9,7 @@ import {
 import { swapTokenForEth } from './swap.js';
 
 export const FEE_SOURCES = {
-  wallet: { label: 'Wallet balance', emoji: '💼', hint: 'Fees land in the dev wallet as ETH (any launchpad that pays creators directly).' },
+  wallet: { label: 'Wallet balance', emoji: '💼', hint: 'Fees land in the dev wallet as stock tokens or ETH (any launchpad that pays creators directly).' },
   univ3: { label: 'Uniswap V3 LP fees', emoji: '🦄', hint: 'Fees accrue in V3 liquidity positions held by the dev wallet. Boomerang collects them every cycle.' },
 };
 

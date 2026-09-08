@@ -72,30 +72,31 @@ export default function Hero() {
           <div>
             <div className="chip mb-5">
               <span className="h-1.5 w-1.5 rounded-full bg-hood-500" />
-              The dividend layer for Robinhood Chain
+              The dividend policy for Robinhood Chain
             </div>
 
             <h1 className="font-display text-5xl font-extrabold leading-[0.98] tracking-tight text-ink sm:text-6xl lg:text-7xl">
-              Pay your holders<br className="hidden sm:block" /> in{' '}
-              <span className="text-gradient">real stocks</span>.
+              Give your memecoin<br className="hidden sm:block" /> a{' '}
+              <span className="text-gradient">dividend policy</span>.
             </h1>
 
             <div className="mt-6 max-w-xl rounded-xl border border-line border-l-4 border-l-hood-500 bg-paper p-4 shadow-soft">
               <p className="text-[15px] leading-relaxed text-mut">
-                Your token earns fees in ETH.{' '}
-                <span className="font-semibold text-ink">Boomerang turns them into NVDA, TSLA, SPY, GLD, any of the 195 Robinhood Stock Tokens</span>{' '}
-                and pays them to every holder, pro-rata, on schedule. A dividend for memecoins.
+                Your launchpad pays you in real stocks.{' '}
+                <span className="font-semibold text-ink">Boomerang decides what happens next: a payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury.</span>{' '}
+                NVDA fees become NVDA dividends. On schedule, from Telegram.
               </p>
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-2 text-sm font-medium">
-              <span className="rounded-full border border-line bg-paper px-3 py-1 text-ink shadow-soft">Fees in ETH</span>
+              <span className="rounded-full border border-line bg-paper px-3 py-1 text-ink shadow-soft">Fees in stocks</span>
               <Arrow className="h-4 w-4 text-hood-500" />
-              <span className="rounded-full border border-line bg-paper px-3 py-1 text-ink shadow-soft">Stock bought</span>
+              <span className="rounded-full border border-line bg-paper px-3 py-1 text-ink shadow-soft">Policy applied</span>
               <Arrow className="h-4 w-4 text-hood-500" />
               <span className="rounded-full border border-hood-200 bg-hood-50 px-3 py-1 font-semibold text-hood-700 shadow-soft">Holders paid</span>
-              <span className="text-xs text-mut">or</span>
-              <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-orange-700 shadow-soft">🔥 Burned</span>
+              <span className="rounded-full border border-line bg-paper px-3 py-1 text-ink shadow-soft">👤 You paid</span>
+              <span className="rounded-full border border-gold-200 bg-gold-50 px-3 py-1 text-gold-700 shadow-soft">🏦 Treasury</span>
+              <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-orange-700 shadow-soft">🔥 Burn</span>
             </div>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -108,7 +109,7 @@ export default function Hero() {
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <CopyCA />
-              <p className="text-sm text-mut">Wall Street, delivered to your holders' wallets.</p>
+              <p className="text-sm text-mut">Revenue in, dividends out. Like a listed company, for a memecoin.</p>
             </div>
           </div>
 

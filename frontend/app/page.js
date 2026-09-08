@@ -5,7 +5,7 @@ import WhyBoomerang from '../components/WhyBoomerang'
 import StatsBar from '../components/StatsBar'
 import TokenSearch from '../components/TokenSearch'
 import LiveFeed from '../components/LiveFeed'
-import ActiveTokens from '../components/ActiveTokens'
+import Screener from '../components/Screener'
 import HowItWorks from '../components/HowItWorks'
 import StockUniverse from '../components/StockUniverse'
 import Modes from '../components/Modes'
@@ -37,7 +37,7 @@ export default function Home() {
           </div>
           <Reveal><LiveFeed /></Reveal>
         </div>
-        <Reveal><ActiveTokens /></Reveal>
+        <Reveal><Screener /></Reveal>
         <Reveal><Modes /></Reveal>
         <Reveal><Developers /></Reveal>
         <Reveal><Security /></Reveal>

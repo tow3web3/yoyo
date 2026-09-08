@@ -52,8 +52,8 @@ export default function Developers() {
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-bold uppercase tracking-[0.2em] text-gold-700">For launchpads</div>
-            <h3 className="font-display text-xl font-bold tracking-tight text-ink">Ship dividends as a default</h3>
-            <p className="mt-1 max-w-xl text-sm text-mut">One call per launch. The creator gets a Telegram link that pre-fills the whole setup; you get a signed webhook for every dividend and a live badge for the token page.</p>
+            <h3 className="font-display text-xl font-bold tracking-tight text-ink">Your creators earn stocks. Make their holders earn them too.</h3>
+            <p className="mt-1 max-w-xl text-sm text-mut">You already pay creators in stock tokens. One call per launch adds a dividend policy on top: the creator gets a Telegram link that pre-fills the setup, you get a signed webhook for every dividend, a yield badge and a balance sheet for the token page.</p>
           </div>
           <a href="mailto:hello@boomerang.fun?subject=Launchpad%20integration" className="btn-ink shrink-0 self-start text-xs">Request an API key</a>
         </div>

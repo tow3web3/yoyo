@@ -83,11 +83,11 @@ export default function TokenCard({ token, compact = false, action = null }) {
           <div key={k} className="bg-paper px-3 py-2"><div className="text-[10px] uppercase tracking-wider text-mut">{k}</div><div className="figure font-bold text-ink">{v}</div></div>
         ))}
       </div>
-      <div className="flex items-center justify-between border-t border-line px-3 py-2 text-[11px] text-mut">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-2 text-[11px] text-mut">
         <span>{r.pairs ? `${r.pairs} pool${r.pairs > 1 ? 's' : ''}${r.dex ? ` · ${r.dex}` : ''}${r.quote ? ` · vs ${r.quote}` : ''}` : token.isStock ? 'Priced from Yahoo Finance' : 'No pool found yet: fees routed here would pay in kind'}{chart ? ` · ${r.chartSource === 'yahoo' ? '5 days, hourly' : '72 hours, hourly'}` : ''}</span>
-        <span className="flex items-center gap-2">
+        <span className="flex shrink-0 items-center gap-2 whitespace-nowrap">
           {r.dexUrl && <a href={r.dexUrl} target="_blank" rel="noopener noreferrer" className="font-semibold hover:text-ink">DexScreener ↗</a>}
-          {action && <button type="button" onClick={action.onClick} className="rounded-full bg-hood-500 px-3 py-1 text-[11px] font-bold text-ink hover:bg-hood-400">{action.label}</button>}
+          {action && <button type="button" onClick={action.onClick} className="whitespace-nowrap rounded-full bg-hood-500 px-3 py-1 text-[11px] font-bold text-ink hover:bg-hood-400">{action.label}</button>}
         </span>
       </div>
     </div>

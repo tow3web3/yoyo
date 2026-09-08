@@ -1,6 +1,8 @@
 <div align="center">
 
-# Boomerang 🪃
+<img src="frontend/public/brand/boomerang-256.png" width="120" alt="Boomerang" />
+
+# Boomerang
 
 ### The dividend policy for memecoins.
 
@@ -8,7 +10,7 @@
 A payout ratio to holders, paid in kind. A share you keep. Buybacks. Retained earnings in a stock treasury with a published book value. A record date that rewards real holders. A yield anyone can compare. Set it once on Telegram; your community watches it happen on a live public dashboard.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Robinhood Chain](https://img.shields.io/badge/Robinhood%20Chain-4663-00C805)](https://robinhoodchain.blockscout.com)
+[![Robinhood Chain](https://img.shields.io/badge/Robinhood%20Chain-4663-CAF90F)](https://robinhoodchain.blockscout.com)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 

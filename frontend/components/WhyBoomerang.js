@@ -20,8 +20,8 @@ export default function WhyBoomerang() {
   return (
     <div ref={ref} className={`wb-stage panel relative overflow-hidden px-7 py-14 sm:px-12 sm:py-16 ${played ? 'in' : ''}`}>
       <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="wb-boom wb-boom--1"><img className="wb-spin" src="/logo-256.png" alt="" /></div>
-        <div className="wb-boom wb-boom--2"><img className="wb-spin" src="/logo-256.png" alt="" /></div>
+        <div className="wb-boom wb-boom--1"><img className="wb-spin" src="/brand/boomerang-256.png" alt="" /></div>
+        <div className="wb-boom wb-boom--2"><img className="wb-spin" src="/brand/boomerang-256.png" alt="" /></div>
       </div>
 
       <div className="relative z-10 max-w-2xl">

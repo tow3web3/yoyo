@@ -85,7 +85,7 @@ export default function TokenSearch() {
         {phase === 'searching' && (
           <>
             <div key={run} className="boomerang-sweep pointer-events-none absolute top-1/2 z-10 h-14 w-14">
-              <Image src="/newlogopng.png" alt="" fill className="object-contain drop-shadow-md" />
+              <Image src="/brand/boomerang-256.png" alt="" fill className="object-contain drop-shadow-md" />
             </div>
             <div className="flex min-h-[120px] items-center justify-center text-sm font-medium text-mut">Throwing the boomerang…</div>
           </>

@@ -54,7 +54,7 @@ export function Monogram({ text, color = COLORS.greenDeep, size = 96 }) {
 export function Wordmark({ siteUrl: site, size = 28 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <img src={`${site}/newlogopng.png`} width={size + 8} height={size + 8} alt="" />
+      <img src={`${site}/brand/boomerang-256.png`} width={size + 8} height={size + 8} alt="" />
       <span style={{ fontSize: size, fontWeight: 800, color: COLORS.ink, letterSpacing: -0.5 }}>Boomerang</span>
       <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.greenDeep, border: `1px solid ${COLORS.green}55`, background: '#EBFCEB', borderRadius: 999, padding: '3px 10px', letterSpacing: 1.5 }}>ROBINHOOD CHAIN</span>
     </div>

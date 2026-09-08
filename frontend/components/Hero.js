@@ -135,7 +135,7 @@ export default function Hero() {
                   className={`boom-throw relative block h-full w-full cursor-pointer ${thrown ? 'is-thrown' : ''}`}
                 >
                   <div ref={spinnerRef} className="boom-spin relative h-full w-full">
-                    <Image src="/newlogopng.png" alt="Boomerang" fill priority className="object-contain drop-shadow-[0_18px_30px_rgba(11,15,12,0.18)]" />
+                    <Image src="/brand/boomerang.png" alt="Boomerang" fill priority className="object-contain drop-shadow-[0_18px_30px_rgba(11,15,12,0.18)]" />
                   </div>
                 </button>
               </div>

@@ -52,7 +52,7 @@ export default function Login({ onLoggedIn }) {
       <div className="relative mx-auto w-full max-w-sm">
         <div className="absolute inset-8 rounded-full bg-hood-300/30 blur-3xl" />
         <div className="panel-glow relative overflow-hidden p-5">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-mut"><Image src="/newlogopng.png" alt="" width={18} height={18} /> Preview</div>
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-mut"><Image src="/brand/boomerang-256.png" alt="" width={18} height={18} /> Preview</div>
           <div className="mb-3 flex h-3 w-full overflow-hidden rounded-full bg-tile"><div className="w-[70%] bg-hood-500" /><div className="w-[20%] bg-ink" /><div className="w-[10%] bg-gold-400" /></div>
           <div className="grid grid-cols-3 gap-2 text-center">
             {[['70%', 'holders'], ['20%', 'you'], ['10%', 'treasury']].map(([v, l]) => <div key={l}><div className="figure font-display text-lg font-extrabold text-ink">{v}</div><div className="text-[10px] uppercase tracking-wider text-mut">{l}</div></div>)}

@@ -15,7 +15,7 @@ export const metadata = {
   title: 'Boomerang: the dividend policy for memecoins',
   description: DESCRIPTION,
   keywords: 'robinhood chain, stock tokens, dividend policy, payout ratio, memecoin dividends, telegram bot, NVDA, SPY, GLD',
-  icons: { icon: '/logo-64.png', apple: '/logo-256.png' },
+  icons: { icon: '/brand/boomerang-64.png', apple: '/brand/boomerang-256.png' },
   openGraph: {
     title: 'Boomerang: the dividend policy for memecoins',
     description: DESCRIPTION,

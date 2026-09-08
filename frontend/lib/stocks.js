@@ -4,7 +4,7 @@ import { STOCK_LIST } from './stocks-data';
 const SECTOR_COLORS = {
   'Big Tech': '#1E88E5', Semis: '#7C4DFF', 'AI & Cloud': '#00ACC1', 'EV & Auto': '#FB8C00',
   'Defense & Space': '#607D8B', 'Crypto Street': '#F2A900', 'Meme & Quantum': '#EC407A',
-  Fintech: '#00C805', Energy: '#FDD835', 'Pharma & Health': '#43A047', Consumer: '#F06292',
+  Fintech: '#93B80A', Energy: '#FDD835', 'Pharma & Health': '#43A047', Consumer: '#F06292',
   'Index & ETF': '#AB47BC', Hardware: '#5C6BC0', Software: '#26A69A', Industrial: '#8D6E63',
 };
 

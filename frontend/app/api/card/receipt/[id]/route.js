@@ -28,7 +28,7 @@ export async function GET(request, { params }) {
   return new ImageResponse(
     (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: COLORS.ground, fontFamily: font, color: COLORS.ink, padding: 56, position: 'relative' }}>
-        <div style={{ position: 'absolute', top: -160, right: -120, width: 520, height: 520, borderRadius: 520, background: 'rgba(0,200,5,0.14)' }} />
+        <div style={{ position: 'absolute', top: -160, right: -120, width: 520, height: 520, borderRadius: 520, background: 'rgba(202,249,15,0.3)' }} />
         <div style={{ position: 'absolute', bottom: -200, left: 200, width: 460, height: 460, borderRadius: 460, background: 'rgba(246,195,67,0.18)' }} />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -65,7 +65,7 @@ export async function GET(request, { params }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 300, height: 300, borderRadius: 300, background: COLORS.paper, border: `10px solid ${COLORS.green}`, boxShadow: '0 30px 80px rgba(0,200,5,0.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 300, height: 300, borderRadius: 300, background: COLORS.paper, border: `10px solid ${COLORS.green}`, boxShadow: '0 30px 80px rgba(202,249,15,0.45)' }}>
             {rewardLogo ? <img src={rewardLogo} width={200} height={200} style={{ borderRadius: 200 }} alt="" /> : <Monogram text={rewardSymbol} size={200} />}
           </div>
         </div>

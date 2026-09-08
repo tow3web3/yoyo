@@ -8,18 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Robinhood green: the brand primary, also the "up" colour.
+        // Boomerang lime (#CAF90F): fills at 500, olive text accents at 600/700.
         hood: {
-          50: '#EBFCEB',
-          100: '#D2F8D3',
-          200: '#A7F0AA',
-          300: '#71E677',
-          400: '#33D93E',
-          500: '#00C805',
-          600: '#00A804',
-          700: '#008A05',
-          800: '#046B07',
-          900: '#064F08',
+          50: '#FBFFE8',
+          100: '#F5FEC9',
+          200: '#EBFD97',
+          300: '#DFFB5C',
+          400: '#D6FA2E',
+          500: '#CAF90F',
+          600: '#93B80A',
+          700: '#6E8C06',
+          800: '#4F6606',
+          900: '#3A4A06',
         },
         // Robinhood Gold: the premium accent.
         gold: {
@@ -32,7 +32,7 @@ module.exports = {
           600: '#C9931B',
           700: '#9E7213',
         },
-        // Robinhood's negative move colour.
+        // Negative move colour.
         down: '#FF5000',
         ink: '#0B0F0C',
         mut: '#5C6660',
@@ -49,7 +49,7 @@ module.exports = {
       },
       boxShadow: {
         soft: '0 1px 2px rgba(11, 15, 12, 0.04), 0 10px 30px rgba(11, 15, 12, 0.06)',
-        glow: '0 0 0 1px rgba(0, 200, 5, 0.18), 0 12px 40px rgba(0, 200, 5, 0.12)',
+        glow: '0 0 0 1px rgba(202, 249, 15, 0.45), 0 12px 40px rgba(202, 249, 15, 0.25)',
         gold: '0 0 0 1px rgba(233, 179, 42, 0.25), 0 12px 40px rgba(233, 179, 42, 0.14)',
       },
       keyframes: {
@@ -64,7 +64,7 @@ module.exports = {
         },
         pop: { '0%': { transform: 'scale(0.8)', opacity: '0' }, '60%': { transform: 'scale(1.05)' }, '100%': { transform: 'scale(1)', opacity: '1' } },
         orbit: { from: { transform: 'rotate(0deg) translateX(var(--r)) rotate(0deg)' }, to: { transform: 'rotate(360deg) translateX(var(--r)) rotate(-360deg)' } },
-        tick: { '0%': { backgroundColor: 'rgba(0,200,5,0.35)' }, '100%': { backgroundColor: 'transparent' } },
+        tick: { '0%': { backgroundColor: 'rgba(202,249,15,0.5)' }, '100%': { backgroundColor: 'transparent' } },
       },
       animation: {
         marquee: 'marquee 40s linear infinite',

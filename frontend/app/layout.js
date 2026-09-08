@@ -15,16 +15,15 @@ export const metadata = {
   title: 'Boomerang: the dividend policy for memecoins',
   description: DESCRIPTION,
   keywords: 'robinhood chain, stock tokens, dividend policy, payout ratio, memecoin dividends, telegram bot, NVDA, SPY, GLD',
-  icons: { icon: '/newlogopng.png', apple: '/newlogopng.png' },
+  icons: { icon: '/logo-64.png', apple: '/logo-256.png' },
   openGraph: {
     title: 'Boomerang: the dividend policy for memecoins',
     description: DESCRIPTION,
     url: SITE_URL,
     siteName: 'Boomerang',
-    images: [{ url: '/bannier.png', width: 1200, height: 630, alt: 'Boomerang' }],
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Boomerang: the dividend policy for memecoins', description: DESCRIPTION, images: ['/bannier.png'] },
+  twitter: { card: 'summary_large_image', title: 'Boomerang: the dividend policy for memecoins', description: DESCRIPTION },
 }
 
 export default function RootLayout({ children }) {

@@ -33,15 +33,15 @@ export default function PerformanceChart({ data }) {
         <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="colorEth" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#00C805" stopOpacity={0.45} />
-              <stop offset="95%" stopColor="#00C805" stopOpacity={0.02} />
+              <stop offset="5%" stopColor="#CAF90F" stopOpacity={0.6} />
+              <stop offset="95%" stopColor="#CAF90F" stopOpacity={0.03} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5EBE6" />
           <XAxis dataKey="time" stroke="#8B95A4" fontSize={12} tickLine={false} axisLine={false} />
           <YAxis stroke="#8B95A4" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => v.toFixed(3)} />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#00C805', strokeOpacity: 0.3 }} />
-          <Area type="monotone" dataKey="eth" stroke="#00A804" strokeWidth={2} fillOpacity={1} fill="url(#colorEth)" />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#93B80A', strokeOpacity: 0.4 }} />
+          <Area type="monotone" dataKey="eth" stroke="#6E8C06" strokeWidth={2} fillOpacity={1} fill="url(#colorEth)" />
         </AreaChart>
       </ResponsiveContainer>
     </div>

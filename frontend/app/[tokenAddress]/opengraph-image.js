@@ -41,7 +41,7 @@ export default async function Image({ params }) {
   return new ImageResponse(
     (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: COLORS.ground, fontFamily: font, color: COLORS.ink, padding: 56, position: 'relative' }}>
-        <div style={{ position: 'absolute', top: -180, right: -140, width: 560, height: 560, borderRadius: 560, background: 'rgba(0,200,5,0.14)' }} />
+        <div style={{ position: 'absolute', top: -180, right: -140, width: 560, height: 560, borderRadius: 560, background: 'rgba(202,249,15,0.3)' }} />
         <div style={{ position: 'absolute', bottom: -220, left: 240, width: 460, height: 460, borderRadius: 460, background: 'rgba(246,195,67,0.18)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Wordmark siteUrl={site} />
@@ -77,7 +77,7 @@ export default async function Image({ params }) {
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 280, height: 280, borderRadius: 280, background: COLORS.paper, border: `10px solid ${COLORS.green}`, boxShadow: '0 30px 80px rgba(0,200,5,0.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 280, height: 280, borderRadius: 280, background: COLORS.paper, border: `10px solid ${COLORS.green}`, boxShadow: '0 30px 80px rgba(202,249,15,0.45)' }}>
             {rewLogo && !modeLabel ? <img src={rewLogo} width={190} height={190} style={{ borderRadius: 190 }} alt="" /> : <span style={{ fontSize: 110 }}>{config.reward_mode === 'roulette' ? '🎰' : config.reward_mode === 'gainer' ? '🚀' : config.reward_mode === 'portfolio' ? '📊' : config.reward_mode === 'vote' ? '🗳️' : '📈'}</span>}
           </div>
         </div>

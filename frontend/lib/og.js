@@ -4,7 +4,7 @@
 import { STOCK_BY_ADDRESS, isNative } from './stocks';
 
 export const CARD = { width: 1200, height: 630 };
-export const COLORS = { green: '#00C805', greenDeep: '#00A804', gold: '#F6C343', ink: '#0B0F0C', mut: '#5C6660', line: '#E5EBE6', paper: '#FFFFFF', ground: '#F6F8F6' };
+export const COLORS = { green: '#CAF90F', greenDeep: '#6E8C06', gold: '#F6C343', ink: '#0B0F0C', mut: '#5C6660', line: '#E5EBE6', paper: '#FFFFFF', ground: '#F6F8F6' };
 
 let fontCache = null;
 /** Manrope 800 as a TTF buffer (Satori needs TTF/OTF/WOFF, never woff2). Falls back to the default font. */
@@ -43,7 +43,7 @@ export function siteUrl() {
 }
 
 /** Monogram fallback when a logo cannot be fetched (Satori renders nothing for a broken img). */
-export function Monogram({ text, color = COLORS.green, size = 96 }) {
+export function Monogram({ text, color = COLORS.greenDeep, size = 96 }) {
   return (
     <div style={{ width: size, height: size, borderRadius: size, background: color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3, fontWeight: 800 }}>
       {String(text || '?').slice(0, 4)}

@@ -2,6 +2,7 @@ import TickerTape from '../components/TickerTape'
 import Navigation from '../components/Navigation'
 import Hero from '../components/Hero'
 import WhyBoomerang from '../components/WhyBoomerang'
+import Peeks from '../components/Peeks'
 import StatsBar from '../components/StatsBar'
 import TokenSearch from '../components/TokenSearch'
 import LiveFeed from '../components/LiveFeed'
@@ -25,6 +26,7 @@ export default function Home() {
 
       <div className="mx-auto max-w-6xl space-y-20 px-5 py-24">
         <WhyBoomerang />
+        <Reveal><Peeks /></Reveal>
         <Reveal><StatsBar /></Reveal>
         <Reveal><TokenSearch /></Reveal>
         <Reveal><HowItWorks /></Reveal>

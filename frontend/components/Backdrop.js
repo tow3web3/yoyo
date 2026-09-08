@@ -15,16 +15,16 @@ export default function Backdrop() {
       <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 1440 900">
         <defs>
           <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
-            <path d="M48 0H0V48" fill="none" stroke="rgba(11,15,12,0.045)" strokeWidth="1" />
+            <path d="M48 0H0V48" fill="none" stroke="rgba(11,15,12,0.05)" strokeWidth="1" />
           </pattern>
           <linearGradient id="rise" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#00C805" stopOpacity="0" />
-            <stop offset="0.6" stopColor="#00C805" stopOpacity="0.35" />
+            <stop offset="0" stopColor="#CAF90F" stopOpacity="0" />
+            <stop offset="0.6" stopColor="#CAF90F" stopOpacity="0.7" />
             <stop offset="1" stopColor="#F6C343" stopOpacity="0.55" />
           </linearGradient>
           <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#00C805" stopOpacity="0.08" />
-            <stop offset="1" stopColor="#00C805" stopOpacity="0" />
+            <stop offset="0" stopColor="#CAF90F" stopOpacity="0.18" />
+            <stop offset="1" stopColor="#CAF90F" stopOpacity="0" />
           </linearGradient>
         </defs>
         <rect width="1440" height="900" fill="url(#grid)" />

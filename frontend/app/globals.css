@@ -5,7 +5,7 @@
 body {
   @apply min-h-screen bg-ground text-ink antialiased;
   background-image:
-    radial-gradient(900px circle at 50% -12%, rgba(0, 200, 5, 0.10), transparent 60%),
+    radial-gradient(900px circle at 50% -12%, rgba(202, 249, 15, 0.22), transparent 60%),
     radial-gradient(700px circle at 100% 0%, rgba(246, 195, 67, 0.12), transparent 55%);
   background-attachment: fixed;
 }
@@ -32,7 +32,7 @@ body {
   }
   .btn-primary:hover {
     @apply -translate-y-px bg-hood-400;
-    box-shadow: 0 8px 24px rgba(0, 200, 5, 0.28);
+    box-shadow: 0 8px 24px rgba(202, 249, 15, 0.45);
   }
   .btn-primary:active {
     @apply translate-y-0;
@@ -55,7 +55,7 @@ body {
     transition: transform 0.12s ease, background-color 0.18s ease;
   }
   .btn-ink:hover {
-    @apply -translate-y-px bg-hood-900;
+    @apply -translate-y-px bg-hood-800;
   }
 
   .chip {
@@ -94,7 +94,7 @@ body {
 }
 
 .text-gradient {
-  background: linear-gradient(100deg, #00A804, #00C805 45%, #33D93E);
+  background: linear-gradient(100deg, #6E8C06, #93B80A 45%, #B5DD0C);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -190,7 +190,7 @@ body {
   position: absolute; top: 0; left: 0;
   offset-rotate: auto; opacity: 0;
   will-change: offset-distance, opacity;
-  filter: drop-shadow(0 8px 14px rgba(0, 200, 5, 0.28));
+  filter: drop-shadow(0 8px 14px rgba(202, 249, 15, 0.45));
 }
 .wb-boom .wb-spin { display: block; width: 100%; height: 100%; animation: wb-spin 0.55s linear infinite; animation-play-state: paused; }
 .wb-boom--1 {
@@ -228,3 +228,12 @@ body {
 ::-webkit-scrollbar-track { @apply bg-ground; }
 ::-webkit-scrollbar-thumb { @apply rounded-full bg-line; }
 ::-webkit-scrollbar-thumb:hover { @apply bg-hood-400; }
+
+/* Sneak peek scenes */
+@keyframes peek-dash { to { stroke-dashoffset: -64; } }
+.peek-dash { animation: peek-dash 2.4s linear infinite; }
+@keyframes peek-fill { 0%, 100% { opacity: 0.25; transform: scaleY(0.4); } 50% { opacity: 1; transform: scaleY(1); } }
+.peek-fill { transform-box: fill-box; transform-origin: bottom; animation: peek-fill 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .peek-dash, .peek-fill { animation: none; }
+}

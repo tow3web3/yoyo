@@ -38,11 +38,11 @@ export async function GET(request, { params }) {
     const y = await tokenYield(address, meta[address.toLowerCase()]?.marketCap ?? null);
     if (style === 'reward') {
       const sym = meta[data.config.target_token_address]?.symbol || 'stocks';
-      return new Response(badge('dividends in', sym, '#00C805'), { headers });
+      return new Response(badge('dividends in', sym, '#CAF90F'), { headers });
     }
     const apy = fmtApy(y.apy);
     if (!apy) return new Response(badge('dividend yield', y.cycles30d > 0 ? `${y.eth30d.toFixed(3)} ETH / 30d` : 'starting', '#F6C343'), { headers });
-    return new Response(badge('dividend yield', `${apy} APY`, '#00C805'), { headers });
+    return new Response(badge('dividend yield', `${apy} APY`, '#CAF90F'), { headers });
   } catch (e) {
     return new Response(badge('boomerang', 'unavailable', '#9AA39D'), { status: 500, headers });
   }

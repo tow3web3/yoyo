@@ -98,12 +98,15 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  /* Inline padding does not change the line box but extends the painted area, so descenders (the y of policy) are not clipped by a tight line-height. */
+  padding-bottom: 0.18em;
 }
 .text-gold-gradient {
   background: linear-gradient(100deg, #C9931B, #F6C343 55%, #FFE38A);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  padding-bottom: 0.18em;
 }
 
 /* Hero boomerang: lands with a bounce, then floats */

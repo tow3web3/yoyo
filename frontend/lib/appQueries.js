@@ -107,6 +107,7 @@ export async function updateConfig(configId, patch) {
     const total = splitKeys.reduce((s, k) => s + Number(k in sets ? sets[k] : cur[k]), 0);
     if (total !== 10000) throw new Error('The policy must add up to 100%');
     sets.destination = sets.split_burn_bps === 10000 ? 'burn' : 'holders';
+    sets.legs_enabled = false; // a simple split replaces the routing canvas
   }
   if (!Object.keys(sets).length) throw new Error('Nothing to update');
   const cols = Object.keys(sets);
@@ -135,9 +136,77 @@ export async function recentLogsForConfig(configId, limit = 12) {
            el.claimed_eth_wei::text AS claimed_eth_wei, el.total_airdropped::text AS total_airdropped,
            el.reward_token_used, el.asset_token, el.asset_amount::text AS asset_amount,
            el.creator_amount::text AS creator_amount, el.burn_amount::text AS burn_amount, el.treasury_amount::text AS treasury_amount, el.treasury_token,
-           el.swap_tx, el.burn_tx, el.treasury_tx, el.creator_tx,
+           el.swap_tx, el.burn_tx, el.treasury_tx, el.creator_tx, el.legs,
            (SELECT at.tx_hash FROM airdrop_transactions at WHERE at.execution_log_id = el.id AND at.status = 'success' AND at.tx_hash IS NOT NULL LIMIT 1) AS tx_hash
     FROM execution_logs el WHERE el.config_id = ${configId}
     ORDER BY el.execution_time DESC LIMIT ${limit}
   `;
+}
+
+// ---------- fee routing legs (the canvas) ----------
+const LEG_KINDS = ['holders', 'wallet', 'burn', 'treasury'];
+const ADDR = /^0x[0-9a-fA-F]{40}$/;
+
+export async function getLegs(configId) {
+  const sql = getSql();
+  return await sql`SELECT id, kind, share_bps, address, asset, label, sort_order, pos_x, pos_y FROM policy_legs WHERE config_id = ${configId} ORDER BY sort_order, id`;
+}
+
+/** Validate a routing table: kinds, shares summing to 100%, destinations, assets. Returns clean rows. */
+export function validateLegs(input) {
+  if (!Array.isArray(input) || input.length === 0) throw new Error('Route the fees somewhere: add at least one destination');
+  if (input.length > 12) throw new Error('Twelve destinations at most');
+  const clean = input.map((l, i) => {
+    const kind = String(l.kind || '');
+    if (!LEG_KINDS.includes(kind)) throw new Error(`Unknown destination type "${kind}"`);
+    const share = Number(l.shareBps ?? l.share_bps);
+    if (!Number.isInteger(share) || share < 0 || share > 10000) throw new Error('Shares must be whole basis points between 0 and 10000');
+    const address = l.address ? String(l.address) : null;
+    if ((kind === 'wallet' || kind === 'treasury') && !(address && ADDR.test(address))) throw new Error(`${l.label || kind} needs a valid destination address`);
+    const asset = l.asset ? String(l.asset) : null;
+    if (asset && !ADDR.test(asset)) throw new Error('Payout asset must be a token address (or empty for in kind)');
+    if (kind === 'burn' && asset) throw new Error('A buyback leg always buys your own token');
+    const label = l.label ? String(l.label).slice(0, 40) : null;
+    const px = Number.isFinite(Number(l.posX ?? l.pos_x)) ? Math.round(Number(l.posX ?? l.pos_x)) : null;
+    const py = Number.isFinite(Number(l.posY ?? l.pos_y)) ? Math.round(Number(l.posY ?? l.pos_y)) : null;
+    return { kind, shareBps: share, address: kind === 'wallet' || kind === 'treasury' ? address.toLowerCase() : null, asset: asset ? asset.toLowerCase() : null, label, sortOrder: i, posX: px, posY: py };
+  });
+  if (clean.filter((l) => l.kind === 'holders').length > 1) throw new Error('One holders leg at most');
+  const total = clean.reduce((s, l) => s + l.shareBps, 0);
+  if (total !== 10000) throw new Error(`Shares add up to ${(total / 100).toFixed(0)}%, they must total 100%`);
+  return clean;
+}
+
+/** Replace the routing table atomically and switch the config to routing mode. */
+export async function replaceLegs(configId, input) {
+  const legs = validateLegs(input);
+  const { getPool } = await import('./dbPool');
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM policy_legs WHERE config_id = $1', [configId]);
+    for (const l of legs) {
+      await client.query(
+        'INSERT INTO policy_legs (config_id, kind, share_bps, address, asset, label, sort_order, pos_x, pos_y) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+        [configId, l.kind, l.shareBps, l.address, l.asset, l.label, l.sortOrder, l.posX, l.posY]
+      );
+    }
+    // Mirror the table into the legacy columns so the bot summary and public pages stay right.
+    const sum = (k) => legs.filter((l) => l.kind === k).reduce((s, l) => s + l.shareBps, 0);
+    const firstWallet = legs.find((l) => l.kind === 'wallet');
+    const firstTreasury = legs.find((l) => l.kind === 'treasury');
+    await client.query(
+      `UPDATE bot_configs SET legs_enabled = true, split_holders_bps = $2, split_creator_bps = $3, split_burn_bps = $4, split_treasury_bps = $5,
+         creator_address = COALESCE($6, creator_address), treasury_address = COALESCE($7, treasury_address), treasury_asset = COALESCE($8, treasury_asset),
+         destination = CASE WHEN $4 = 10000 THEN 'burn' ELSE 'holders' END, updated_at = NOW() WHERE id = $1`,
+      [configId, sum('holders'), sum('wallet'), sum('burn'), sum('treasury'), firstWallet?.address || null, firstTreasury?.address || null, firstTreasury?.asset || null]
+    );
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+  return getLegs(configId);
 }

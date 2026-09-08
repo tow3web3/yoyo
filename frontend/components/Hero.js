@@ -85,7 +85,7 @@ export default function Hero() {
               <p className="text-[15px] leading-relaxed text-mut">
                 Your launchpad pays you in real stocks.{' '}
                 <span className="font-semibold text-ink">Boomerang decides what happens next: a payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury.</span>{' '}
-                NVDA fees become NVDA dividends. On schedule, from Telegram.
+                NVDA fees become NVDA dividends. Drawn on one screen, run on schedule.
               </p>
             </div>
 
@@ -101,11 +101,8 @@ export default function Hero() {
             </div>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <a href={telegramUrl} target="_blank" rel="noopener noreferrer" className="btn-primary text-base">
-                Start on Telegram
-                <Arrow className="h-4 w-4" />
-              </a>
-              <Link href="/app" className="btn-ink text-base">Open the dashboard</Link>
+              <Link href="/app" className="btn-primary text-base">Open the dashboard <Arrow className="h-4 w-4" /></Link>
+              <a href={telegramUrl} target="_blank" rel="noopener noreferrer" className="btn-ink text-base">Telegram remote</a>
               <a href="#how" className="btn-ghost text-base">How it works</a>
             </div>
 

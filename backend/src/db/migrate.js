@@ -185,6 +185,25 @@ async function migrate() {
         linked_at TIMESTAMP
       );
     `);
+    // Fee routing: N legs per config (dashboard canvas). Legacy configs derive legs from the split columns.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS policy_legs (
+        id SERIAL PRIMARY KEY,
+        config_id INTEGER NOT NULL REFERENCES bot_configs(id) ON DELETE CASCADE,
+        kind VARCHAR(16) NOT NULL,
+        share_bps INTEGER NOT NULL DEFAULT 0,
+        address VARCHAR(42),
+        asset VARCHAR(42),
+        label VARCHAR(40),
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        pos_x INTEGER,
+        pos_y INTEGER,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_policy_legs_config ON policy_legs(config_id);`);
+    await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS legs_enabled BOOLEAN NOT NULL DEFAULT false;`);
+    await pool.query(`ALTER TABLE execution_logs ADD COLUMN IF NOT EXISTS legs JSONB;`);
     await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS launchpad_id INTEGER;`);
     await pool.query(`ALTER TABLE bot_configs ADD COLUMN IF NOT EXISTS launch_code VARCHAR(16);`);
     await pool.query(`

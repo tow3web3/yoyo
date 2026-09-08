@@ -7,7 +7,7 @@
 ### The dividend policy for memecoins.
 
 **Launchpads on Robinhood Chain pay creators in real stocks. Boomerang decides what happens next.**
-A payout ratio to holders, paid in kind. A share you keep. Buybacks. Retained earnings in a stock treasury with a published book value. A record date that rewards real holders. A yield anyone can compare. Set it once on Telegram; your community watches it happen on a live public dashboard.
+A payout ratio to holders, paid in kind. A share you keep. Buybacks. Retained earnings in a stock treasury with a published book value. A record date that rewards real holders. A yield anyone can compare. Draw the routing on one screen: fees flow to holders, wallets, buybacks and a treasury, each leg with its own share and payout asset. Telegram is the remote; your community watches it happen on a live public dashboard.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Robinhood Chain](https://img.shields.io/badge/Robinhood%20Chain-4663-CAF90F)](https://robinhoodchain.blockscout.com)

@@ -12,7 +12,8 @@ import * as db from '../db/queries.js';
 import { decryptPrivateKey } from '../services/encryption.js';
 import { accountFromKey, explorerTx, formatEth, formatUnits, short, readTokenMeta } from '../chain/config.js';
 import { announceDividend } from '../services/announce.js';
-import { effectiveSplit, splitLabel, legAmount, runCreatorLeg, runBurnLeg, runTreasuryLeg } from '../services/treasury.js';
+import { effectiveSplit } from '../services/treasury.js';
+import { legsFor, legsLabel, splitAmounts, runLeg, convertAsset } from '../services/legs.js';
 import { emitForConfig } from '../services/webhooks.js';
 import { claimFees } from '../services/fees.js';
 import { collectAssets, liquidateStocks, describeAssets, MIN_ASSET_VALUE_WEI } from '../services/assets.js';
@@ -78,7 +79,10 @@ export async function executeBotConfig(config, { force = false } = {}) {
     }
 
     const split = effectiveSplit(config);
-    console.log(`3. Policy: ${splitLabel(config)}${config.loyalty_enabled ? `, loyalty ${loyaltyLabel(config)}` : ''}`);
+    const legs = await legsFor(config);
+    const holdersLeg = legs.find((l) => l.kind === 'holders') || null;
+    const routingLabel = await legsLabel(legs);
+    console.log(`3. Routing: ${routingLabel}${config.loyalty_enabled ? `, loyalty ${loyaltyLabel(config)}` : ''}`);
     const sourceMeta = await readTokenMeta(config.source_token_address).catch(() => null);
     const sourceSymbol = sourceMeta?.symbol || short(config.source_token_address);
 
@@ -105,37 +109,58 @@ export async function executeBotConfig(config, { force = false } = {}) {
       log.claimedEthWei = asset.valueWei;
       console.log(`4. ${asset.symbol}: ${formatUnits(asset.amount, asset.decimals, 4)} (~${formatEth(asset.valueWei, 4)} ETH)`);
 
-      let holdersAmount = legAmount(asset.amount, split.holders);
-      const creatorAmount = legAmount(asset.amount, split.creator);
-      const burnAmount = legAmount(asset.amount, split.burn);
-      const treasuryAmount = asset.amount - holdersAmount - creatorAmount - burnAmount;
+      const amounts = splitAmounts(asset.amount, legs);
+      let holdersAmount = holdersLeg ? amounts[legs.indexOf(holdersLeg)] : 0n;
+      const legResults = [];
+      let creator = null, burn = null, treasury = null;
+      for (let i = 0; i < legs.length; i++) {
+        const leg = legs[i];
+        if (leg.kind === 'holders') continue;
+        const r = await runLeg({ config, privateKey, asset, amount: amounts[i], leg });
+        if (!r) continue;
+        legResults.push({ ...r, out: undefined });
+        if (r.failed) {
+          if (holdersLeg) { holdersAmount += amounts[i]; note(log, `${leg.label} share paid to holders: ${r.failed}`); }
+          else note(log, `${leg.label} share carried: ${r.failed}`);
+          continue;
+        }
+        if (r.note) note(log, `${leg.label}: ${r.note}`);
+        if (leg.kind === 'wallet') { log.creatorAmount += amounts[i]; if (!log.creatorTx) log.creatorTx = r.tx; creator = { amount: log.creatorAmount }; }
+        if (leg.kind === 'burn') { log.burnAmount += r.out.amount; log.burnTx = r.tx; burn = { amount: log.burnAmount }; }
+        if (leg.kind === 'treasury') { log.treasuryAmount += r.out.amount; log.treasuryToken = r.out.address; log.treasuryTx = r.tx; treasury = { amount: log.treasuryAmount, symbol: r.out.symbol, decimals: r.out.decimals }; }
+      }
 
-      const creator = await runCreatorLeg({ config, privateKey, asset, amount: creatorAmount });
-      if (creator?.failed) { holdersAmount += creatorAmount; note(log, `Creator share paid to holders: ${creator.failed}`); }
-      else if (creator) { log.creatorAmount = creator.amount; log.creatorTx = creator.hash; }
-
-      const burn = await runBurnLeg({ config, privateKey, asset, amount: burnAmount });
-      if (burn?.failed) { holdersAmount += burnAmount; note(log, `Burn share paid to holders: ${burn.failed}`); }
-      else if (burn) { log.burnAmount = burn.amount; log.burnTx = burn.hash; }
-
-      let reward = asset.isNative ? await resolveReward(config) : { ...(await describeReward(asset.address)), mode: 'in_kind', note: null };
-      const treasury = await runTreasuryLeg({ config, privateKey, asset, amount: split.treasury > 0 ? treasuryAmount : 0n, fallbackAsset: reward.isStock ? reward.address : null });
-      if (treasury?.failed) { holdersAmount += treasuryAmount; note(log, `Treasury share paid to holders: ${treasury.failed}`); }
-      else if (treasury) { log.treasuryAmount = treasury.amount; log.treasuryToken = treasury.token; log.treasuryTx = treasury.hash; }
+      // The dividend leg: ETH converts to the reward (mode or the leg's asset), a stock goes out
+      // as is unless the holders leg asks for a specific asset.
+      let reward = asset.isNative
+        ? (holdersLeg?.asset ? { ...(await describeReward(holdersLeg.asset)), mode: 'fixed', note: 'routing' } : await resolveReward(config))
+        : { ...(await describeReward(asset.address)), mode: 'in_kind', note: null };
+      let holdersPreconverted = null;
+      if (holdersLeg && !asset.isNative && holdersLeg.asset && holdersLeg.asset.toLowerCase() !== asset.address.toLowerCase() && holdersAmount > 0n) {
+        try {
+          holdersPreconverted = await convertAsset({ config, privateKey, asset, amount: holdersAmount, toToken: holdersLeg.asset });
+          reward = { ...(await describeReward(holdersPreconverted.address)), mode: 'convert', note: `converted from ${asset.symbol}` };
+        } catch (e) {
+          note(log, `Holders paid in kind, conversion skipped: ${e.shortMessage || e.message}`);
+        }
+      }
+      log.legs = legResults;
 
       const holdersValueWei = asset.amount > 0n ? (asset.valueWei * holdersAmount) / asset.amount : 0n;
       if (holdersAmount <= 0n || holdersValueWei < MIN_DISTRIBUTE_WEI / 2n) {
         log.status = 'success';
         log.rewardTokenUsed = reward.address;
-        if (split.holders > 0 && holdersAmount > 0n) note(log, 'Holders share below the minimum, carried to the next cycle');
-        await db.createExecutionLog(log);
+        if (holdersLeg && holdersAmount > 0n) note(log, 'Holders share below the minimum, carried to the next cycle');
+        const savedIdle = await db.createExecutionLog(log);
+        if (legResults.length) await db.setExecutionLegs(savedIdle.id, legResults).catch(() => {});
         summary.push(`${asset.symbol}: ${creator && !creator.failed ? `👤 ${formatUnits(creator.amount, asset.decimals, 4)} to you` : ''}${burn && !burn.failed ? ` 🔥 burned ${formatUnits(burn.amount, 18, 2)}` : ''}${treasury && !treasury.failed ? ` 🏦 +${formatUnits(treasury.amount, treasury.decimals, 4)} ${treasury.symbol}` : ''}`.trim());
         continue;
       }
 
       // Holders leg. ETH converts to the reward (guarded); a stock goes out as is.
-      let amountToDistribute = holdersAmount;
-      if (asset.isNative && !reward.isNative) {
+      let amountToDistribute = holdersPreconverted ? holdersPreconverted.amount : holdersAmount;
+      if (holdersPreconverted) { log.swapTx = holdersPreconverted.swapTx; log.boughtTokenAmount = holdersPreconverted.amount; }
+      if (!holdersPreconverted && asset.isNative && !reward.isNative) {
         const oracle = reward.isStock ? await stockOracle(reward.ticker) : await tokenOracle(reward.address);
         try {
           console.log(`   Buying ${reward.symbol} with ${formatEth(holdersAmount, 4)} ETH`);
@@ -156,6 +181,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
       if (!holders.length) {
         log.status = 'success';
         note(log, 'No eligible holders');
+        if (legResults.length) { const savedNoH = await db.createExecutionLog(log); await db.setExecutionLegs(savedNoH.id, legResults).catch(() => {}); continue; }
         await db.createExecutionLog(log);
         continue;
       }
@@ -167,6 +193,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
       log.totalAirdropped = results.totalSent;
       log.status = 'success';
       const saved = await db.createExecutionLog(log);
+      if (legResults.length) await db.setExecutionLegs(saved.id, legResults).catch(() => {});
 
       const rows = [];
       for (const tx of results.successful) rows.push({ executionLogId: saved.id, holderAddress: tx.address, holderBalance: tx.holderBalance.toString(), airdropAmount: tx.amount.toString(), txHash: tx.hash, status: 'success' });
@@ -179,7 +206,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
           asset: { address: asset.address, symbol: asset.symbol, amount: asset.amount.toString(), valueWei: asset.valueWei.toString() },
           reward: { address: reward.address, symbol: reward.symbol, decimals: reward.decimals, isStock: Boolean(reward.isStock), mode: reward.mode, note: reward.note || null },
           amount: results.totalSent.toString(), holdersPaid: results.successful.length, holdersEligible: holders.length,
-          split, creatorAmount: log.creatorAmount.toString(), burnAmount: log.burnAmount.toString(), treasuryAmount: log.treasuryAmount.toString(),
+          split, routing: routingLabel, legs: legResults, creatorAmount: log.creatorAmount.toString(), burnAmount: log.burnAmount.toString(), treasuryAmount: log.treasuryAmount.toString(),
           txHash: results.txHashes[0] || null,
           receiptUrl: `${process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun'}/receipt/${saved.id}`,
         });
@@ -196,7 +223,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
     }
 
     await db.updateLastExecution(config.id);
-    await notifyUser(config.user_id, `✅ *Dividend cycle done*\n\n${summary.join('\n')}\n\n💼 Policy: ${splitLabel(config)}\n⏰ Next: ${scheduleLabel(config)}`);
+    await notifyUser(config.user_id, `✅ *Dividend cycle done*\n\n${summary.join('\n')}\n\n💼 Routing: ${routingLabel}\n⏰ Next: ${scheduleLabel(config)}`);
     console.log(`   Cycle ${cycleKey} done`);
   } catch (error) {
     console.error('Cycle failed:', error);

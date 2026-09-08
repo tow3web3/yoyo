@@ -1,13 +1,12 @@
 'use client';
 
+// Three steps to a running Boomerang: the token, the dev wallet, go. Everything
+// else (routing, record date, schedule) is drawn on the canvas afterwards.
 import { useState } from 'react';
-import StockLogo from '../StockLogo';
-import PolicyEditor from './PolicyEditor';
-import { RewardEditor, ScheduleEditor, LoyaltyEditor } from './Editors';
-import { getStock } from '../../lib/stocks';
-import { Button, Field, inputCls, useToast, parseSchedule, shortAddr } from './ui';
+import TokenCard from './TokenCard';
+import { Button, Field, inputCls, useToast, shortAddr } from './ui';
 
-const STEPS = ['Token', 'Dev wallet', 'Policy', 'Reward & schedule', 'Record date', 'Review'];
+const STEPS = ['Token', 'Dev wallet', 'Launch'];
 
 export default function Wizard({ onCreated }) {
   const toast = useToast();
@@ -15,10 +14,6 @@ export default function Wizard({ onCreated }) {
   const [busy, setBusy] = useState(false);
   const [token, setToken] = useState({ address: '', meta: null, checking: false, error: null });
   const [wallet, setWallet] = useState({ mode: 'generate', privateKey: '' });
-  const [policy, setPolicy] = useState({ holders: 100, creator: 0, burn: 0, treasury: 0, creatorAddress: '', treasuryAddress: '', treasuryAsset: '', payoutMode: 'in_kind' });
-  const [reward, setReward] = useState({ rewardMode: 'fixed', reward: 'ETH', basket: 'MAG7' });
-  const [schedule, setSchedule] = useState({ schedule: 'closing_bell', marketHoursOnly: false, feeSource: 'wallet' });
-  const [loyalty, setLoyalty] = useState({ enabled: true, maxBps: 20000, rampDays: 30, minHoldHours: 24, sellReset: true });
 
   async function checkToken(address) {
     setToken({ address, meta: null, checking: true, error: null });
@@ -33,30 +28,23 @@ export default function Wizard({ onCreated }) {
     }
   }
 
-  const canNext = [
-    Boolean(token.meta),
-    wallet.mode === 'generate' || /^(0x)?[0-9a-fA-F]{64}$/.test(wallet.privateKey.trim()),
-    policy.holders + policy.creator + policy.burn + policy.treasury === 100,
-    true, true, true,
-  ][step];
+  const canNext = [Boolean(token.meta), wallet.mode === 'generate' || /^(0x)?[0-9a-fA-F]{64}$/.test(wallet.privateKey.trim()), true][step];
 
   async function create() {
     setBusy(true);
     try {
-      const s = parseSchedule(schedule.schedule);
       const res = await fetch('/api/app/config', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sourceToken: token.address, wallet, reward: reward.reward, rewardMode: reward.rewardMode, basket: reward.basket,
-          scheduleKind: s.schedule_kind, intervalMinutes: s.interval_minutes, marketHoursOnly: schedule.marketHoursOnly, feeSource: schedule.feeSource,
-          split: { holders: policy.holders * 100, creator: policy.creator * 100, burn: policy.burn * 100, treasury: policy.treasury * 100 },
-          creatorAddress: policy.creatorAddress, treasuryAddress: policy.treasuryAddress, payoutMode: policy.payoutMode,
-          loyalty,
+          sourceToken: token.address, wallet, reward: 'ETH', rewardMode: 'fixed',
+          scheduleKind: 'closing_bell', intervalMinutes: 1440, marketHoursOnly: false, feeSource: 'wallet',
+          split: { holders: 10000, creator: 0, burn: 0, treasury: 0 }, payoutMode: 'in_kind',
+          loyalty: { enabled: true, minHoldHours: 24, rampDays: 30, maxBps: 20000, sellReset: true },
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not create');
-      toast(data.generated ? `Boomerang is live. Dev wallet ${shortAddr(data.devWallet)} created for you.` : 'Boomerang is live.');
+      toast(data.generated ? `Boomerang is live. Dev wallet ${shortAddr(data.devWallet)} created for you. Now draw the routing.` : 'Boomerang is live. Now draw the routing.');
       onCreated(data);
     } catch (e) {
       toast(e.message, 'err');
@@ -66,14 +54,13 @@ export default function Wizard({ onCreated }) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-10">
+    <div className="mx-auto max-w-2xl px-5 py-10">
       <div className="mb-6">
         <div className="eyebrow mb-2">Set up your Boomerang</div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">Six decisions. Two minutes.</h1>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">Two answers, then draw the routing.</h1>
       </div>
 
-      {/* Progress */}
-      <ol className="mb-6 grid grid-cols-6 gap-1">
+      <ol className="mb-6 grid grid-cols-3 gap-1">
         {STEPS.map((s, i) => (
           <li key={s} className="text-center">
             <div className={`mx-auto mb-1 h-1.5 rounded-full ${i <= step ? 'bg-hood-500' : 'bg-line'}`} />
@@ -91,19 +78,14 @@ export default function Wizard({ onCreated }) {
             </Field>
             {token.checking && <p className="text-xs text-mut">Checking on chain…</p>}
             {token.error && <p className="text-xs text-down">{token.error}</p>}
-            {token.meta && (
-              <div className="flex items-center gap-3 rounded-xl border border-hood-200 bg-hood-50 p-3">
-                <StockLogo address={token.meta.address} meta={token.meta} size="h-10 w-10" />
-                <div><div className="text-sm font-bold text-ink">{token.meta.name}</div><div className="font-mono text-xs text-mut">${token.meta.symbol}{token.meta.marketCap ? ` · MC $${Math.round(token.meta.marketCap).toLocaleString()}` : ''}</div></div>
-              </div>
-            )}
+            {token.meta && <TokenCard token={token.meta} />}
           </div>
         )}
 
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-ink">The dev wallet</h2>
-            <p className="text-sm text-mut">Boomerang needs a wallet it can spend from: it receives your fees and pays them out. Never your main wallet.</p>
+            <p className="text-sm text-mut">Boomerang needs a wallet it can spend from: it receives your fees and routes them. Never your main wallet.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <button type="button" onClick={() => setWallet({ ...wallet, mode: 'generate' })} className={`rounded-xl border p-4 text-left transition ${wallet.mode === 'generate' ? 'border-hood-500 bg-hood-50' : 'border-line hover:border-hood-300'}`}>
                 <div className="text-sm font-bold text-ink">✨ Create one for me <span className="ml-1 rounded-full bg-hood-500 px-1.5 py-0.5 text-[9px] font-bold uppercase text-ink">Recommended</span></div>
@@ -124,43 +106,18 @@ export default function Wizard({ onCreated }) {
 
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-ink">The dividend policy</h2>
-            <p className="text-sm text-mut">How each cycle's fees are split. You can change it anytime.</p>
-            <PolicyEditor value={policy} onChange={setPolicy} />
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-5">
-            <h2 className="font-display text-lg font-bold text-ink">Reward and schedule</h2>
-            <RewardEditor value={reward} onChange={setReward} />
-            <div className="border-t border-line pt-4"><ScheduleEditor value={schedule} onChange={setSchedule} /></div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-ink">Record date and loyalty</h2>
-            <LoyaltyEditor value={loyalty} onChange={setLoyalty} />
-          </div>
-        )}
-
-        {step === 5 && (
-          <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-ink">Review</h2>
+            <h2 className="font-display text-lg font-bold text-ink">Launch with a sane default, then draw</h2>
             <dl className="grid gap-2 text-sm sm:grid-cols-2">
               {[
                 ['Token', token.meta ? `${token.meta.name} ($${token.meta.symbol})` : token.address],
                 ['Dev wallet', wallet.mode === 'generate' ? 'Created for you' : 'Imported'],
-                ['Policy', `${policy.holders}% holders · ${policy.creator}% you · ${policy.burn}% burn · ${policy.treasury}% treasury`],
-                ['Stock fees', policy.payoutMode === 'convert' ? 'Converted to the reward' : 'Paid in kind'],
-                ['ETH fees', reward.rewardMode === 'fixed' ? `Converted to ${reward.reward === 'ETH' ? 'ETH (no conversion)' : getStock(reward.reward)?.ticker || `${reward.reward.slice(0, 6)}…${reward.reward.slice(-4)} (custom token)`}` : reward.rewardMode],
-                ['Schedule', `${schedule.schedule.replace('interval:', 'every ').replace('_', ' ')}${schedule.marketHoursOnly ? ', market hours only' : ''}`],
-                ['Record date', loyalty.enabled ? `Loyalty 1x to ${(loyalty.maxBps / 10000).toFixed(1)}x over ${loyalty.rampDays}d, min hold ${loyalty.minHoldHours}h` : 'Pro-rata by balance'],
-                ['Fee source', schedule.feeSource === 'univ3' ? 'Uniswap V3 LP fees' : 'Wallet balance'],
+                ['Routing', '100% to holders, paid in kind'],
+                ['Record date', 'Loyalty 1x to 2x over 30 days, 24h minimum hold'],
+                ['Schedule', 'Closing bell, 4:00 pm New York, weekdays'],
+                ['Then', 'Add wallets, buybacks, a treasury, pick payout assets: all on the canvas'],
               ].map(([k, v]) => <div key={k} className="rounded-xl border border-line bg-ground p-3"><dt className="text-[10px] uppercase tracking-wider text-mut">{k}</dt><dd className="mt-0.5 font-semibold text-ink">{v}</dd></div>)}
             </dl>
-            <p className="text-xs text-mut">Activating creates the bot. Cycles that find nothing to distribute simply wait for the next one.</p>
+            <p className="text-xs text-mut">Cycles that find nothing to route simply wait for the next one. Nothing moves until fees land in the dev wallet.</p>
           </div>
         )}
 
@@ -168,7 +125,7 @@ export default function Wizard({ onCreated }) {
           <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || busy}>Back</Button>
           {step < STEPS.length - 1
             ? <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext}>Continue</Button>
-            : <Button onClick={create} busy={busy}>Activate Boomerang</Button>}
+            : <Button onClick={create} busy={busy}>Launch and open the canvas</Button>}
         </div>
       </div>
     </div>

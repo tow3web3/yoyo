@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import StockLogo from '../StockLogo';
+import TokenCard from './TokenCard';
 import { STOCKS, LIQUID_TICKERS, getStock } from '../../lib/stocks';
 
 // ---------- toasts ----------
@@ -109,7 +110,7 @@ export function Slider({ label, value, min = 0, max = 100, step = 1, onChange, f
 
 /** Stock picker: search over the 195 tickers, plus ETH and a raw address. */
 const customCache = new Map();
-function useCustomToken(address) {
+export function useCustomToken(address) {
   const key = address && /^0x[0-9a-fA-F]{40}$/.test(address) && !getStock(address) && !/^0x0{40}$/i.test(address) ? address.toLowerCase() : null;
   const [info, setInfo] = useState(key ? customCache.get(key) || null : null);
   useEffect(() => {
@@ -123,9 +124,26 @@ function useCustomToken(address) {
   return info;
 }
 
+/** Research payload (/api/app/token) for any address, stocks and ETH included. Cached per address. */
+const researchCache = new Map();
+export function useTokenResearch(address) {
+  const key = address && /^0x[0-9a-fA-F]{40}$/.test(address) ? address.toLowerCase() : address === 'ETH' ? '0x0000000000000000000000000000000000000000' : null;
+  const [info, setInfo] = useState(key ? researchCache.get(key) || null : null);
+  useEffect(() => {
+    if (!key) { setInfo(null); return; }
+    if (researchCache.has(key)) { setInfo(researchCache.get(key)); return; }
+    let alive = true;
+    setInfo({ loading: true });
+    fetch(`/api/app/token?address=${key}`).then((r) => r.json()).then((d) => { const v = d.error ? { error: d.error } : d; researchCache.set(key, v); if (alive) setInfo(v); }).catch(() => { if (alive) setInfo({ error: 'Lookup failed' }); });
+    return () => { alive = false; };
+  }, [key]);
+  return info;
+}
+
 export function StockPicker({ value, onChange, allowEth = true, allowAddress = true, compact = false }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
+  const custom = useCustomToken(value);
   const selected = value ? (value === 'ETH' || /^0x0{40}$/i.test(value) ? { symbol: 'ETH', name: 'Ether', address: '0x0000000000000000000000000000000000000000' } : getStock(value) ? { symbol: getStock(value).ticker, name: getStock(value).name, address: getStock(value).address } : { symbol: custom?.symbol || `${value.slice(0, 6)}…`, name: custom?.name ? `${custom.name} · custom token` : 'Custom token', address: value, image: custom?.image || null }) : null;
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -134,8 +152,7 @@ export function StockPicker({ value, onChange, allowEth = true, allowAddress = t
   }, [q, compact]);
   useEffect(() => { if (!open) setQ(''); }, [open]);
   const isAddr = /^0x[0-9a-fA-F]{40}$/.test(q.trim());
-  const custom = useCustomToken(value);
-  const probe = useCustomToken(isAddr ? q.trim() : null);
+  const probe = useTokenResearch(isAddr ? q.trim() : null);
 
   return (
     <div className="relative">
@@ -148,9 +165,9 @@ export function StockPicker({ value, onChange, allowEth = true, allowAddress = t
         <span className="text-mut">▾</span>
       </button>
       {open && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-line bg-paper shadow-soft">
+        <div className="absolute left-0 right-0 top-full z-20 mt-2 min-w-[320px] overflow-hidden rounded-2xl border border-line bg-paper shadow-lg">
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={allowAddress ? 'Search ticker, company, or paste any token CA' : 'Search ticker or company'} className="w-full border-b border-line px-4 py-2.5 text-sm outline-none" />
-          <div className="max-h-72 overflow-y-auto">
+          <div className="max-h-[420px] overflow-y-auto">
             {allowEth && !q && (
               <button type="button" onClick={() => { onChange('ETH'); setOpen(false); }} className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-hood-50">
                 <StockLogo address="0x0000000000000000000000000000000000000000" size="h-7 w-7" text="text-[8px]" /><span className="font-mono text-sm font-bold">ETH</span><span className="text-xs text-mut">no conversion</span>
@@ -165,14 +182,11 @@ export function StockPicker({ value, onChange, allowEth = true, allowAddress = t
               </button>
             ))}
             {allowAddress && isAddr && (
-              <button type="button" disabled={!!probe?.error || !!probe?.loading} onClick={() => { onChange(q.trim()); setOpen(false); }} className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-hood-50 disabled:cursor-not-allowed disabled:opacity-70">
-                {probe?.symbol ? <StockLogo address={q.trim()} meta={{ symbol: probe.symbol, image: probe.image }} size="h-7 w-7" text="text-[8px]" /> : <span className="stock-logo h-7 w-7 bg-tile text-[8px]">0x</span>}
-                <span className="min-w-0 flex-1">
-                  <span className="block font-mono text-sm font-bold text-ink">{probe?.loading ? 'Looking up…' : probe?.error ? 'Not an ERC-20 on Robinhood Chain' : probe?.symbol || q.trim().slice(0, 10)}</span>
-                  <span className="block truncate text-xs text-mut">{probe?.name ? `${probe.name} · ${probe.isStock ? 'Stock Token' : 'custom token, swapped on Uniswap each cycle'}` : q.trim()}</span>
-                </span>
-                {probe?.symbol && !probe.isStock && <span className="rounded-full bg-gold-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-gold-700">Any CA</span>}
-              </button>
+              <div className="p-2">
+                {probe?.loading || !probe ? <div className="flex items-center gap-2 px-2 py-3 text-xs text-mut"><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-line border-t-hood-500" /> Looking up {q.trim().slice(0, 10)}… on chain, DexScreener and GeckoTerminal</div>
+                  : probe.error ? <div className="px-2 py-3 text-xs text-down">{probe.error}</div>
+                  : <TokenCard token={probe} compact action={{ label: 'Use this token', onClick: () => { onChange(q.trim()); setOpen(false); } }} />}
+              </div>
             )}
             {list.length === 0 && !isAddr && <div className="px-4 py-4 text-center text-xs text-mut">No ticker matches.</div>}
           </div>

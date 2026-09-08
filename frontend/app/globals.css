@@ -245,3 +245,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .mode-stage svg * { animation: none !important; }
 }
+
+/* Studio canvas */
+.bm-flow { animation: peek-dash 1.6s linear infinite; }
+.react-flow__node { cursor: grab; }
+.react-flow__node.dragging { cursor: grabbing; }
+.react-flow__controls { box-shadow: none !important; border: 1px solid #E5EBE6; border-radius: 12px; overflow: hidden; }
+.react-flow__controls-button { border-bottom: 1px solid #E5EBE6 !important; background: #fff !important; }
+.react-flow__handle { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .bm-flow { animation: none; } }

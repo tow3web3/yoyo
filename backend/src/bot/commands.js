@@ -591,6 +591,16 @@ export async function handleBasketSelection(ctx, key) {
 // ---------- fee split + treasury ----------
 
 function splitText(config) {
+  if (config.legs_enabled) {
+    const url = (process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun') + '/app';
+    return `🧭 *Fee routing*
+
+This Boomerang uses the routing canvas: fees flow to several destinations (holders, wallets, buyback, treasury), each with its own share and payout asset.
+
+Edit it on the dashboard: ${url}
+
+Picking a preset below replaces the canvas with a simple split.`;
+  }
   const s = effectiveSplit(config);
   const asset = config.treasury_asset ? rewardLabel(config.treasury_asset) : 'SPY (default)';
   const inKind = (config.payout_mode || 'in_kind') !== 'convert';

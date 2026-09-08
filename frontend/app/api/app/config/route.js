@@ -1,7 +1,7 @@
 // Create, update or delete the logged-in creator's Boomerang. Mirrors the bot.
 import { parseAbi } from 'viem';
 import { sessionUser } from '../../../../lib/session';
-import { getConfigForUser, createConfig, updateConfig, deleteConfig } from '../../../../lib/appQueries';
+import { getConfigForUser, createConfig, updateConfig, deleteConfig, replaceLegs, getLegs } from '../../../../lib/appQueries';
 import { encryptPrivateKey, isValidPrivateKey, normalizeKey, addressOf, generateDevWallet } from '../../../../lib/crypto';
 import { reschedule } from '../../../../lib/internal';
 import { rpc } from '../../../../lib/evm';
@@ -104,11 +104,16 @@ export async function PATCH(request) {
       if (!t || t === ZERO) return Response.json({ error: 'Treasury asset must be a stock' }, { status: 400 });
       patch.treasury_asset = t;
     }
-    const updated = await updateConfig(config.id, patch);
+    let legs = null;
+    if (patch.legs !== undefined) {
+      legs = await replaceLegs(config.id, patch.legs);
+      delete patch.legs;
+    }
+    const updated = Object.keys(patch).length ? await updateConfig(config.id, patch) : { ...(await getConfigForUser(user.id)) };
     await reschedule(config.id);
     const { dev_wallet_encrypted, ...pub } = updated;
     void dev_wallet_encrypted;
-    return Response.json({ ok: true, config: pub });
+    return Response.json({ ok: true, config: pub, legs: legs || (await getLegs(config.id)) });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 400 });
   }

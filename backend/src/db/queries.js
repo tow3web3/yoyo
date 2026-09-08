@@ -200,3 +200,12 @@ export async function getRecentExecutions(tokenAddress, limit = 10) {
   );
   return result.rows;
 }
+
+// ---------- fee routing legs ----------
+export async function getPolicyLegs(configId) {
+  const r = await pool.query('SELECT * FROM policy_legs WHERE config_id = $1 ORDER BY sort_order, id', [configId]);
+  return r.rows;
+}
+export async function setExecutionLegs(executionLogId, legs) {
+  await pool.query('UPDATE execution_logs SET legs = $2 WHERE id = $1', [executionLogId, JSON.stringify(legs)]);
+}

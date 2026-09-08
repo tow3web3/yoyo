@@ -48,6 +48,24 @@ check('bad split rejected', r.status === 400, r.data.error || '');
 r = await api('/api/app/config', { method: 'PATCH', body: JSON.stringify({ reward: 'GLD' }) });
 check('patch reward by ticker', r.status === 200 && r.data.config?.target_token_address === '0xc9a981fee1f9dec688bb123ccdecc63d0debfc4e');
 
+// Fee routing legs (the canvas)
+const legs = [
+  { kind: 'holders', shareBps: 6000, label: 'Holders' },
+  { kind: 'wallet', shareBps: 2500, label: 'Team', address: account.address, asset: '0xc9a981fee1f9dec688bb123ccdecc63d0debfc4e' },
+  { kind: 'burn', shareBps: 500, label: 'Buyback & burn' },
+  { kind: 'treasury', shareBps: 1000, label: 'Treasury', address: account.address },
+];
+r = await api('/api/app/config', { method: 'PATCH', body: JSON.stringify({ legs }) });
+check('save routing legs', r.status === 200 && r.data.legs?.length === 4 && r.data.config?.legs_enabled === true && r.data.config?.split_holders_bps === 6000, r.data.error || '');
+r = await api('/api/app/config', { method: 'PATCH', body: JSON.stringify({ legs: legs.map((l) => ({ ...l, shareBps: 1000 })) }) });
+check('routing not 100% rejected', r.status === 400, r.data.error || '');
+r = await api('/api/app/config', { method: 'PATCH', body: JSON.stringify({ legs: [{ kind: 'wallet', shareBps: 10000, label: 'x' }] }) });
+check('wallet leg without address rejected', r.status === 400, r.data.error || '');
+r = await api('/api/app/me');
+check('me returns legs', r.status === 200 && r.data.legs?.length === 4);
+r = await api('/api/app/token?address=0x39dbed3a2bd333467115de45665cc57f813c4571');
+check('token research (PONS)', r.status === 200 && r.data.research?.priceUsd > 0 && r.data.image, 'chart ' + (r.data.research?.chart?.length || 0));
+
 r = await api('/api/app/telegram-link', { method: 'POST' });
 check('telegram link code', r.status === 200 && /start=w_/.test(r.data.url), r.data.url);
 

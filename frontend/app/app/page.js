@@ -7,13 +7,13 @@ import TickerTape from '../../components/TickerTape';
 import Footer from '../../components/Footer';
 import Login from '../../components/app/Login';
 import Wizard from '../../components/app/Wizard';
-import Dashboard from '../../components/app/Dashboard';
+import Studio from '../../components/app/Studio';
 import { ToastProvider } from '../../components/app/ui';
 
-function AppShell({ children, wallet }) {
+function AppShell({ children, wallet, studio }) {
   return (
-    <>
-      <TickerTape />
+    <div className={studio ? 'flex h-screen flex-col overflow-hidden' : ''}>
+      {!studio && <TickerTape />}
       <nav className="sticky top-0 z-40 border-b border-line bg-ground/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2.5">
@@ -28,9 +28,9 @@ function AppShell({ children, wallet }) {
           </div>
         </div>
       </nav>
-      <main className="min-h-[70vh]">{children}</main>
-      <Footer />
-    </>
+      <main className={studio ? 'min-h-0 flex-1' : 'min-h-[70vh]'}>{children}</main>
+      {!studio && <Footer />}
+    </div>
   );
 }
 
@@ -63,7 +63,7 @@ export default function AppPage() {
   const wallet = state.data?.user?.wallet;
   return (
     <ToastProvider>
-      <AppShell wallet={wallet}>
+      <AppShell wallet={wallet} studio={Boolean(state.data?.config)}>
         {state.loading ? (
           <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-hood-500" /></div>
         ) : !state.data?.user ? (
@@ -71,7 +71,7 @@ export default function AppPage() {
         ) : !state.data.config ? (
           <Wizard onCreated={load} />
         ) : (
-          <Dashboard data={state.data} refresh={load} onLogout={logout} />
+          <Studio data={state.data} refresh={load} onLogout={logout} />
         )}
       </AppShell>
     </ToastProvider>

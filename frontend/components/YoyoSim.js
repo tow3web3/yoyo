@@ -50,9 +50,9 @@ export default function YoyoSim({ className = '' }) {
       canvas.style.width = `${rect.width}px`; canvas.style.height = `${rect.height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       s.R = Math.max(44, Math.min(78, rect.width * 0.17));
-      s.x0 = rect.width / 2; s.y0 = 34;
-      // sleep above the dividend card that overlaps the bottom-left of the hero
-      s.L = Math.min(rect.height - s.y0 - s.R - 26, rect.height * 0.64 - s.y0 - s.R);
+      // hangs right of centre and sleeps above the dividend card that overlaps the bottom-left
+      s.x0 = rect.width * 0.6; s.y0 = 34;
+      s.L = Math.max(120, Math.min(rect.height - s.y0 - 2 * s.R - 26, rect.height * 0.6 - s.y0 - 2 * s.R));
     };
     resize();
     const ro = new ResizeObserver(resize);

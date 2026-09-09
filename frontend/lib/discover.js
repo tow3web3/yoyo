@@ -7,7 +7,7 @@
 // alchemy_getAssetTransfers on ARCHIVE_RPC_URL; their receipts reveal every mint
 // and deployment (created). Without Alchemy, the receipt of the wallet's earliest
 // transfer of each held token is checked for a mint instead.
-import { parseAbiItem, parseAbi, zeroAddress } from 'viem';
+import { createPublicClient, http, parseAbiItem, parseAbi } from 'viem';
 import { rpc } from './evm';
 import { getStock, isNative } from './stocks';
 import { fetchTokenMeta } from './tokenMeta';
@@ -22,6 +22,15 @@ const MAX_RECEIPTS = 160;
 const PER_TARGET = 6; // receipts to inspect per distinct contract the wallet called
 const TTL = 2 * 60_000;
 const walletCache = new Map();
+const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
+
+// Reads go through the archive provider when configured (higher rate limits), else the public RPC.
+let archiveClient = null;
+function reader() {
+  const url = process.env.ARCHIVE_RPC_URL;
+  if (!url) return rpc();
+  return (archiveClient ??= createPublicClient({ transport: http(url, { timeout: 12_000, retryCount: 2, batch: true }) }));
+}
 
 const isLpToken = (symbol, name) => /^(UNI-V2|UNI-V3-POS|SLP|CAKE-LP)$/i.test(symbol || '') || /uniswap|liquidity|\bLP\b|position/i.test(name || '');
 
@@ -97,11 +106,13 @@ export async function discoverTokens(wallet) {
   const w = wallet.toLowerCase();
   const hit = walletCache.get(w);
   if (hit && Date.now() - hit.ts < TTL) return hit.data;
-  const client = rpc();
+  const client = reader();
+  const pub = rpc();
   const head = await client.getBlockNumber();
+  const logsFor = (args) => pub.getLogs({ event: TRANSFER, args, fromBlock: 0n, toBlock: head }).catch(() => client.getLogs({ event: TRANSFER, args, fromBlock: 0n, toBlock: head }));
   const [inLogs, outLogs, created] = await Promise.all([
-    client.getLogs({ event: TRANSFER, args: { to: wallet }, fromBlock: 0n, toBlock: head }),
-    client.getLogs({ event: TRANSFER, args: { from: wallet }, fromBlock: 0n, toBlock: head }),
+    logsFor({ to: wallet }),
+    logsFor({ from: wallet }),
     createdTokens(client, w).catch(() => new Map()),
   ]);
   const last = new Map();
@@ -115,14 +126,15 @@ export async function discoverTokens(wallet) {
   const heldTokens = [...last.entries()].sort((a, b) => Number(b[1] - a[1])).slice(0, MAX_HELD).map(([a]) => a);
   const tokens = [...new Set([...created.keys(), ...heldTokens])];
 
+  const calls = tokens.flatMap((t) => [
+    { address: t, abi: ERC20, functionName: 'symbol' }, { address: t, abi: ERC20, functionName: 'name' },
+    { address: t, abi: ERC20, functionName: 'decimals' }, { address: t, abi: ERC20, functionName: 'balanceOf', args: [wallet] },
+  ]);
+  const mc = tokens.length ? await client.multicall({ contracts: calls, multicallAddress: MULTICALL3, allowFailure: true }).catch(() => null) : [];
+  const field = (i, k, fallback) => { const r = mc?.[i * 4 + k]; return r && r.status === 'success' ? r.result : fallback; };
   const [rows, meta] = await Promise.all([
-    mapLimit(tokens, 8, async (t) => {
-      const [symbol, name, decimals, balance] = await Promise.all([
-        client.readContract({ address: t, abi: ERC20, functionName: 'symbol' }).catch(() => null),
-        client.readContract({ address: t, abi: ERC20, functionName: 'name' }).catch(() => null),
-        client.readContract({ address: t, abi: ERC20, functionName: 'decimals' }).catch(() => 18),
-        client.readContract({ address: t, abi: ERC20, functionName: 'balanceOf', args: [wallet] }).catch(() => 0n),
-      ]);
+    mapLimit(tokens, 8, async (t, i) => {
+      const symbol = field(i, 0, null), name = field(i, 1, null), decimals = field(i, 2, 18), balance = field(i, 3, 0n);
       if (!symbol || isLpToken(String(symbol), name ? String(name) : '')) return null;
       const c = created.get(t);
       const isCreated = Boolean(c) || (await mintedInWalletTx(client, t, w, earliest.get(t)));

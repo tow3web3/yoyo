@@ -137,7 +137,7 @@ export default function Wizard({ onCreated, user }) {
             <h2 className="font-display text-lg font-bold text-ink">Which token pays dividends?</h2>
             <p className="text-sm text-mut">Scanning <span className="font-mono text-ink">{shortAddr(scanWallet)}</span> on Robinhood Chain. Its holders will receive the dividends.</p>
             {scan.loading && <div className="flex items-center gap-2 rounded-xl border border-line bg-ground px-3 py-3 text-xs text-mut"><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-line border-t-hood-500" /> Reading every transfer this wallet ever made, finding the tokens it created…</div>}
-            {scan.error && <p className="text-xs text-down">{scan.error}</p>}
+            {scan.error && <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"><span>The chain scan did not complete{/rate limit/i.test(scan.error) ? ' (the public RPC is busy)' : ''}. Paste the address below, or retry.</span><button type="button" onClick={() => { scanned.current = null; setScan({ wallet: null, loading: false, data: null, error: null }); }} className="ml-3 rounded-full bg-ink px-2.5 py-1 text-[11px] font-bold text-white">Retry</button></div>}
             {scan.data && (
               <div className="space-y-3">
                 {created.length > 0 && (

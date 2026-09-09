@@ -181,7 +181,7 @@ export default function YoyoSim({ className = '' }) {
   return (
     <div ref={wrapRef} className={`relative h-full w-full select-none ${className}`}>
       <canvas ref={canvasRef} onPointerDown={(e) => { e.preventDefault(); act(); }} className="block h-full w-full cursor-pointer touch-none" aria-label="Playable yo-yo: click to throw, click again to bring it back" role="img" />
-      <div className="pointer-events-none absolute right-3 top-3 whitespace-nowrap rounded-full border border-line bg-paper/90 px-2.5 py-1 text-[11px] font-semibold text-mut shadow-soft">{hint}{returns > 0 ? ` · ${returns} return${returns > 1 ? 's' : ''}` : ''}</div>
+      <div className="pointer-events-none absolute left-3 top-3 whitespace-nowrap rounded-full border border-line bg-paper/90 px-2.5 py-1 text-[11px] font-semibold text-mut shadow-soft">{hint}{returns > 0 ? ` · ${returns} return${returns > 1 ? 's' : ''}` : ''}</div>
     </div>
   );
 }

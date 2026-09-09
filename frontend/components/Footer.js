@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="border-t border-line bg-ground px-5 py-8">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 md:flex-row">
         <div className="flex items-center gap-2.5">
-          <div className="relative h-7 w-7"><Image src="/brand/boomerang-256.png" alt="Boomerang" fill className="object-contain" /></div>
+          <div className="relative h-7 w-7"><Image src="/brand/boom-256.png" alt="Boomerang" fill className="object-contain" /></div>
           <span className="text-sm text-mut">© {year} Boomerang · The dividend policy for memecoins</span>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-5 text-sm text-mut">

@@ -14,7 +14,7 @@ export default function Navigation() {
         <div className="flex h-14 items-center justify-between gap-4">
           <Link href="/" className="group flex items-center gap-2.5">
             <div className="relative h-8 w-8 group-hover:animate-wiggle">
-              <Image src="/brand/boomerang-256.png" alt="Boomerang" fill className="object-contain" priority />
+              <Image src="/brand/boom-256.png" alt="Boomerang" fill className="object-contain" priority />
             </div>
             <span className="font-display text-lg font-bold tracking-tight text-ink">Boomerang</span>
             <span className="hidden items-center gap-1.5 whitespace-nowrap rounded-full border border-hood-300 bg-hood-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-hood-700 sm:inline-flex">

@@ -13,7 +13,7 @@ export default async function Image() {
     (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: COLORS.ink, color: '#fff', fontFamily: font, padding: 64, position: 'relative' }}>
         <div style={{ position: 'absolute', right: -60, top: 40, width: 520, height: 520, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={`${site}/brand/boomerang-256.png`} width={480} height={480} alt="" />
+          <img src={`${site}/brand/boom-256.png`} width={480} height={480} alt="" />
         </div>
         <Wordmark siteUrl={site} size={32} />
         <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 680 }}>

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="frontend/public/brand/boomerang-256.png" width="120" alt="Boomerang" />
+<img src="frontend/public/brand/boom-256.png" width="120" alt="Boomerang" />
 
 # Boomerang
 

@@ -37,7 +37,7 @@ export default function Backdrop() {
           className={`absolute animate-spin ${it.pos} ${it.size}`}
           style={{ opacity: it.opacity, animationDuration: `${it.dur}s`, animationDirection: it.reverse ? 'reverse' : 'normal', animationTimingFunction: 'linear' }}
         >
-          <Image src="/brand/boomerang-256.png" alt="" fill className="object-contain" />
+          <Image src="/brand/boom-256.png" alt="" fill className="object-contain" />
         </div>
       ))}
     </div>

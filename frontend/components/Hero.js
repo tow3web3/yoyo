@@ -1,21 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Arrow } from './Icons';
 import CopyCA from './CopyCA';
 import StockLogo from './StockLogo';
+import YoyoSim from './YoyoSim';
 import { getStock } from '../lib/stocks';
 
-// Stocks orbiting the yo-yo: the point is real tickers, not just ETH.
-const ORBIT = [
-  { t: 'NVDA', r: 190, dur: 26, delay: 0 },
-  { t: 'TSLA', r: 190, dur: 26, delay: -8.7 },
-  { t: 'AAPL', r: 190, dur: 26, delay: -17.3 },
-  { t: 'GLD', r: 128, dur: 19, delay: -4 },
-  { t: 'SPY', r: 128, dur: 19, delay: -13.5 },
-];
 
 // The dividend statement the hero "prints": what a holder's inbox looks like.
 const STATEMENT = [
@@ -28,37 +19,6 @@ const STATEMENT = [
 export default function Hero() {
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'boomerangtekbot';
   const telegramUrl = `https://t.me/${botUsername}`;
-
-  const [thrown, setThrown] = useState(false);
-  const spinnerRef = useRef(null);
-  const hovering = useRef(false);
-  const throwing = useRef(false);
-  const vel = useRef(0);
-  const rot = useRef(0);
-
-  useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    let raf;
-    const loop = () => {
-      const active = hovering.current || throwing.current;
-      const cap = throwing.current ? 26 : 13;
-      if (active) vel.current = Math.min(cap, vel.current + 0.16);
-      else { vel.current *= 0.95; if (vel.current < 0.02) vel.current = 0; }
-      rot.current += vel.current;
-      if (spinnerRef.current) spinnerRef.current.style.transform = `rotate(${rot.current}deg)`;
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const throwBoomerang = () => {
-    if (thrown) return;
-    setThrown(true);
-    throwing.current = true;
-    vel.current = Math.max(vel.current, 16);
-    setTimeout(() => { setThrown(false); throwing.current = false; }, 2200);
-  };
 
   return (
     <section className="relative overflow-hidden px-5 pt-10 sm:pt-14">
@@ -112,36 +72,13 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* yo-yo with orbiting stocks + a dividend statement */}
+          {/* A playable yo-yo + a dividend statement */}
           <div className="relative mx-auto w-full max-w-md">
             <div className="relative aspect-square w-full">
               <div className="absolute inset-10 rounded-full bg-hood-300/30 blur-3xl" />
-              <div className="absolute inset-[18%] rounded-full border border-dashed border-hood-200" />
-              <div className="absolute inset-[2%] rounded-full border border-dashed border-gold-200" />
-
-              <div className="boomerang-hero absolute inset-[22%]">
-                <button
-                  type="button"
-                  onClick={throwBoomerang}
-                  onMouseEnter={() => (hovering.current = true)}
-                  onMouseLeave={() => (hovering.current = false)}
-                  onFocus={() => (hovering.current = true)}
-                  onBlur={() => (hovering.current = false)}
-                  aria-label="Throw the yo-yo"
-                  title="Throw me!"
-                  className={`boom-throw relative block h-full w-full cursor-pointer ${thrown ? 'is-thrown' : ''}`}
-                >
-                  <div ref={spinnerRef} className="boom-spin relative h-full w-full">
-                    <Image src="/brand/yoyo.png" alt="yo-yo" fill priority className="object-contain drop-shadow-[0_18px_30px_rgba(11,15,12,0.18)]" />
-                  </div>
-                </button>
+              <div className="absolute inset-0 overflow-hidden rounded-[2rem]">
+                <YoyoSim />
               </div>
-
-              {ORBIT.map(({ t, r, dur, delay }) => (
-                <div key={t} className="orbit h-12 w-12" style={{ '--r': `${r}px`, '--dur': `${dur}s`, '--delay': `${delay}s` }} title={getStock(t)?.name}>
-                  <StockLogo address={getStock(t).address} size="h-12 w-12" text="text-xs" className="shadow-md" />
-                </div>
-              ))}
             </div>
 
             {/* Dividend statement */}

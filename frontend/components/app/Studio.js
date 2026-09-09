@@ -325,7 +325,7 @@ function Cycles({ logs, meta, onClose }) {
 }
 
 /* ---------------- the studio ---------------- */
-function StudioInner({ data, refresh, onLogout }) {
+function StudioInner({ data, refresh, onLogout, onSwitchWallet }) {
   const { config, assets, logs, meta, user } = data;
   const toast = useToast();
   const src = meta[config.source_token_address] || {};
@@ -479,6 +479,7 @@ function StudioInner({ data, refresh, onLogout }) {
           {dirty && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setDraft(initial)} disabled={busy === 'save'}>Discard</Button>}
           <Button className="!py-1.5 text-xs" onClick={save} busy={busy === 'save'} disabled={!canSave}>{dirty ? 'Save routing' : 'Saved'}</Button>
           <Link href={`/${config.source_token_address}`} className="hidden text-xs font-semibold text-hood-700 hover:underline lg:inline">Public ↗</Link>
+          {onSwitchWallet && <button type="button" onClick={onSwitchWallet} className="text-xs text-mut hover:text-ink" title={`Signed in as ${data.user.wallet}`}>Switch wallet</button>}
           <button type="button" onClick={onLogout} className="text-xs text-mut hover:text-ink">Sign out</button>
         </div>
       </div>

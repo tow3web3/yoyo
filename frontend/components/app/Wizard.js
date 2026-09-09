@@ -16,7 +16,7 @@ function addressOfKey(pk) {
   try { return privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`).address; } catch { return null; }
 }
 
-export default function Wizard({ onCreated, user }) {
+export default function Wizard({ onCreated, user, onSwitchWallet, onLogout }) {
   const toast = useToast();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -113,7 +113,11 @@ export default function Wizard({ onCreated, user }) {
             <div className="grid gap-3 sm:grid-cols-2">
               <button type="button" onClick={() => setWallet({ ...wallet, mode: 'mine' })} className={`rounded-xl border p-4 text-left transition ${wallet.mode === 'mine' ? 'border-hood-500 bg-hood-50' : 'border-line hover:border-hood-300'}`}>
                 <div className="text-sm font-bold text-ink">🪪 My connected wallet</div>
-                <div className="mt-1 font-mono text-xs text-ink">{user?.wallet ? shortAddr(user.wallet) : 'not connected'}</div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-xs text-ink">{user?.wallet ? shortAddr(user.wallet) : 'not connected'}</span>
+                  {onSwitchWallet && <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onSwitchWallet(); }} onKeyDown={(e) => e.key === 'Enter' && onSwitchWallet()} className="rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] font-bold text-ink hover:border-hood-400">🔁 Switch wallet</span>}
+                  {onLogout && <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onLogout(); }} onKeyDown={(e) => e.key === 'Enter' && onLogout()} className="rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] font-bold text-down hover:border-red-300">⏏ Disconnect</span>}
+                </div>
                 <div className="mt-1 text-xs text-mut">We list the tokens it created. Boomerang then creates a dedicated dev wallet for the fees (a bot cannot sign with your browser wallet); you set it as fee recipient on your launchpad.</div>
               </button>
               <button type="button" onClick={() => setWallet({ ...wallet, mode: 'import' })} className={`rounded-xl border p-4 text-left transition ${wallet.mode === 'import' ? 'border-hood-500 bg-hood-50' : 'border-line hover:border-hood-300'}`}>

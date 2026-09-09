@@ -44,6 +44,23 @@ export function useWallet() {
 
   const disconnect = useCallback(() => setAddress(null), []);
 
+  // Ask the extension to show its account picker (MetaMask, Rabby, Phantom honour
+  // wallet_requestPermissions), then return whatever account is selected.
+  const switchAccount = useCallback(async () => {
+    setError(null);
+    const eth = window.ethereum;
+    if (!eth) { setError('No wallet found. Install MetaMask or Rabby.'); return null; }
+    try {
+      await eth.request({ method: 'wallet_requestPermissions', params: [{ eth_accounts: {} }] }).catch(() => null);
+      const accs = await eth.request({ method: 'eth_requestAccounts' });
+      setAddress(accs?.[0] || null);
+      return accs?.[0] || null;
+    } catch (e) {
+      setError(e.message);
+      return null;
+    }
+  }, []);
+
   // Signs with the given address (or the connected one). Falls back to a raw personal_sign
   // for providers that return nothing through viem, and always yields a 0x hex string.
   const signMessage = useCallback(async (message, account = address) => {
@@ -64,7 +81,7 @@ export function useWallet() {
     return sig;
   }, [address]);
 
-  return { address, connected: Boolean(address), available, error, connect, disconnect, signMessage };
+  return { address, connected: Boolean(address), available, error, connect, disconnect, switchAccount, signMessage };
 }
 
 export function ConnectButton({ wallet, className = '' }) {

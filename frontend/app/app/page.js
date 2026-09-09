@@ -8,9 +8,33 @@ import Footer from '../../components/Footer';
 import Login from '../../components/app/Login';
 import Wizard from '../../components/app/Wizard';
 import Studio from '../../components/app/Studio';
-import { ToastProvider } from '../../components/app/ui';
+import { ToastProvider, useToast } from '../../components/app/ui';
+import { useWallet } from '../../lib/useWallet';
+import { signIn, signOut } from '../../lib/authClient';
 
-function AppShell({ children, wallet, studio }) {
+/** Header chip: the signed-in wallet, with Switch wallet and Disconnect. */
+function WalletMenu({ wallet, onSwitch, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (!wallet) return null;
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="chip font-mono hover:border-hood-400" title={wallet}>
+        <span className="h-1.5 w-1.5 rounded-full bg-hood-500" />{wallet.slice(0, 6)}…{wallet.slice(-4)} <span className="text-mut">▾</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-2xl border border-line bg-paper shadow-lg">
+          <div className="border-b border-line px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-mut">Signed in as</div>
+          <div className="break-all px-3 py-2 font-mono text-[11px] text-ink">{wallet}</div>
+          <button type="button" disabled={busy} onClick={async () => { setBusy(true); try { await onSwitch(); setOpen(false); } finally { setBusy(false); } }} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-tile disabled:opacity-60">🔁 Switch wallet</button>
+          <button type="button" disabled={busy} onClick={async () => { setBusy(true); try { await onLogout(); setOpen(false); } finally { setBusy(false); } }} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-down hover:bg-tile disabled:opacity-60">⏏ Disconnect</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AppShell({ children, wallet, studio, onSwitch, onLogout }) {
   return (
     <div className={studio ? 'flex h-screen flex-col overflow-hidden' : ''}>
       {!studio && <TickerTape />}
@@ -24,7 +48,7 @@ function AppShell({ children, wallet, studio }) {
           <div className="flex items-center gap-3 text-sm">
             <Link href="/stocks" className="hidden text-mut hover:text-ink sm:inline">Stocks</Link>
             <Link href="/#screener" className="hidden text-mut hover:text-ink sm:inline">Screener</Link>
-            {wallet && <span className="chip font-mono">{wallet.slice(0, 6)}…{wallet.slice(-4)}</span>}
+            <WalletMenu wallet={wallet} onSwitch={onSwitch} onLogout={onLogout} />
           </div>
         </div>
       </nav>
@@ -35,7 +59,13 @@ function AppShell({ children, wallet, studio }) {
 }
 
 export default function AppPage() {
+  return <ToastProvider><AppInner /></ToastProvider>;
+}
+
+function AppInner() {
   const [state, setState] = useState({ loading: true, data: null });
+  const injected = useWallet();
+  const toast = useToast();
 
   const load = useCallback(async () => {
     try {
@@ -56,24 +86,40 @@ export default function AppPage() {
   }, [load]);
 
   async function logout() {
-    await fetch('/api/app/auth/logout', { method: 'POST' });
+    await signOut();
+    injected.disconnect();
     setState({ loading: false, data: null });
+  }
+
+  // Switch wallet: sign out, let the extension pick another account, sign in with it.
+  async function switchWallet() {
+    try {
+      const addr = await injected.switchAccount();
+      if (!addr) throw new Error(injected.error || 'No account selected');
+      if (state.data?.user?.wallet && addr.toLowerCase() === state.data.user.wallet.toLowerCase()) { toast('Same wallet selected.'); return; }
+      await signOut();
+      await signIn(injected, addr);
+      toast(`Signed in as ${addr.slice(0, 6)}…${addr.slice(-4)}`);
+      await load();
+    } catch (e) {
+      toast(e.message, 'err');
+    }
   }
 
   const wallet = state.data?.user?.wallet;
   return (
-    <ToastProvider>
-      <AppShell wallet={wallet} studio={Boolean(state.data?.config)}>
+    <>
+      <AppShell wallet={wallet} studio={Boolean(state.data?.config)} onSwitch={switchWallet} onLogout={logout}>
         {state.loading ? (
           <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-hood-500" /></div>
         ) : !state.data?.user ? (
           <Login onLoggedIn={load} />
         ) : !state.data.config ? (
-          <Wizard onCreated={load} user={state.data.user} />
+          <Wizard onCreated={load} user={state.data.user} onSwitchWallet={switchWallet} onLogout={logout} />
         ) : (
-          <Studio data={state.data} refresh={load} onLogout={logout} />
+          <Studio data={state.data} refresh={load} onLogout={logout} onSwitchWallet={switchWallet} />
         )}
       </AppShell>
-    </ToastProvider>
+    </>
   );
 }

@@ -10,7 +10,7 @@ export async function POST(request) {
   try {
     const { missionId, wallet } = await request.json();
     if (!missionId || !wallet || !EVM_ADDR.test(wallet)) return Response.json({ error: 'Missing fields' }, { status: 400 });
-    if (!BOOMERANG_TOKEN) return Response.json({ error: 'Missions open once $BOOMERANG is live' }, { status: 503 });
+    if (!BOOMERANG_TOKEN) return Response.json({ error: 'Missions open once $0XDIV is live' }, { status: 503 });
 
     const mission = await getMission(missionId);
     if (!mission) return Response.json({ error: 'Mission not found' }, { status: 404 });
@@ -18,7 +18,7 @@ export async function POST(request) {
 
     const balance = await getTokenUiBalance(wallet, BOOMERANG_TOKEN);
     if (balance < MIN_HOLD) {
-      return Response.json({ error: `You need at least ${MIN_HOLD.toLocaleString()} $BOOMERANG to earn rewards (you hold ${Math.floor(balance).toLocaleString()}).` }, { status: 403 });
+      return Response.json({ error: `You need at least ${MIN_HOLD.toLocaleString()} $0XDIV to earn rewards (you hold ${Math.floor(balance).toLocaleString()}).` }, { status: 403 });
     }
 
     let ok = false;
@@ -26,7 +26,7 @@ export async function POST(request) {
     if (mission.type === 'hold') {
       const min = Number(mission.params?.minAmount || 0);
       ok = balance >= min;
-      reason = `Hold ${min.toLocaleString()} $BOOMERANG (you have ${Math.floor(balance).toLocaleString()}).`;
+      reason = `Hold ${min.toLocaleString()} $0XDIV (you have ${Math.floor(balance).toLocaleString()}).`;
     } else if (mission.type === 'vote') {
       ok = await hasVoted(wallet); reason = 'Cast a vote in any Community Vote cycle first.';
     } else if (mission.type === 'customer') {

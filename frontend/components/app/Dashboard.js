@@ -77,7 +77,7 @@ export default function Dashboard({ data, refresh, onLogout }) {
         toast(kind === 'resume' ? 'Resumed.' : 'Paused. No cycles until you resume.');
         refresh();
       } else if (kind === 'delete') {
-        if (!window.confirm('Delete this Boomerang? The bot loses access to the dev wallet. Withdraw its funds first.')) return;
+        if (!window.confirm('Delete this policy? The bot loses access to the dev wallet. Withdraw its funds first.')) return;
         const res = await fetch('/api/app/config', { method: 'DELETE' });
         if (!res.ok) throw new Error((await res.json()).error);
         toast('Deleted.');
@@ -203,7 +203,7 @@ export default function Dashboard({ data, refresh, onLogout }) {
               <p className="text-sm text-mut">Linked{user.telegramUsername ? ` to @${user.telegramUsername}` : ''}. Send <span className="font-mono text-ink">/announce</span> in your project group so every dividend posts a receipt card there.</p>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm text-mut">Get every cycle's result on Telegram, post receipt cards in your group, and control the same Boomerang from the bot.</p>
+                <p className="text-sm text-mut">Get every cycle's result on Telegram, post receipt cards in your group, and control the same 0xdiv from the bot.</p>
                 {tg ? <a href={tg} target="_blank" rel="noopener noreferrer" className="btn-primary !py-2 text-xs">Open Telegram to link <Arrow className="h-3.5 w-3.5" /></a> : <Button variant="ghost" className="!py-2 text-xs" onClick={() => act('tg')} busy={busy === 'tg'}>Link Telegram</Button>}
               </div>
             )}
@@ -211,7 +211,7 @@ export default function Dashboard({ data, refresh, onLogout }) {
 
           <Card title="Danger zone" eyebrow="Irreversible">
             <p className="mb-3 text-xs text-mut">Deleting removes the bot's access to the dev wallet. Move its funds out first.</p>
-            <Button variant="danger" className="!py-2 text-xs" onClick={() => act('delete')} busy={busy === 'delete'}>Delete this Boomerang</Button>
+            <Button variant="danger" className="!py-2 text-xs" onClick={() => act('delete')} busy={busy === 'delete'}>Delete this policy</Button>
           </Card>
         </div>
       </div>

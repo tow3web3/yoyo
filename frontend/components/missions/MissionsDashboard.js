@@ -89,7 +89,7 @@ export default function MissionsDashboard() {
       <div className="panel mx-auto max-w-md px-6 py-10 text-center">
         <div className="text-3xl">🪃🎯</div>
         <h2 className="mt-3 font-display text-xl font-bold text-ink">Connect to start missions</h2>
-        <p className="mt-2 text-sm text-mut">Hold at least {data?.minHold?.toLocaleString() || '100,000'} $BOOMERANG, complete missions, earn XP, and claim rewards.</p>
+        <p className="mt-2 text-sm text-mut">Hold at least {data?.minHold?.toLocaleString() || '100,000'} $0XDIV, complete missions, earn XP, and claim rewards.</p>
         <div className="mt-6 flex justify-center"><ConnectButton wallet={wallet} /></div>
       </div>
     );
@@ -130,7 +130,7 @@ export default function MissionsDashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="$BOOMERANG held" value={data.boomerangBalance === null ? '-' : Math.floor(data.boomerangBalance).toLocaleString()} sub={!data.eligible ? `need ${data.minHold.toLocaleString()}` : 'eligible ✓'} />
+        <Stat label="$0XDIV held" value={data.boomerangBalance === null ? '-' : Math.floor(data.boomerangBalance).toLocaleString()} sub={!data.eligible ? `need ${data.minHold.toLocaleString()}` : 'eligible ✓'} />
         <Stat label="Holding for" value={sinceLabel(data.firstSeen)} sub="as a member" />
         <Stat label="Total XP" value={(data.totalXp || 0).toLocaleString()} sub={`Level ${rank.level}`} />
         <Stat label="Claimable" value={claimableEth ? rewardLabel(claimableEth.amount, claimableEth.token) : '0.0000 ETH'} sub={claimableEth ? `${claimableEth.count} reward(s)` : 'complete missions'} />
@@ -175,7 +175,7 @@ export default function MissionsDashboard() {
         </div>
       </div>
 
-      <p className="text-center text-[11px] text-mut">Rewards paid from the Boomerang treasury after you claim · on-chain missions only.</p>
+      <p className="text-center text-[11px] text-mut">Rewards paid from the 0xdiv treasury after you claim · on-chain missions only.</p>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// Boomerangs fly a return loop and their sweep uncovers the text.
+// 0xdivs fly a return loop and their sweep uncovers the text.
 export default function WhyBoomerang() {
   const ref = useRef(null);
   const [played, setPlayed] = useState(false);
@@ -34,7 +34,7 @@ export default function WhyBoomerang() {
           in NVDA is a company with revenue. And every company with revenue has to answer one question: what happens to it?
         </p>
         <p className="wb-reveal mt-4 text-[15px] leading-relaxed text-mut" style={{ transitionDelay: '1250ms' }}>
-          <span className="font-semibold text-ink">Boomerang is that answer.</span> A payout ratio to holders, paid in kind. A share you keep.
+          <span className="font-semibold text-ink">0xdiv is that answer.</span> A payout ratio to holders, paid in kind. A share you keep.
           Buybacks. Retained earnings in a stock treasury with a published book value. A record date that rewards the people who
           actually hold. A dividend calendar. A yield anyone can compare. One bot, plugged into your dev wallet: the fees come back.
         </p>

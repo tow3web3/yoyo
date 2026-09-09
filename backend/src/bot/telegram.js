@@ -71,7 +71,7 @@ export function initBot() {
 
   bot.telegram
     .setMyCommands([
-      { command: 'start', description: '🪃 Open the Boomerang menu' },
+      { command: 'start', description: '🪃 Open the 0xdiv menu' },
       { command: 'setup', description: '🚀 Set up your dividends' },
       { command: 'status', description: '📊 View your bot status' },
       { command: 'stocks', description: '📈 The 195 Robinhood Stock Tokens' },

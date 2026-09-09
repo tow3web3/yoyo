@@ -89,7 +89,7 @@ export default function VoteDashboard() {
       <div className="panel mx-auto max-w-md px-6 py-10 text-center">
         <div className="text-3xl">🪃🗳️</div>
         <h2 className="mt-3 font-display text-xl font-bold text-ink">Connect to vote</h2>
-        <p className="mt-2 text-sm text-mut">Connect your Robinhood Chain wallet to see the Boomerang tokens you hold and vote on their next dividend. Voting is gasless: you only sign a message.</p>
+        <p className="mt-2 text-sm text-mut">Connect your Robinhood Chain wallet to see the 0xdiv tokens you hold and vote on their next dividend. Voting is gasless: you only sign a message.</p>
         {wallet.error && <p className="mt-2 text-xs text-down">{wallet.error}</p>}
         <div className="mt-6 flex justify-center"><ConnectButton wallet={wallet} /></div>
       </div>
@@ -102,7 +102,7 @@ export default function VoteDashboard() {
     return (
       <div className="panel px-6 py-12 text-center">
         <p className="text-sm font-medium text-ink">No open votes for your wallet</p>
-        <p className="mt-1 text-xs text-mut">You don't hold any token with an active Community Vote (at the last snapshot). Hold a vote-enabled Boomerang token to take part.</p>
+        <p className="mt-1 text-xs text-mut">You don't hold any token with an active Community Vote (at the last snapshot). Hold a vote-enabled 0xdiv token to take part.</p>
         <div className="mt-5 flex justify-center"><ConnectButton wallet={wallet} /></div>
       </div>
     );

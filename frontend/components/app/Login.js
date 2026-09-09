@@ -35,7 +35,7 @@ export default function Login({ onLoggedIn }) {
           Everything the Telegram bot does, with sliders. Set the payout ratio, the record date, the treasury, the schedule. Watch what the next cycle pays. Run it now. Same engine, same account.
         </p>
         <ul className="mt-6 space-y-2 text-sm text-mut">
-          {['Sign in with any wallet, no gas, no email', 'Boomerang creates a dedicated dev wallet for you, or import yours', 'Link Telegram later for receipts and alerts'].map((t) => (
+          {['Sign in with any wallet, no gas, no email', '0xdiv creates a dedicated dev wallet for you, or import yours', 'Link Telegram later for receipts and alerts'].map((t) => (
             <li key={t} className="flex items-center gap-2"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-hood-100 text-[10px] font-bold text-hood-700">✓</span>{t}</li>
           ))}
         </ul>

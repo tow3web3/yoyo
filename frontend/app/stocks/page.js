@@ -5,8 +5,8 @@ import StockUniverse from '../../components/StockUniverse';
 import CTA from '../../components/CTA';
 
 export const metadata = {
-  title: 'Stocks · Boomerang',
-  description: 'The 195 Robinhood Stock Tokens on Robinhood Chain that Boomerang can pay as dividends.',
+  title: 'Stocks · 0xdiv',
+  description: 'The 195 Robinhood Stock Tokens on Robinhood Chain that 0xdiv can pay as dividends.',
 };
 
 export default function StocksPage() {

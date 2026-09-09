@@ -178,7 +178,7 @@ function LegInspector({ leg, draft, setDraft, meta, sourceSymbol, onRemove }) {
         <Section title={leg.kind === 'wallet' ? 'Destination address' : 'Treasury wallet'}>
           <input value={leg.address} onChange={(e) => patch({ address: e.target.value.trim() })} placeholder="0x…" className={inputCls} />
           {leg.address && !ADDR.test(leg.address) && <p className="mt-1 text-xs text-red-600">Not a valid address.</p>}
-          {leg.kind === 'treasury' && <p className="mt-1.5 text-xs text-mut">A wallet you control. Boomerang only sends to it. Its holdings become the book value on the public dashboard.</p>}
+          {leg.kind === 'treasury' && <p className="mt-1.5 text-xs text-mut">A wallet you control. 0xdiv only sends to it. Its holdings become the book value on the public dashboard.</p>}
         </Section>
       )}
       {leg.kind === 'burn' && (
@@ -265,7 +265,7 @@ function SourceInspector({ data, draft, setDraft, act, busy, tg }) {
       </Section>
       <Section title="Danger zone">
         <p className="mb-2 text-xs text-mut">Deleting removes the bot's access to the dev wallet. Move its funds out first.</p>
-        <Button variant="danger" className="!py-1.5 text-xs" onClick={() => act('delete')} busy={busy === 'delete'}>Delete this Boomerang</Button>
+        <Button variant="danger" className="!py-1.5 text-xs" onClick={() => act('delete')} busy={busy === 'delete'}>Delete this policy</Button>
       </Section>
     </>
   );
@@ -438,7 +438,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet }) {
         toast(kind === 'resume' ? 'Resumed.' : 'Paused. No cycles until you resume.');
         refresh();
       } else if (kind === 'delete') {
-        if (!window.confirm('Delete this Boomerang? The bot loses access to the dev wallet. Withdraw its funds first.')) return;
+        if (!window.confirm('Delete this policy? The bot loses access to the dev wallet. Withdraw its funds first.')) return;
         const res = await fetch('/api/app/config', { method: 'DELETE' });
         if (!res.ok) throw new Error((await res.json()).error);
         toast('Deleted.');

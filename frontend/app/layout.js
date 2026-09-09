@@ -8,22 +8,22 @@ const jetbrains = JetBrains_Mono({ subsets: ['latin'], weight: ['500', '600'], v
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://boomerang.fun'
 const DESCRIPTION =
-  'Launchpads on Robinhood Chain pay creators in real stocks. Boomerang gives your memecoin a dividend policy: payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury with a published book value, and a yield anyone can compare.'
+  'Launchpads on Robinhood Chain pay creators in real stocks. 0xdiv gives your memecoin a dividend policy: payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury with a published book value, and a yield anyone can compare.'
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Boomerang: the dividend policy for memecoins',
+  title: '0xdiv: the dividend policy for memecoins',
   description: DESCRIPTION,
   keywords: 'robinhood chain, stock tokens, dividend policy, payout ratio, memecoin dividends, telegram bot, NVDA, SPY, GLD',
   icons: { icon: '/brand/boom-64.png', apple: '/brand/boom-256.png' },
   openGraph: {
-    title: 'Boomerang: the dividend policy for memecoins',
+    title: '0xdiv: the dividend policy for memecoins',
     description: DESCRIPTION,
     url: SITE_URL,
-    siteName: 'Boomerang',
+    siteName: '0xdiv',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Boomerang: the dividend policy for memecoins', description: DESCRIPTION },
+  twitter: { card: 'summary_large_image', title: '0xdiv: the dividend policy for memecoins', description: DESCRIPTION },
 }
 
 export default function RootLayout({ children }) {

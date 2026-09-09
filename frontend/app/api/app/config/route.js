@@ -1,4 +1,4 @@
-// Create, update or delete the logged-in creator's Boomerang. Mirrors the bot.
+// Create, update or delete the logged-in creator's 0xdiv. Mirrors the bot.
 import { parseAbi } from 'viem';
 import { sessionUser } from '../../../../lib/session';
 import { getConfigForUser, createConfig, updateConfig, deleteConfig, replaceLegs, getLegs } from '../../../../lib/appQueries';
@@ -34,7 +34,7 @@ export async function POST(request) {
   try {
     const user = await sessionUser();
     if (!user) return Response.json({ error: 'Not logged in' }, { status: 401 });
-    if (await getConfigForUser(user.id)) return Response.json({ error: 'You already have a Boomerang. Delete it first to start over.' }, { status: 409 });
+    if (await getConfigForUser(user.id)) return Response.json({ error: 'You already have a 0xdiv policy. Delete it first to start over.' }, { status: 409 });
 
     const b = await request.json();
     if (!EVM_ADDR.test(b.sourceToken || '')) return Response.json({ error: 'Token address is invalid' }, { status: 400 });
@@ -91,7 +91,7 @@ export async function PATCH(request) {
     const user = await sessionUser();
     if (!user) return Response.json({ error: 'Not logged in' }, { status: 401 });
     const config = await getConfigForUser(user.id);
-    if (!config) return Response.json({ error: 'No Boomerang yet' }, { status: 404 });
+    if (!config) return Response.json({ error: 'No policy yet' }, { status: 404 });
     const patch = await request.json();
     if (patch.reward !== undefined) {
       const t = resolveReward(patch.reward);
@@ -124,7 +124,7 @@ export async function DELETE() {
     const user = await sessionUser();
     if (!user) return Response.json({ error: 'Not logged in' }, { status: 401 });
     const config = await getConfigForUser(user.id);
-    if (!config) return Response.json({ error: 'No Boomerang yet' }, { status: 404 });
+    if (!config) return Response.json({ error: 'No policy yet' }, { status: 404 });
     await updateConfig(config.id, { is_active: false });
     await reschedule(config.id);
     await deleteConfig(config.id);

@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
     const { token } = await params;
     if (!EVM_ADDR.test(token)) return Response.json({ error: 'Invalid address' }, { status: 400 });
     const data = await getDashboard(token);
-    if (!data) return Response.json({ error: 'Token not found', message: 'No active Boomerang configuration for this token' }, { status: 404 });
+    if (!data) return Response.json({ error: 'Token not found', message: 'No active 0xdiv configuration for this token' }, { status: 404 });
 
     const { config, stats, topRecipients, recentExecutions, holderCount } = data;
     const src = config.source_token_address;

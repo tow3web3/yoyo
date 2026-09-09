@@ -71,7 +71,7 @@ export default function TokenDashboard() {
       <div className="flex min-h-screen items-center justify-center px-5">
         <div className="panel max-w-md px-8 py-10 text-center">
           <h1 className="font-display text-xl font-bold text-ink">Token not found</h1>
-          <p className="mt-2 text-sm text-mut">This token doesn't have an active Boomerang configuration yet.</p>
+          <p className="mt-2 text-sm text-mut">This token doesn't have an active 0xdiv configuration yet.</p>
           <Link href="/" className="btn-primary mt-6">Go home <Arrow className="h-4 w-4" /></Link>
         </div>
       </div>

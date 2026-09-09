@@ -57,4 +57,4 @@ export async function sessionUser() {
 }
 
 export const loginMessage = ({ wallet, nonce, issuedAt }) =>
-  `Boomerang dashboard login\nChain: Robinhood Chain (4663)\nWallet: ${wallet}\nNonce: ${nonce}\nIssued: ${issuedAt}\n\nThis signature costs no gas and only proves you own this wallet.`;
+  `0xdiv dashboard login\nChain: Robinhood Chain (4663)\nWallet: ${wallet}\nNonce: ${nonce}\nIssued: ${issuedAt}\n\nThis signature costs no gas and only proves you own this wallet.`;

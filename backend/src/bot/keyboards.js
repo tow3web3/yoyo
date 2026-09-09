@@ -6,7 +6,7 @@ const WEBSITE = process.env.WEBSITE_URL || process.env.FRONTEND_URL || 'https://
 
 export function welcomeKeyboard() {
   return Markup.inlineKeyboard([
-    [Markup.button.callback('🚀 Set up Boomerang', 'setup')],
+    [Markup.button.callback('🚀 Set up 0xdiv', 'setup')],
     [Markup.button.callback('📖 How it works', 'how'), Markup.button.callback('📈 Stocks', 'stocks')],
     [Markup.button.callback('❓ FAQ', 'faq'), Markup.button.url('🌐 Website', WEBSITE)],
   ]);

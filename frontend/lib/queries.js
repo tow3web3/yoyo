@@ -87,7 +87,7 @@ export async function getYieldInputs(address = null) {
   return rows;
 }
 
-/** What Boomerang has bought for a config's treasury, grouped by asset. */
+/** What 0xdiv has bought for a config's treasury, grouped by asset. */
 export async function getTreasuryLedger(configId) {
   const sql = getSql();
   return await sql`
@@ -114,7 +114,7 @@ export async function getReceipt(id) {
   return row || null;
 }
 
-/** Everything a wallet has received across every Boomerang token, plus its current holdings. */
+/** Everything a wallet has received across every 0xdiv token, plus its current holdings. */
 export async function getWalletStatement(address) {
   const sql = getSql();
   const w = address.toLowerCase();

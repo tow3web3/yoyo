@@ -1,6 +1,6 @@
 // Browser-side sign in: nonce, wallet signature, session cookie. Shared by the
 // login screen and the wallet menu (switch account).
-export const LOGIN_TEXT = (addr, nonce, issuedAt) => `Boomerang dashboard login\nChain: Robinhood Chain (4663)\nWallet: ${addr}\nNonce: ${nonce}\nIssued: ${issuedAt}\n\nThis signature costs no gas and only proves you own this wallet.`;
+export const LOGIN_TEXT = (addr, nonce, issuedAt) => `0xdiv dashboard login\nChain: Robinhood Chain (4663)\nWallet: ${addr}\nNonce: ${nonce}\nIssued: ${issuedAt}\n\nThis signature costs no gas and only proves you own this wallet.`;
 
 export async function signIn(wallet, addr) {
   const n = await fetch('/api/app/auth/nonce', { cache: 'no-store' }).then((r) => r.json());

@@ -2,15 +2,15 @@ import Navigation from '../../components/Navigation';
 import TickerTape from '../../components/TickerTape';
 import Footer from '../../components/Footer';
 
-export const metadata = { title: 'Missions, coming soon · Boomerang' };
+export const metadata = { title: 'Missions, coming soon · 0xdiv' };
 
 const PREVIEW = [
-  { emoji: '💎', title: 'Diamond hands', body: 'Hold tiers from 100K to 1M $BOOMERANG.' },
+  { emoji: '💎', title: 'Diamond hands', body: 'Hold tiers from 100K to 1M $0XDIV.' },
   { emoji: '🗳️', title: 'Cast your vote', body: 'Take part in a Community Vote cycle.' },
   { emoji: '🔥', title: 'Active voter', body: 'Vote across multiple cycles.' },
   { emoji: '🤝', title: 'Become a customer', body: 'Link your own token to the bot.' },
   { emoji: '🎰', title: 'Spin the wheel', body: 'Turn on Stock Roulette.' },
-  { emoji: '📈', title: 'Dividend collector', body: 'Receive a stock dividend from any Boomerang token. (later)' },
+  { emoji: '📈', title: 'Dividend collector', body: 'Receive a stock dividend from any 0xdiv token. (later)' },
 ];
 
 const RANKS = ['🥚 Rookie', '🪃 Holder', '💎 Diamond', '🐋 Whale', '👑 Legend'];
@@ -26,7 +26,7 @@ export default function MissionsPage() {
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Earn from holding 🪃🎯</h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-mut">
             Holding won't be passive anymore. Complete missions, earn <span className="font-semibold text-ink">XP</span>, level up, and claim
-            ETH rewards straight to your wallet, gasless. And soon, every project on Boomerang will be able to run missions for
+            ETH rewards straight to your wallet, gasless. And soon, every project on 0xdiv will be able to run missions for
             their own holders.
           </p>
         </div>
@@ -56,7 +56,7 @@ export default function MissionsPage() {
           ))}
         </div>
 
-        <p className="mt-6 text-center text-sm text-mut">Missions drop with <span className="font-semibold text-ink">$BOOMERANG</span> on Robinhood Chain. 🪃</p>
+        <p className="mt-6 text-center text-sm text-mut">Missions drop with <span className="font-semibold text-ink">$0XDIV</span> on Robinhood Chain. 🪃</p>
       </main>
       <Footer />
     </>

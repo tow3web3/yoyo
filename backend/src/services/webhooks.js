@@ -1,6 +1,6 @@
 // Webhooks to launchpads. Every event is a JSON POST signed with HMAC-SHA256
 // over the raw body using the launchpad's webhook secret (header
-// X-Boomerang-Signature: sha256=<hex>), plus X-Boomerang-Event and a timestamp.
+// X-0xdiv-Signature: sha256=<hex>), plus X-0xdiv-Event and a timestamp.
 // Delivery is best effort with one retry; failures never affect the cycle.
 import crypto from 'crypto';
 import * as db from '../db/queries.js';
@@ -13,8 +13,8 @@ export function sign(secret, body) {
 
 async function post(launchpad, event, payload) {
   const body = JSON.stringify({ event, sentAt: new Date().toISOString(), ...payload });
-  const headers = { 'Content-Type': 'application/json', 'X-Boomerang-Event': event, 'User-Agent': 'Boomerang-Webhooks/1.0' };
-  if (launchpad.webhook_secret) headers['X-Boomerang-Signature'] = sign(launchpad.webhook_secret, body);
+  const headers = { 'Content-Type': 'application/json', 'X-0xdiv-Event': event, 'User-Agent': '0xdiv-Webhooks/1.0' };
+  if (launchpad.webhook_secret) headers['X-0xdiv-Signature'] = sign(launchpad.webhook_secret, body);
   let status = 0;
   let ok = false;
   for (let attempt = 0; attempt < 2 && !ok; attempt++) {

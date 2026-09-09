@@ -122,12 +122,23 @@ export async function handleHelp(ctx) {
 }
 
 export async function handleHowItWorks(ctx) {
+  const dash = `${(process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun')}/app`;
   await edit(ctx,
     `📖 *How Boomerang works*\n\n` +
-    `1️⃣ *Sweep*: your launchpad pays you in stock tokens (or ETH). Every cycle Boomerang sweeps the dev wallet: all 195 Robinhood Stock Tokens and ETH above the gas reserve.\n\n` +
-    `2️⃣ *Apply the policy*: payout ratio to holders, the share you keep, buyback and burn, retained earnings into the treasury. Loyalty sets the record date.\n\n` +
-    `3️⃣ *Pay in kind*: NVDA fees become NVDA dividends, pro-rata, no swap. ETH fees are converted to your chosen stock with a fair-price guard (at least 90% of the real market price).\n\n` +
-    `Schedules: every 1 to 60 minutes, or once a day at the closing bell like a real dividend. 🪃`,
+    `Your launchpad on Robinhood Chain pays you in real Stock Tokens (NVDA, SPY, GLD, 195 of them) or ETH. Boomerang is the dividend policy on top: it decides where every cycle's fees go.\n\n` +
+    `🧭 *Routing canvas*: draw it on the dashboard (${dash}). Fees flow from the dev wallet to as many legs as you like, each with its own share:\n` +
+    `  🎁 Holders: the dividend, paid *in kind* (NVDA fees become NVDA dividends, no swap)\n` +
+    `  👤 Wallets: you, a partner, marketing, a DAO, any address\n` +
+    `  🔥 Buyback & burn: buys your own token on Uniswap and burns it\n` +
+    `  🏦 Treasury: retained earnings in stocks, book value per token published live\n\n` +
+    `🪙 *Any token, by address*: each leg can convert its share into a stock, ETH, or any token on Robinhood Chain by contract address. Pay a partner in their coin, pay holders in yours.\n\n` +
+    `🏅 *Record date*: dividends weighted by holding time, 1x to 2x over 30 days, minimum hold, selling resets the clock. Snipers earn less than diamond hands.\n\n` +
+    `🎛️ *ETH fees*: fixed reward, 🎰 Stock Roulette, 🚀 Top Gainer of the day, 📊 Portfolio baskets (Magnificent 7, AI & Semis, Degen Street, Safe Haven) or 🗳️ holder vote.\n\n` +
+    `🔔 *Calendar*: every 1 to 60 minutes, or once a day at the closing bell (4:00 pm New York), market hours only if you want.\n\n` +
+    `⚖️ *Fair-price guard*: every swap is checked against Yahoo Finance (stocks) or DexScreener (tokens). Thin pool, no fill: that leg pays in kind instead of a bad price.\n\n` +
+    `🧾 *Receipts & statements*: every dividend posts a card here with Share on X. Holders get a statement page, tokens get a public dashboard, a yield figure and an embeddable badge.\n\n` +
+    `🔗 *Launchpads* plug in with one link: a token lands here already configured.\n\n` +
+    `🔐 Keys are AES-256 encrypted, decrypted in memory at run time only. Use a dedicated dev wallet. 🪃`,
     keyboards.welcomeKeyboard()
   );
 }
@@ -136,7 +147,7 @@ export async function handleFaq(ctx) {
   await edit(ctx,
     `❓ *FAQ*\n\n` +
     `*Are my funds safe?*\nYour key is encrypted (AES-256-GCM) and only decrypted in memory at run time. Use a *dedicated wallet*.\n\n` +
-    `*What can the bot do with my wallet?*\nCollect fees, swap on Uniswap, transfer rewards to holders. Nothing else.\n\n` +
+    `*What can the bot do with my wallet?*\nCollect fees, swap on Uniswap, send each leg where you routed it: holders, your wallets, the burn address, your treasury. Nothing else.\n\n` +
     `*Which stocks?*\nAll 195 official Robinhood Stock Tokens. The liquid ones (${LIQUID_TICKERS.join(', ')}) fill at fair value today; others are guarded and fall back to ETH when their pool is too thin.\n\n` +
     `*Who counts as a holder?*\nReal wallets only. Pools, routers, the token contract and any smart contract are excluded.\n\n` +
     `*Can I stop it?*\nYes: pause, resume or delete anytime from the menu.`,

@@ -41,7 +41,13 @@ export default function Login({ onLoggedIn }) {
         </ul>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Button onClick={login} busy={busy} className="text-base">{wallet.available ? (wallet.connected ? 'Sign in' : 'Connect wallet and sign in') : 'Install a wallet'}</Button>
-          {wallet.connected && <span className="font-mono text-xs text-mut">{wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}</span>}
+          {wallet.connected && (
+            <span className="flex items-center gap-2 text-xs text-mut">
+              <span className="font-mono">{wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}</span>
+              <button type="button" onClick={async () => { setErr(null); const a = await wallet.switchAccount(); if (!a) setErr(wallet.error || 'No account selected'); }} className="font-semibold text-hood-700 hover:underline">Not you? Switch wallet</button>
+              <button type="button" onClick={wallet.disconnect} className="hover:text-ink">Disconnect</button>
+            </span>
+          )}
         </div>
         {err && <p className="mt-3 text-sm text-down">{err}</p>}
       </div>

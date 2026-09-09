@@ -13,6 +13,12 @@ export const ROBINHOOD_CHAIN = {
   blockExplorers: { default: { name: 'Blockscout', url: 'https://robinhoodchain.blockscout.com' } },
 };
 
+// After an explicit disconnect the extension still reports its accounts; remember the
+// choice for this tab so the address does not reappear until the user connects again.
+const DISCONNECTED_KEY = 'bm:wallet-disconnected';
+const wasDisconnected = () => { try { return sessionStorage.getItem(DISCONNECTED_KEY) === '1'; } catch { return false; } };
+const setDisconnected = (v) => { try { v ? sessionStorage.setItem(DISCONNECTED_KEY, '1') : sessionStorage.removeItem(DISCONNECTED_KEY); } catch { /* ignore */ } };
+
 export function useWallet() {
   const [address, setAddress] = useState(null);
   const [available, setAvailable] = useState(false);
@@ -22,8 +28,8 @@ export function useWallet() {
     const eth = typeof window !== 'undefined' ? window.ethereum : null;
     setAvailable(Boolean(eth));
     if (!eth) return;
-    eth.request({ method: 'eth_accounts' }).then((accs) => { if (accs?.[0]) setAddress(accs[0]); }).catch(() => {});
-    const onAccounts = (accs) => setAddress(accs?.[0] || null);
+    if (!wasDisconnected()) eth.request({ method: 'eth_accounts' }).then((accs) => { if (accs?.[0]) setAddress(accs[0]); }).catch(() => {});
+    const onAccounts = (accs) => { if (!wasDisconnected()) setAddress(accs?.[0] || null); };
     eth.on?.('accountsChanged', onAccounts);
     return () => eth.removeListener?.('accountsChanged', onAccounts);
   }, []);
@@ -34,6 +40,7 @@ export function useWallet() {
     if (!eth) { setError('No wallet found. Install MetaMask or Rabby.'); return null; }
     try {
       const accs = await eth.request({ method: 'eth_requestAccounts' });
+      setDisconnected(false);
       setAddress(accs?.[0] || null);
       return accs?.[0] || null;
     } catch (e) {
@@ -42,7 +49,13 @@ export function useWallet() {
     }
   }, []);
 
-  const disconnect = useCallback(() => setAddress(null), []);
+  // Forget the account for this tab and ask the extension to drop the site permission
+  // (MetaMask honours wallet_revokePermissions, others simply ignore it).
+  const disconnect = useCallback(() => {
+    setDisconnected(true);
+    setAddress(null);
+    try { window.ethereum?.request({ method: 'wallet_revokePermissions', params: [{ eth_accounts: {} }] }).catch(() => {}); } catch { /* ignore */ }
+  }, []);
 
   // Ask the extension to show its account picker (MetaMask, Rabby, Phantom honour
   // wallet_requestPermissions), then return whatever account is selected.
@@ -53,6 +66,7 @@ export function useWallet() {
     try {
       await eth.request({ method: 'wallet_requestPermissions', params: [{ eth_accounts: {} }] }).catch(() => null);
       const accs = await eth.request({ method: 'eth_requestAccounts' });
+      setDisconnected(false);
       setAddress(accs?.[0] || null);
       return accs?.[0] || null;
     } catch (e) {

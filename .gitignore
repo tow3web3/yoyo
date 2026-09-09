@@ -45,3 +45,4 @@ recovered-key-*.txt
 recover-*.js
 users-export.csv
 backend/recovered-keys/
+design/

@@ -69,7 +69,7 @@ export default function AppPage() {
         ) : !state.data?.user ? (
           <Login onLoggedIn={load} />
         ) : !state.data.config ? (
-          <Wizard onCreated={load} />
+          <Wizard onCreated={load} user={state.data.user} />
         ) : (
           <Studio data={state.data} refresh={load} onLogout={logout} />
         )}

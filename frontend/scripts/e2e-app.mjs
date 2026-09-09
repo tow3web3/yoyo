@@ -63,6 +63,8 @@ r = await api('/api/app/config', { method: 'PATCH', body: JSON.stringify({ legs:
 check('wallet leg without address rejected', r.status === 400, r.data.error || '');
 r = await api('/api/app/me');
 check('me returns legs', r.status === 200 && r.data.legs?.length === 4);
+r = await api('/api/app/discover?wallet=0xe45eec9834a517dea03d69c9bc7dc93c1a032a34');
+check('discover tokens of a creator wallet', r.status === 200 && (r.data.created || []).some((t) => t.symbol === 'Nasduck'), 'created ' + (r.data.created || []).map((t) => t.symbol).join(','));
 r = await api('/api/app/token?address=0x39dbed3a2bd333467115de45665cc57f813c4571');
 check('token research (PONS)', r.status === 200 && r.data.research?.priceUsd > 0 && r.data.image, 'chart ' + (r.data.research?.chart?.length || 0));
 

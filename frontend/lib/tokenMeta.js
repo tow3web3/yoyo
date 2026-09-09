@@ -33,7 +33,15 @@ async function fromDexScreener(addresses, map) {
 }
 
 async function fromRpc(addresses, map) {
-  for (const addr of addresses) {
+  // Parallel, a few at a time: a wallet scan can bring 40 tokens at once.
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(8, addresses.length) }, async () => {
+    while (i < addresses.length) await readOne(addresses[i++], map);
+  }));
+}
+
+async function readOne(addr, map) {
+  {
     try {
       const [symbol, name, decimals] = await Promise.all([
         rpc().readContract({ address: addr, abi: erc20, functionName: 'symbol' }),

@@ -54,7 +54,6 @@ export default function Wizard({ onCreated, user }) {
 
   const canNext = [wallet.mode === 'mine' ? Boolean(user?.wallet) : Boolean(keyAddress), Boolean(token.meta), true][step];
   const created = scan.data?.created || [];
-  const held = scan.data?.held || [];
 
   async function create() {
     setBusy(true);
@@ -110,16 +109,16 @@ export default function Wizard({ onCreated, user }) {
         {step === 0 && (
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-ink">Which wallet created your token?</h2>
-            <p className="text-sm text-mut">Boomerang scans Robinhood Chain for the tokens this wallet created or holds, so you can pick yours in one tap.</p>
+            <p className="text-sm text-mut">Boomerang scans Robinhood Chain for the tokens this wallet created, so you can pick yours in one tap.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <button type="button" onClick={() => setWallet({ ...wallet, mode: 'mine' })} className={`rounded-xl border p-4 text-left transition ${wallet.mode === 'mine' ? 'border-hood-500 bg-hood-50' : 'border-line hover:border-hood-300'}`}>
                 <div className="text-sm font-bold text-ink">🪪 My connected wallet</div>
                 <div className="mt-1 font-mono text-xs text-ink">{user?.wallet ? shortAddr(user.wallet) : 'not connected'}</div>
-                <div className="mt-1 text-xs text-mut">We scan its tokens. Boomerang then creates a dedicated dev wallet for the fees (a bot cannot sign with your browser wallet); you set it as fee recipient on your launchpad.</div>
+                <div className="mt-1 text-xs text-mut">We list the tokens it created. Boomerang then creates a dedicated dev wallet for the fees (a bot cannot sign with your browser wallet); you set it as fee recipient on your launchpad.</div>
               </button>
               <button type="button" onClick={() => setWallet({ ...wallet, mode: 'import' })} className={`rounded-xl border p-4 text-left transition ${wallet.mode === 'import' ? 'border-hood-500 bg-hood-50' : 'border-line hover:border-hood-300'}`}>
                 <div className="text-sm font-bold text-ink">🔑 Import a key</div>
-                <div className="mt-1 text-xs text-mut">The wallet that already receives your launchpad fees. We scan its tokens and use it as the dev wallet. AES-256 encrypted the moment it arrives.</div>
+                <div className="mt-1 text-xs text-mut">The wallet that created your token and receives its fees. We list its tokens and use it as the dev wallet. AES-256 encrypted the moment it arrives.</div>
               </button>
             </div>
             {wallet.mode === 'import' && (
@@ -136,7 +135,7 @@ export default function Wizard({ onCreated, user }) {
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-ink">Which token pays dividends?</h2>
             <p className="text-sm text-mut">Scanning <span className="font-mono text-ink">{shortAddr(scanWallet)}</span> on Robinhood Chain. Its holders will receive the dividends.</p>
-            {scan.loading && <div className="flex items-center gap-2 rounded-xl border border-line bg-ground px-3 py-3 text-xs text-mut"><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-line border-t-hood-500" /> Reading every transfer this wallet ever made, finding the tokens it created…</div>}
+            {scan.loading && <div className="flex items-center gap-2 rounded-xl border border-line bg-ground px-3 py-3 text-xs text-mut"><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-line border-t-hood-500" /> Reading every transaction this wallet ever sent, finding the tokens it created…</div>}
             {scan.error && <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"><span>The chain scan did not complete{/rate limit/i.test(scan.error) ? ' (the public RPC is busy)' : ''}. Paste the address below, or retry.</span><button type="button" onClick={() => { scanned.current = null; setScan({ wallet: null, loading: false, data: null, error: null }); }} className="ml-3 rounded-full bg-ink px-2.5 py-1 text-[11px] font-bold text-white">Retry</button></div>}
             {scan.data && (
               <div className="space-y-3">
@@ -146,16 +145,10 @@ export default function Wizard({ onCreated, user }) {
                     <div className="space-y-1.5">{created.map((t) => <TokenRow key={t.address} t={t} tag="Created" />)}</div>
                   </div>
                 )}
-                {held.length > 0 && (
-                  <div>
-                    <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-mut">Also in this wallet</div>
-                    <div className="space-y-1.5">{held.slice(0, 8).map((t) => <TokenRow key={t.address} t={t} />)}</div>
-                  </div>
-                )}
-                {created.length === 0 && held.length === 0 && <p className="text-xs text-mut">No token found for this wallet yet. Paste the contract address below.</p>}
+                {created.length === 0 && <p className="text-xs text-mut">No token created by this wallet found on chain. If your launchpad deployed it from another wallet, paste the contract address below.</p>}
               </div>
             )}
-            <Field label={scan.data && (created.length || held.length) ? 'Or paste a contract address' : 'Token contract address'} hint="Any ERC-20 on Robinhood Chain.">
+            <Field label={created.length ? 'Or paste a contract address' : 'Token contract address'} hint="Any ERC-20 on Robinhood Chain.">
               <input value={manual} onChange={(e) => { setManual(e.target.value.trim()); checkToken(e.target.value.trim()); }} placeholder="0x…" className={inputCls} />
             </Field>
             {token.checking && <p className="text-xs text-mut">Checking on chain, DexScreener and GeckoTerminal…</p>}

@@ -18,8 +18,9 @@ const ZERO_TOPIC = `0x${'0'.repeat(64)}`;
 const ERC20 = parseAbi(['function symbol() view returns (string)', 'function name() view returns (string)', 'function decimals() view returns (uint8)', 'function balanceOf(address) view returns (uint256)']);
 const IGNORE = new Set(['0x0bd7d308f8e1639fab988df18a8011f41eacad73', '0x5fc5360d0400a0fd4f2af552add042d716f1d168']); // WETH, USDG
 const MAX_HELD = 40;
-const MAX_RECEIPTS = 160;
-const PER_TARGET = 6; // receipts to inspect per distinct contract the wallet called
+const MAX_RECEIPTS = 1200;
+const PER_TARGET = 80; // receipts to inspect per distinct contract the wallet called (games and routers are called far more often than a launchpad factory)
+const NEVER_CREATE = new Set(['0x0000000000000000000000000000000000004663', '0x000000000000000000000000000000000000dead', '0xca11bde05977b3631167028862be2a173976ca11', '0x89e5db8b5aa49aa85ac63f691524311aeb649eba', '0xcaf681a66d020601342297493863e78c959e5cb2', '0x73991a25c818bf1f1128deaab1492d45638de0d3', '0x8366a39cc670b4001a1121b8f6a443a643e40951', '0x9115a9208e9c09056bb3617136cb4eff1bb408a0']); // inscription sink, burn, multicall, uniswap routers, pool manager
 const TTL = 2 * 60_000;
 const walletCache = new Map();
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
@@ -47,7 +48,7 @@ async function alchemy(method, params) {
 async function outgoingTxs(wallet) {
   const out = [];
   let pageKey;
-  for (let page = 0; page < 3; page++) {
+  for (let page = 0; page < 10; page++) {
     const r = await alchemy('alchemy_getAssetTransfers', [{ fromBlock: '0x0', toBlock: 'latest', fromAddress: wallet, category: ['external'], maxCount: '0x3e8', excludeZeroValue: false, order: 'desc', ...(pageKey ? { pageKey } : {}) }]).catch(() => null);
     if (!r) break;
     for (const t of r.transfers || []) out.push({ hash: t.hash, to: (t.to || '').toLowerCase(), block: parseInt(t.blockNum, 16) });
@@ -69,10 +70,15 @@ async function mapLimit(items, limit, fn) {
 /** Tokens minted or deployed inside the wallet's own transactions. Map token -> { txHash, block }. */
 async function createdTokens(client, wallet) {
   const txs = await outgoingTxs(wallet);
+  // Only transactions to contracts can create tokens: drop plain transfers to wallets and known sinks.
+  const targets = [...new Set(txs.map((t) => t.to).filter((a) => a && !IGNORE.has(a) && !NEVER_CREATE.has(a)))];
+  const codes = await mapLimit(targets, 12, async (a) => ((await client.getCode({ address: a })) || '0x') !== '0x');
+  const isContract = new Map(targets.map((a, i) => [a, Boolean(codes[i])]));
   const perTarget = new Map();
   const picked = [];
   for (const t of txs) {
-    if (IGNORE.has(t.to)) continue;
+    if (IGNORE.has(t.to) || NEVER_CREATE.has(t.to)) continue;
+    if (t.to && !isContract.get(t.to)) continue;
     const n = perTarget.get(t.to) || 0;
     if (t.to && n >= PER_TARGET) continue; // repeated calls to the same contract (a game, a router) rarely create tokens
     perTarget.set(t.to, n + 1);
@@ -80,7 +86,7 @@ async function createdTokens(client, wallet) {
     if (picked.length >= MAX_RECEIPTS) break;
   }
   const found = new Map();
-  await mapLimit(picked, 10, async (t) => {
+  await mapLimit(picked, 16, async (t) => {
     const r = await client.getTransactionReceipt({ hash: t.hash });
     if (!r || r.status !== 'success') return;
     if (r.contractAddress) found.set(r.contractAddress.toLowerCase(), { txHash: t.hash, block: t.block, how: 'deployed' });

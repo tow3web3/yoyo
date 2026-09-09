@@ -1,6 +1,8 @@
 // Shared bits for the server-rendered cards (receipts, wallet statements, token
 // OG images). Rendered with next/og (Satori): flex layouts only, absolute image
 // URLs, fonts passed in as buffers.
+import fs from 'fs';
+import path from 'path';
 import { STOCK_BY_ADDRESS, isNative } from './stocks';
 
 export const CARD = { width: 1200, height: 630 };
@@ -51,11 +53,21 @@ export function Monogram({ text, color = COLORS.greenDeep, size = 96 }) {
   );
 }
 
-export function Wordmark({ siteUrl: site, size = 28 }) {
+/** The boomerang as a data URL: Satori cannot always fetch the site from inside the server. */
+let logoData = null;
+export function logoUrl(site) {
+  if (logoData) return logoData;
+  for (const p of [path.join(process.cwd(), 'public', 'brand', 'boom-256.png'), path.join(process.cwd(), 'frontend', 'public', 'brand', 'boom-256.png')]) {
+    try { logoData = 'data:image/png;base64,' + fs.readFileSync(p).toString('base64'); return logoData; } catch { /* next */ }
+  }
+  return `${site}/brand/boom-256.png`;
+}
+
+export function Wordmark({ siteUrl: site, size = 28, color = COLORS.ink }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <img src={`${site}/brand/boom-256.png`} width={size + 8} height={size + 8} alt="" />
-      <span style={{ fontSize: size, fontWeight: 800, color: COLORS.ink, letterSpacing: -0.5, display: 'flex' }}><span style={{ color: COLORS.greenDeep }}>0x</span>div</span>
+      <img src={logoUrl(site)} width={size + 8} height={size + 8} alt="" />
+      <div style={{ display: 'flex', fontSize: size, fontWeight: 800, letterSpacing: -0.5 }}><span style={{ color: COLORS.greenDeep }}>0x</span><span style={{ color }}>div</span></div>
       <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.greenDeep, border: `1px solid ${COLORS.green}55`, background: '#EBFCEB', borderRadius: 999, padding: '3px 10px', letterSpacing: 1.5 }}>ROBINHOOD CHAIN</span>
     </div>
   );

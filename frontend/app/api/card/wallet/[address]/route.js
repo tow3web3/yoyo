@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { getWalletStatement } from '../../../../../lib/queries';
 import { fetchTokenMeta } from '../../../../../lib/tokenMeta';
-import { CARD, COLORS, loadFonts, assetLogo, fmtUnits, siteUrl, Monogram, Wordmark } from '../../../../../lib/og';
+import { CARD, COLORS, loadFonts, assetLogo, fmtUnits, siteUrl, Monogram, Wordmark, logoUrl } from '../../../../../lib/og';
 import { EVM_ADDR } from '../../../../../lib/stocks';
 
 export const runtime = 'nodejs';
@@ -37,7 +37,7 @@ export async function GET(request, { params }) {
         <div style={{ position: 'absolute', bottom: -220, left: 100, width: 460, height: 460, borderRadius: 460, background: 'rgba(246,195,67,0.16)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src={`${site}/brand/boom-256.png`} width={36} height={36} alt="" />
+            <img src={logoUrl(site)} width={36} height={36} alt="" />
             <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>0xdiv</span>
           </div>
           <span style={{ fontSize: 18, color: '#9AA39D', letterSpacing: 2 }}>DIVIDEND STATEMENT · {short}</span>

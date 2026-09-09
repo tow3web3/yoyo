@@ -41,8 +41,8 @@ function AppShell({ children, wallet, studio, onSwitch, onLogout }) {
       <nav className="sticky top-0 z-40 border-b border-line bg-ground/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="relative h-8 w-8"><Image src="/brand/boom-256.png" alt="0xdiv" fill className="object-contain" /></div>
-            <span className="font-display text-lg font-bold tracking-tight text-ink"><span className="font-mono font-extrabold text-hood-700">0x</span>div</span>
+            <div className="relative h-8 w-8"><Image src="/brand/yoyo-256.png" alt="Yoyo" fill className="object-contain" /></div>
+            <span className="font-display text-lg font-bold tracking-tight text-ink">Yoyo</span>
             <span className="rounded-full border border-ink bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Dashboard</span>
           </Link>
           <div className="flex items-center gap-3 text-sm">

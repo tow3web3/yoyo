@@ -14,9 +14,9 @@ export default function Navigation() {
         <div className="flex h-14 items-center justify-between gap-4">
           <Link href="/" className="group flex items-center gap-2.5">
             <div className="relative h-8 w-8 group-hover:animate-wiggle">
-              <Image src="/brand/boom-256.png" alt="0xdiv" fill className="object-contain" priority />
+              <Image src="/brand/yoyo-256.png" alt="Yoyo" fill className="object-contain" priority />
             </div>
-            <span className="font-display text-lg font-bold tracking-tight text-ink"><span className="font-mono font-extrabold text-hood-700">0x</span>div</span>
+            <span className="font-display text-lg font-bold tracking-tight text-ink">Yoyo</span>
             <span className="hidden items-center gap-1.5 whitespace-nowrap rounded-full border border-hood-300 bg-hood-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-hood-700 sm:inline-flex">
               <span className="h-1.5 w-1.5 rounded-full bg-hood-500" />
               Robinhood Chain
@@ -36,10 +36,10 @@ export default function Navigation() {
 
           <div className="flex items-center gap-2">
             <CopyCA className="hidden xl:inline-flex" />
-            <a href="https://x.com/Boomerang_tek" target="_blank" rel="noopener noreferrer" aria-label="0xdiv on X" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
+            <a href="https://x.com/Boomerang_tek" target="_blank" rel="noopener noreferrer" aria-label="Yoyo on X" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
               <X className="h-[18px] w-[18px]" />
             </a>
-            <a href="https://github.com/tow3web3/boomerang" target="_blank" rel="noopener noreferrer" aria-label="0xdiv on GitHub" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
+            <a href="https://github.com/tow3web3/boomerang" target="_blank" rel="noopener noreferrer" aria-label="Yoyo on GitHub" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
               <Github className="h-[18px] w-[18px]" />
             </a>
             <Link href="/app" className="btn-primary whitespace-nowrap">

@@ -271,7 +271,7 @@ async function migrate() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_vote_cycles_config ON vote_cycles(config_id, status);`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_votes_option ON votes(option_id);`);
 
-    // Missions: holders of $0XDIV complete actions, earn XP, claim rewards.
+    // Missions: holders of $YOYO complete actions, earn XP, claim rewards.
     await pool.query(`
       CREATE TABLE IF NOT EXISTS missions (
         id SERIAL PRIMARY KEY,
@@ -316,12 +316,12 @@ async function migrate() {
     // Starter missions, rewards in ETH (wei).
     const ETH = '0x0000000000000000000000000000000000000000';
     const seed = [
-      ['holder-100k', 'Holder', 'Hold at least 100,000 $0XDIV.', 'hold', { minAmount: 100000 }, 50, '100000000000000', '20000000000000000'],
-      ['diamond-500k', 'Diamond hands', 'Hold at least 500,000 $0XDIV.', 'hold', { minAmount: 500000 }, 100, '300000000000000', '30000000000000000'],
-      ['whale-1m', 'Whale', 'Hold at least 1,000,000 $0XDIV.', 'hold', { minAmount: 1000000 }, 200, '1000000000000000', '50000000000000000'],
+      ['holder-100k', 'Holder', 'Hold at least 100,000 $YOYO.', 'hold', { minAmount: 100000 }, 50, '100000000000000', '20000000000000000'],
+      ['diamond-500k', 'Diamond hands', 'Hold at least 500,000 $YOYO.', 'hold', { minAmount: 500000 }, 100, '300000000000000', '30000000000000000'],
+      ['whale-1m', 'Whale', 'Hold at least 1,000,000 $YOYO.', 'hold', { minAmount: 1000000 }, 200, '1000000000000000', '50000000000000000'],
       ['first-vote', 'Cast your first vote', 'Vote in any Community Vote cycle.', 'vote', {}, 75, '200000000000000', '20000000000000000'],
       ['active-voter', 'Active voter', 'Vote in 3 different Community Vote cycles.', 'vote_count', { count: 3 }, 150, '500000000000000', '20000000000000000'],
-      ['link-token', 'Become a customer', 'Link one of your tokens to 0xdiv.', 'customer', {}, 200, '1000000000000000', '50000000000000000'],
+      ['link-token', 'Become a customer', 'Link one of your tokens to Yoyo.', 'customer', {}, 200, '1000000000000000', '50000000000000000'],
       ['roulette-on', 'Spin the wheel', 'Enable Stock Roulette on one of your tokens.', 'roulette_mode', {}, 120, '500000000000000', '20000000000000000'],
       ['vote-on', 'Power to the people', 'Enable Community Vote on one of your tokens.', 'vote_mode', {}, 120, '500000000000000', '20000000000000000'],
     ];

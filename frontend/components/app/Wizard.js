@@ -1,6 +1,6 @@
 'use client';
 
-// Setup: pick the wallet first (the connected one, or a key you import), 0xdiv
+// Setup: pick the wallet first (the connected one, or a key you import), Yoyo
 // scans the chain for the tokens that wallet created or holds, you pick one, go.
 // Everything else (routing, record date, schedule) is drawn on the canvas afterwards.
 import { useEffect, useRef, useState } from 'react';
@@ -69,7 +69,7 @@ export default function Wizard({ onCreated, user, onSwitchWallet, onLogout }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not create');
-      toast(data.generated ? `0xdiv is live for your token. Dev wallet ${shortAddr(data.devWallet)} created for you. Now draw the routing.` : '0xdiv is live for your token. Now draw the routing.');
+      toast(data.generated ? `Yoyo is live for your token. Dev wallet ${shortAddr(data.devWallet)} created for you. Now draw the routing.` : 'Yoyo is live for your token. Now draw the routing.');
       onCreated(data);
     } catch (e) {
       toast(e.message, 'err');
@@ -92,7 +92,7 @@ export default function Wizard({ onCreated, user, onSwitchWallet, onLogout }) {
   return (
     <div className="mx-auto max-w-2xl px-5 py-10">
       <div className="mb-6">
-        <div className="eyebrow mb-2">Set up 0xdiv</div>
+        <div className="eyebrow mb-2">Set up Yoyo</div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">Your wallet, your token, then draw the routing.</h1>
       </div>
 
@@ -109,7 +109,7 @@ export default function Wizard({ onCreated, user, onSwitchWallet, onLogout }) {
         {step === 0 && (
           <div className="space-y-4">
             <h2 className="font-display text-lg font-bold text-ink">Which wallet created your token?</h2>
-            <p className="text-sm text-mut">0xdiv scans Robinhood Chain for the tokens this wallet created, so you can pick yours in one tap.</p>
+            <p className="text-sm text-mut">Yoyo scans Robinhood Chain for the tokens this wallet created, so you can pick yours in one tap.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <button type="button" onClick={() => setWallet({ ...wallet, mode: 'mine' })} className={`rounded-xl border p-4 text-left transition ${wallet.mode === 'mine' ? 'border-hood-500 bg-hood-50' : 'border-line hover:border-hood-300'}`}>
                 <div className="text-sm font-bold text-ink">🪪 My connected wallet</div>
@@ -118,7 +118,7 @@ export default function Wizard({ onCreated, user, onSwitchWallet, onLogout }) {
                   {onSwitchWallet && <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onSwitchWallet(); }} onKeyDown={(e) => e.key === 'Enter' && onSwitchWallet()} className="rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] font-bold text-ink hover:border-hood-400">🔁 Switch wallet</span>}
                   {onLogout && <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onLogout(); }} onKeyDown={(e) => e.key === 'Enter' && onLogout()} className="rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] font-bold text-down hover:border-red-300">⏏ Disconnect</span>}
                 </div>
-                <div className="mt-1 text-xs text-mut">We list the tokens it created. 0xdiv then creates a dedicated dev wallet for the fees (a bot cannot sign with your browser wallet); you set it as fee recipient on your launchpad.</div>
+                <div className="mt-1 text-xs text-mut">We list the tokens it created. Yoyo then creates a dedicated dev wallet for the fees (a bot cannot sign with your browser wallet); you set it as fee recipient on your launchpad.</div>
               </button>
               <button type="button" onClick={() => setWallet({ ...wallet, mode: 'import' })} className={`rounded-xl border p-4 text-left transition ${wallet.mode === 'import' ? 'border-hood-500 bg-hood-50' : 'border-line hover:border-hood-300'}`}>
                 <div className="text-sm font-bold text-ink">🔑 Import a key</div>

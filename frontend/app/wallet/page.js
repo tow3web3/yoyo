@@ -27,7 +27,7 @@ export default function WalletLookup() {
       <main className="mx-auto max-w-2xl px-5 py-16 text-center">
         <div className="eyebrow mb-2">Dividend statement</div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">What did holding earn you?</h1>
-        <p className="mt-3 text-sm text-mut">Every stock dividend a wallet received from any 0xdiv token, plus its loyalty standing. Shareable.</p>
+        <p className="mt-3 text-sm text-mut">Every stock dividend a wallet received from any Yoyo token, plus its loyalty standing. Shareable.</p>
         <form onSubmit={(e) => { e.preventDefault(); go(q.trim()); }} className="mx-auto mt-8 flex max-w-xl flex-col gap-2 sm:flex-row">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="0x… wallet address" spellCheck={false} className="flex-1 rounded-full border border-line bg-paper px-5 py-3 font-mono text-sm outline-none focus:border-hood-400 focus:ring-2 focus:ring-hood-200" />
           <button type="submit" className="btn-primary justify-center">Show <Arrow className="h-4 w-4" /></button>

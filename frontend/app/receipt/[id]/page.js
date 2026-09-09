@@ -24,12 +24,12 @@ async function load(id) {
 export async function generateMetadata({ params }) {
   const { id } = await params;
   const d = await load(id);
-  if (!d) return { title: 'Receipt not found · 0xdiv' };
+  if (!d) return { title: 'Receipt not found · Yoyo' };
   const title = `$${d.src.symbol || 'Token'} paid ${d.amount} ${d.rewardSymbol} to its holders`;
-  const description = `${d.r.paid_count || d.r.holder_count} wallets received ${d.rewardSymbol} as a dividend on Robinhood Chain, via 0xdiv.`;
+  const description = `${d.r.paid_count || d.r.holder_count} wallets received ${d.rewardSymbol} as a dividend on Robinhood Chain, via Yoyo.`;
   const image = `${siteUrl()}/api/card/receipt/${d.r.id}`;
   return {
-    title: `${title} · 0xdiv`,
+    title: `${title} · Yoyo`,
     description,
     openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }], type: 'article' },
     twitter: { card: 'summary_large_image', title, description, images: [image] },

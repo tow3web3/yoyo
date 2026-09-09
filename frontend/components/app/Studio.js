@@ -178,7 +178,7 @@ function LegInspector({ leg, draft, setDraft, meta, sourceSymbol, onRemove }) {
         <Section title={leg.kind === 'wallet' ? 'Destination address' : 'Treasury wallet'}>
           <input value={leg.address} onChange={(e) => patch({ address: e.target.value.trim() })} placeholder="0x…" className={inputCls} />
           {leg.address && !ADDR.test(leg.address) && <p className="mt-1 text-xs text-red-600">Not a valid address.</p>}
-          {leg.kind === 'treasury' && <p className="mt-1.5 text-xs text-mut">A wallet you control. 0xdiv only sends to it. Its holdings become the book value on the public dashboard.</p>}
+          {leg.kind === 'treasury' && <p className="mt-1.5 text-xs text-mut">A wallet you control. Yoyo only sends to it. Its holdings become the book value on the public dashboard.</p>}
         </Section>
       )}
       {leg.kind === 'burn' && (

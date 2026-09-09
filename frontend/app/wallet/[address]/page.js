@@ -15,12 +15,12 @@ const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 export async function generateMetadata({ params }) {
   const { address } = await params;
-  if (!EVM_ADDR.test(address)) return { title: 'Wallet · 0xdiv' };
+  if (!EVM_ADDR.test(address)) return { title: 'Wallet · Yoyo' };
   const image = `${siteUrl()}/api/card/wallet/${address}`;
   const title = `Dividend statement for ${short(address)}`;
   return {
-    title: `${title} · 0xdiv`,
-    description: 'Stock dividends earned by holding tokens on Robinhood Chain, via 0xdiv.',
+    title: `${title} · Yoyo`,
+    description: 'Stock dividends earned by holding tokens on Robinhood Chain, via Yoyo.',
     openGraph: { title, images: [{ url: image, width: 1200, height: 630 }] },
     twitter: { card: 'summary_large_image', title, images: [image] },
   };
@@ -70,7 +70,7 @@ export default async function WalletPage({ params }) {
           <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-hood-500/20 blur-3xl" />
           <div className="text-xs font-bold uppercase tracking-[0.2em] text-hood-400">{dividends} dividends received</div>
           {dividends === 0 ? (
-            <p className="mt-2 text-white/80">No dividend yet for this wallet. Hold a token that runs 0xdiv and the statement fills itself.</p>
+            <p className="mt-2 text-white/80">No dividend yet for this wallet. Hold a token that runs Yoyo and the statement fills itself.</p>
           ) : (
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[...byReward.entries()].sort((a, b) => b[1].n - a[1].n).map(([k, v]) => (
@@ -89,8 +89,8 @@ export default async function WalletPage({ params }) {
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Holdings + loyalty */}
           <div className="panel p-6">
-            <h2 className="mb-3 text-sm font-semibold text-ink">0xdiv tokens held</h2>
-            {holdings.length === 0 ? <p className="text-sm text-mut">This wallet holds no token that runs 0xdiv right now.</p> : (
+            <h2 className="mb-3 text-sm font-semibold text-ink">Yoyo tokens held</h2>
+            {holdings.length === 0 ? <p className="text-sm text-mut">This wallet holds no token that runs Yoyo right now.</p> : (
               <div className="space-y-2">
                 {holdings.map((h) => {
                   const since = h.since_block == null ? null : Math.max(Number(h.since_block), h.loyalty_sell_reset && h.last_out_block != null ? Number(h.last_out_block) : 0);

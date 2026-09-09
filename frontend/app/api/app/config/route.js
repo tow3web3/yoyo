@@ -1,4 +1,4 @@
-// Create, update or delete the logged-in creator's 0xdiv. Mirrors the bot.
+// Create, update or delete the logged-in creator's Yoyo. Mirrors the bot.
 import { parseAbi } from 'viem';
 import { sessionUser } from '../../../../lib/session';
 import { getConfigForUser, createConfig, updateConfig, deleteConfig, replaceLegs, getLegs } from '../../../../lib/appQueries';
@@ -34,7 +34,7 @@ export async function POST(request) {
   try {
     const user = await sessionUser();
     if (!user) return Response.json({ error: 'Not logged in' }, { status: 401 });
-    if (await getConfigForUser(user.id)) return Response.json({ error: 'You already have a 0xdiv policy. Delete it first to start over.' }, { status: 409 });
+    if (await getConfigForUser(user.id)) return Response.json({ error: 'You already have a Yoyo policy. Delete it first to start over.' }, { status: 409 });
 
     const b = await request.json();
     if (!EVM_ADDR.test(b.sourceToken || '')) return Response.json({ error: 'Token address is invalid' }, { status: 400 });

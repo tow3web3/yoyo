@@ -1,5 +1,5 @@
 // Ambient backdrop: a faint chart grid with a rising line, plus a few slow
-// boomerangs, all at low opacity so the content stays the subject.
+// yo-yos, all at low opacity so the content stays the subject.
 import Image from 'next/image';
 
 const BOOMS = [
@@ -37,7 +37,7 @@ export default function Backdrop() {
           className={`absolute animate-spin ${it.pos} ${it.size}`}
           style={{ opacity: it.opacity, animationDuration: `${it.dur}s`, animationDirection: it.reverse ? 'reverse' : 'normal', animationTimingFunction: 'linear' }}
         >
-          <Image src="/brand/boom-256.png" alt="" fill className="object-contain" />
+          <Image src="/brand/yoyo-256.png" alt="" fill className="object-contain" />
         </div>
       ))}
     </div>

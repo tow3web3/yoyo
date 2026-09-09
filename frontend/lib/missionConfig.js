@@ -1,14 +1,14 @@
-// $0XDIV on Robinhood Chain + the minimum holding required for missions.
+// $YOYO on Robinhood Chain + the minimum holding required for missions.
 export const BOOMERANG_TOKEN = process.env.NEXT_PUBLIC_BOOMERANG_CA || process.env.BOOMERANG_TOKEN_ADDRESS || '';
 export const MIN_HOLD = 100_000;
 
 export function claimMessage(wallet) {
-  return `0xdiv Missions, claim rewards\nChain: Robinhood Chain (4663)\nWallet: ${wallet}`;
+  return `Yoyo Missions, claim rewards\nChain: Robinhood Chain (4663)\nWallet: ${wallet}`;
 }
 
 export const RANKS = [
   { name: 'Rookie', min: 0, emoji: '🥚' },
-  { name: 'Holder', min: 100, emoji: '🪃' },
+  { name: 'Holder', min: 100, emoji: '🪀' },
   { name: 'Diamond', min: 300, emoji: '💎' },
   { name: 'Whale', min: 700, emoji: '🐋' },
   { name: 'Legend', min: 1500, emoji: '👑' },

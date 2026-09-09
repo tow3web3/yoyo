@@ -395,7 +395,7 @@ function Receipts() {
         <g>
           <rect x="24" y="28" width="196" height="46" rx="8" fill={PAPER} />
           <rect x="24" y="28" width="196" height="12" rx="6" fill={LIME} />
-          <Label x="32" y="37" size="7" fill={INK} weight={800}>🪃 DIVIDEND PAID · 4:00 PM ET</Label>
+          <Label x="32" y="37" size="7" fill={INK} weight={800}>🪀 DIVIDEND PAID · 4:00 PM ET</Label>
           <Coin x={42} y={57} r={10} t="NVDA" />
           <Label x="58" y="54" size="8" fill={MUT}>Holders received</Label>
           <Label x="58" y="68" size="12" fill={OLIVE} weight={800} mono>0.0421 NVDA</Label>

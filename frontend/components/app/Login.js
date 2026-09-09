@@ -35,7 +35,7 @@ export default function Login({ onLoggedIn }) {
           Everything the Telegram bot does, with sliders. Set the payout ratio, the record date, the treasury, the schedule. Watch what the next cycle pays. Run it now. Same engine, same account.
         </p>
         <ul className="mt-6 space-y-2 text-sm text-mut">
-          {['Sign in with any wallet, no gas, no email', '0xdiv creates a dedicated dev wallet for you, or import yours', 'Link Telegram later for receipts and alerts'].map((t) => (
+          {['Sign in with any wallet, no gas, no email', 'Yoyo creates a dedicated dev wallet for you, or import yours', 'Link Telegram later for receipts and alerts'].map((t) => (
             <li key={t} className="flex items-center gap-2"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-hood-100 text-[10px] font-bold text-hood-700">✓</span>{t}</li>
           ))}
         </ul>
@@ -54,7 +54,7 @@ export default function Login({ onLoggedIn }) {
       <div className="relative mx-auto w-full max-w-sm">
         <div className="absolute inset-8 rounded-full bg-hood-300/30 blur-3xl" />
         <div className="panel-glow relative overflow-hidden p-5">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-mut"><Image src="/brand/boom-256.png" alt="" width={18} height={18} /> Preview</div>
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-mut"><Image src="/brand/yoyo-256.png" alt="" width={18} height={18} /> Preview</div>
           <div className="mb-3 flex h-3 w-full overflow-hidden rounded-full bg-tile"><div className="w-[70%] bg-hood-500" /><div className="w-[20%] bg-ink" /><div className="w-[10%] bg-gold-400" /></div>
           <div className="grid grid-cols-3 gap-2 text-center">
             {[['70%', 'holders'], ['20%', 'you'], ['10%', 'treasury']].map(([v, l]) => <div key={l}><div className="figure font-display text-lg font-extrabold text-ink">{v}</div><div className="text-[10px] uppercase tracking-wider text-mut">{l}</div></div>)}

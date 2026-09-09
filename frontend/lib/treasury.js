@@ -1,5 +1,5 @@
 // Balance sheet of a token's treasury: what the treasury wallet holds (from the
-// ledger of what 0xdiv bought for it, plus ETH), priced with Yahoo (stocks)
+// ledger of what Yoyo bought for it, plus ETH), priced with Yahoo (stocks)
 // and ETH-USD, against the token's circulating supply and market cap.
 import { parseAbi } from 'viem';
 import { rpc } from './evm';

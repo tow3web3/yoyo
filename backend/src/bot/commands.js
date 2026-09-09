@@ -14,7 +14,7 @@ import { loyaltyLabel } from '../services/holders.js';
 import { SPLIT_PRESETS, effectiveSplit, splitLabel } from '../services/treasury.js';
 import { emitForConfig } from '../services/webhooks.js';
 
-// Optional holders-only gate: the dev wallet must hold MIN_HOLD_TO_ACTIVATE $0XDIV.
+// Optional holders-only gate: the dev wallet must hold MIN_HOLD_TO_ACTIVATE $YOYO.
 const BOOMERANG_TOKEN = isAddress(process.env.BOOMERANG_TOKEN_ADDRESS) ? process.env.BOOMERANG_TOKEN_ADDRESS : null;
 const MIN_HOLD_TO_ACTIVATE = Number(process.env.MIN_HOLD_TO_ACTIVATE || 1_000_000);
 
@@ -82,15 +82,15 @@ export async function handleStart(ctx) {
 
   if (config) {
     return ctx.replyWithMarkdown(
-      `🪃 *Welcome back!*\n\nYour policy is ${config.is_active ? '🟢 *running*' : '⏸️ *paused*'}: ` +
+      `🪀 *Welcome back!*\n\nYour policy is ${config.is_active ? '🟢 *running*' : '⏸️ *paused*'}: ` +
       `paying holders of \`${short(config.source_token_address)}\` ${scheduleLabel(config)}.\n\nWhat would you like to do?`,
       keyboards.dashboardKeyboard(config)
     );
   }
 
   await ctx.replyWithMarkdown(
-    `🪃 *0xdiv: the dividend policy for your memecoin*\n\n` +
-    `Your launchpad pays you in real stocks. 0xdiv decides what happens next, every cycle:\n` +
+    `🪀 *Yoyo: the dividend policy for your memecoin*\n\n` +
+    `Your launchpad pays you in real stocks. Yoyo decides what happens next, every cycle:\n` +
     `🎁 *Payout ratio*: a share to your holders, paid in kind (NVDA fees become NVDA dividends)\n` +
     `👤 *Your share*: sent to your own payout address\n` +
     `🔥 *Buyback*: buy your token and burn it\n` +
@@ -104,16 +104,16 @@ export async function handleStart(ctx) {
 export async function handleMenu(ctx) {
   const { config } = await getUserConfig(ctx.from.id);
   const text = config
-    ? `🪃 *Main menu*\n\n0xdiv is ${config.is_active ? '🟢 running' : '⏸️ paused'}. Pick an option:`
-    : `🪃 *Main menu*\n\nLet's turn your fees into dividends:`;
+    ? `🪀 *Main menu*\n\nYoyo is ${config.is_active ? '🟢 running' : '⏸️ paused'}. Pick an option:`
+    : `🪀 *Main menu*\n\nLet's turn your fees into dividends:`;
   await edit(ctx, text, config ? keyboards.dashboardKeyboard(config) : keyboards.welcomeKeyboard());
 }
 
 export async function handleHelp(ctx) {
   await edit(ctx,
-    `❓ *0xdiv, help*\n\n` +
+    `❓ *Yoyo, help*\n\n` +
     `*Commands*\n/start: open the menu\n/setup: configure your bot\n/status: view your bot\n/stocks: the stock universe\n/help: this message\n\n` +
-    `*The loop*\nOn schedule, 0xdiv sweeps the dev wallet (stock tokens and ETH, plus Uniswap V3 LP fees), applies your dividend policy ` +
+    `*The loop*\nOn schedule, Yoyo sweeps the dev wallet (stock tokens and ETH, plus Uniswap V3 LP fees), applies your dividend policy ` +
     `(payout ratio, your share, buyback, treasury) and pays holders in proportion to what they hold, weighted by loyalty if enabled. Stocks go out in kind; ETH is converted to your reward.\n\n` +
     `*Modes*\n🎯 Fixed: one stock (or ETH, or any token)\n🎰 Roulette: a random liquid stock each cycle\n🚀 Top Gainer: the day's best stock\n📊 Portfolio: rotate through a basket\n🗳️ Community Vote: holders choose\n🏅 Loyalty: weight dividends by holding time, snipers earn less\n\n` +
     `*Good to know*\n🔐 Your key is AES-256 encrypted, decrypted only at run time\n🛡️ Swaps are guarded against the real market price (Yahoo Finance)\n⏸️ Pause, resume or delete anytime`,
@@ -124,8 +124,8 @@ export async function handleHelp(ctx) {
 export async function handleHowItWorks(ctx) {
   const dash = `${(process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun')}/app`;
   await edit(ctx,
-    `📖 *How 0xdiv works*\n\n` +
-    `Your launchpad on Robinhood Chain pays you in real Stock Tokens (NVDA, SPY, GLD, 195 of them) or ETH. 0xdiv is the dividend policy on top: it decides where every cycle's fees go.\n\n` +
+    `📖 *How Yoyo works*\n\n` +
+    `Your launchpad on Robinhood Chain pays you in real Stock Tokens (NVDA, SPY, GLD, 195 of them) or ETH. Yoyo is the dividend policy on top: it decides where every cycle's fees go.\n\n` +
     `🧭 *Routing canvas*: draw it on the dashboard (${dash}). Fees flow from the dev wallet to as many legs as you like, each with its own share:\n` +
     `  🎁 Holders: the dividend, paid *in kind* (NVDA fees become NVDA dividends, no swap)\n` +
     `  👤 Wallets: you, a partner, marketing, a DAO, any address\n` +
@@ -138,7 +138,7 @@ export async function handleHowItWorks(ctx) {
     `⚖️ *Fair-price guard*: every swap is checked against Yahoo Finance (stocks) or DexScreener (tokens). Thin pool, no fill: that leg pays in kind instead of a bad price.\n\n` +
     `🧾 *Receipts & statements*: every dividend posts a card here with Share on X. Holders get a statement page, tokens get a public dashboard, a yield figure and an embeddable badge.\n\n` +
     `🔗 *Launchpads* plug in with one link: a token lands here already configured.\n\n` +
-    `🔐 Keys are AES-256 encrypted, decrypted in memory at run time only. Use a dedicated dev wallet. 🪃`,
+    `🔐 Keys are AES-256 encrypted, decrypted in memory at run time only. Use a dedicated dev wallet. 🪀`,
     keyboards.welcomeKeyboard()
   );
 }
@@ -179,13 +179,13 @@ async function linkWebAccount(ctx, code) {
   const tgUser = mine[0];
   if (tgUser && tgUser.id !== webUser.id) {
     const { rows: cfg } = await db.pool.query('SELECT id FROM bot_configs WHERE user_id = $1', [tgUser.id]);
-    if (cfg.length) return ctx.replyWithMarkdown('⚠️ This Telegram account already runs a 0xdiv policy. Delete it first (Settings) before linking a web account.', keyboards.welcomeKeyboard());
+    if (cfg.length) return ctx.replyWithMarkdown('⚠️ This Telegram account already runs a Yoyo policy. Delete it first (Settings) before linking a web account.', keyboards.welcomeKeyboard());
     await db.pool.query('DELETE FROM users WHERE id = $1', [tgUser.id]);
   }
   await db.pool.query('UPDATE users SET telegram_id = $1, username = $2, link_code = NULL WHERE id = $3', [telegramId, ctx.from.username || null, webUser.id]);
   const { config } = await getUserConfig(telegramId);
   await ctx.replyWithMarkdown(
-    `🔗 *Linked.* This Telegram account now controls the same 0xdiv as your web dashboard${config ? ` (\`${short(config.source_token_address)}\`)` : ''}. Alerts and receipts arrive here.`,
+    `🔗 *Linked.* This Telegram account now controls the same Yoyo as your web dashboard${config ? ` (\`${short(config.source_token_address)}\`)` : ''}. Alerts and receipts arrive here.`,
     config ? keyboards.dashboardKeyboard(config) : keyboards.welcomeKeyboard()
   );
 }
@@ -193,7 +193,7 @@ async function linkWebAccount(ctx, code) {
 async function startFromLaunchLink(ctx, code) {
   const link = await db.getLaunchLink(code);
   if (!link) return ctx.replyWithMarkdown('❌ This launch link is unknown or expired. Send /setup to start normally.', keyboards.welcomeKeyboard());
-  if (link.status === 'linked') return ctx.replyWithMarkdown('ℹ️ This token is already linked to 0xdiv. Send /status.', keyboards.welcomeKeyboard());
+  if (link.status === 'linked') return ctx.replyWithMarkdown('ℹ️ This token is already linked to Yoyo. Send /status.', keyboards.welcomeKeyboard());
   return startFromToken(ctx, link.token, link);
 }
 
@@ -207,9 +207,9 @@ async function startFromToken(ctx, token, link) {
   });
   const via = link?.launchpad_name ? ' (via ' + link.launchpad_name + ')' : '';
   await ctx.replyWithMarkdown(
-    '🪃 *Set up dividends for $' + meta.symbol + '*' + via + '\n\n' +
+    '🪀 *Set up dividends for $' + meta.symbol + '*' + via + '\n\n' +
     'Token: *' + meta.name + '* `' + short(token) + '`\n\n' +
-    "0xdiv needs your dev wallet's *private key* to collect fees and pay holders. Use a *dedicated wallet*, never your main one. " +
+    "Yoyo needs your dev wallet's *private key* to collect fees and pay holders. Use a *dedicated wallet*, never your main one. " +
     'Your key is encrypted immediately (AES-256) and the message is deleted right after.\n\nUnderstood?',
     keyboards.warningConfirmationKeyboard()
   );
@@ -229,7 +229,7 @@ export async function handleSetupStart(ctx) {
   sessions.set(telegramId, { userId: user.id, step: 'warning', data: {} });
   await ctx.replyWithMarkdown(
     `⚠️ *Before we start, read this*\n\n` +
-    `To collect fees and pay holders, 0xdiv needs your dev wallet's *private key*. So:\n\n` +
+    `To collect fees and pay holders, Yoyo needs your dev wallet's *private key*. So:\n\n` +
     `❌ *Don't* use your main wallet\n✅ *Do* create a fresh, dedicated wallet on Robinhood Chain\n✅ Keep a little ETH in it for gas (0.002 ETH is reserved automatically)\n\n` +
     `🔐 Your key is encrypted immediately (AES-256) and your message is deleted right after.\n🛑 You stay in control: pause, resume or delete anytime.\n\nUnderstood?`,
     keyboards.warningConfirmationKeyboard()
@@ -292,12 +292,12 @@ async function handlePrivateKeyInput(ctx, session, privateKey) {
     } catch { /* treat as 0 */ }
     if (held < MIN_HOLD_TO_ACTIVATE) {
       return ctx.replyWithMarkdown(
-        `🔒 *Holders-only access.*\n\nYour dev wallet must hold at least *${MIN_HOLD_TO_ACTIVATE.toLocaleString()} $0XDIV*.\n` +
+        `🔒 *Holders-only access.*\n\nYour dev wallet must hold at least *${MIN_HOLD_TO_ACTIVATE.toLocaleString()} $YOYO*.\n` +
         `Wallet \`${short(publicKey)}\` holds *${Math.floor(held).toLocaleString()}*.\n\nTop it up and send the key again, or send a different wallet.`,
         keyboards.cancelKeyboard()
       );
     }
-    gateLine = `\n💎 Holds ${Math.floor(held).toLocaleString()} $0XDIV, access granted.`;
+    gateLine = `\n💎 Holds ${Math.floor(held).toLocaleString()} $YOYO, access granted.`;
   }
 
   let balanceLine = '';
@@ -475,7 +475,7 @@ export async function handleSetupConfirmation(ctx, confirmed) {
       await emitForConfig(config, 'token.linked', { symbol: session.data.sourceMeta?.symbol || null, rewardToken: config.target_token_address, schedule: scheduleLabel(config) });
     }
     await edit(ctx,
-      `🎉 *0xdiv is live!*\n\nDividends go out ${scheduleLabel(config)}.\n\n📊 Dashboard: ${dashboardLink(config)}\n\n` +
+      `🎉 *Yoyo is live!*\n\nDividends go out ${scheduleLabel(config)}.\n\n📊 Dashboard: ${dashboardLink(config)}\n\n` +
       `Tip: hit *⚡ Run now* to fire the first cycle. The first run also builds the holder ledger from chain logs, which can take a minute.`,
       keyboards.dashboardKeyboard(config)
     );
@@ -512,7 +512,7 @@ export async function handleStatus(ctx) {
   }
 
   await ctx.replyWithMarkdown(
-    `📊 *Your 0xdiv*\n\n📍 Status: ${config.is_active ? '🟢 Running' : '⏸️ Paused'}\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n` +
+    `📊 *Your Yoyo*\n\n📍 Status: ${config.is_active ? '🟢 Running' : '⏸️ Paused'}\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n` +
     `🔐 Wallet: \`${config.dev_wallet_public}\`${balanceLine}\n💎 Your token: \`${short(config.source_token_address)}\`\n` +
     `💰 Fees: ${FEE_SOURCES[config.fee_source]?.label || config.fee_source}\n${modeLine(config)}\n` +
     `💼 Policy: ${splitLabel(config)}${lastLine}\n\n📈 Dashboard: ${dashboardLink(config)}\n🔎 ${explorerAddress(config.dev_wallet_public)}`,
@@ -606,7 +606,7 @@ function splitText(config) {
     const url = (process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun') + '/app';
     return `🧭 *Fee routing*
 
-This 0xdiv uses the routing canvas: fees flow to several destinations (holders, wallets, buyback, treasury), each with its own share and payout asset.
+This Yoyo uses the routing canvas: fees flow to several destinations (holders, wallets, buyback, treasury), each with its own share and payout asset.
 
 Edit it on the dashboard: ${url}
 
@@ -730,7 +730,7 @@ async function handleTreasuryAssetInput(ctx, session, text) {
  */
 export async function handleAnnounce(ctx) {
   const { config } = await getUserConfig(ctx.from.id);
-  if (!config) return ctx.reply('You have no 0xdiv yet. Set one up in a private chat with me first (/setup).');
+  if (!config) return ctx.reply('You have no Yoyo yet. Set one up in a private chat with me first (/setup).');
   const arg = (ctx.message.text || '').split(/\s+/)[1];
   const chat = ctx.chat;
 

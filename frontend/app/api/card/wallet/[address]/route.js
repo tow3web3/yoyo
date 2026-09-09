@@ -38,7 +38,7 @@ export async function GET(request, { params }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src={logoUrl(site)} width={36} height={36} alt="" />
-            <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>0xdiv</span>
+            <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Yoyo</span>
           </div>
           <span style={{ fontSize: 18, color: '#9AA39D', letterSpacing: 2 }}>DIVIDEND STATEMENT · {short}</span>
         </div>
@@ -46,7 +46,7 @@ export async function GET(request, { params }) {
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
           <div style={{ fontSize: 26, color: '#9AA39D' }}>{dividends > 0 ? `${dividends} dividends from ${sources.length} token${sources.length === 1 ? '' : 's'} on Robinhood Chain` : 'No dividends yet'}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 20 }}>
-            {rows.length === 0 && <div style={{ fontSize: 64, fontWeight: 800, color: COLORS.green }}>Hold a token on 0xdiv.</div>}
+            {rows.length === 0 && <div style={{ fontSize: 64, fontWeight: 800, color: COLORS.green }}>Hold a token on Yoyo.</div>}
             {rows.map(([reward, v]) => {
               const m = meta[reward] || {};
               const logo = assetLogo(reward, site);

@@ -10,7 +10,7 @@ import { swapTokenForEth } from './swap.js';
 
 export const FEE_SOURCES = {
   wallet: { label: 'Wallet balance', emoji: '💼', hint: 'Fees land in the dev wallet as stock tokens or ETH (any launchpad that pays creators directly).' },
-  univ3: { label: 'Uniswap V3 LP fees', emoji: '🦄', hint: 'Fees accrue in V3 liquidity positions held by the dev wallet. 0xdiv collects them every cycle.' },
+  univ3: { label: 'Uniswap V3 LP fees', emoji: '🦄', hint: 'Fees accrue in V3 liquidity positions held by the dev wallet. Yoyo collects them every cycle.' },
 };
 
 const MAX_UINT128 = (1n << 128n) - 1n;

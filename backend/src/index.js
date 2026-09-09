@@ -30,7 +30,7 @@ app.use(middleware.errorHandler);
 
 async function start() {
   try {
-    console.log('Starting 0xdiv (Robinhood Chain)');
+    console.log('Starting Yoyo (Robinhood Chain)');
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`   RPC: ${RPC_URL.replace(/\/v2\/.*$/, '/v2/***')}`);
 
@@ -58,7 +58,7 @@ async function start() {
       });
 
     await initScheduler();
-    console.log('Scheduler started. 0xdiv is running.');
+    console.log('Scheduler started. Yoyo is running.');
 
     process.once('SIGINT', () => gracefulShutdown(bot));
     process.once('SIGTERM', () => gracefulShutdown(bot));

@@ -13,7 +13,7 @@ export default function Security() {
       <div>
         <div className="eyebrow mb-2">Security</div>
         <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Built so your keys stay yours</h2>
-        <p className="mt-3 text-sm leading-relaxed text-mut">0xdiv handles a wallet key to automate on-chain actions, so it is designed around least privilege, encryption, a price guard, and full owner control.</p>
+        <p className="mt-3 text-sm leading-relaxed text-mut">Yoyo handles a wallet key to automate on-chain actions, so it is designed around least privilege, encryption, a price guard, and full owner control.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {POINTS.map(({ Icon, title, body, tile, ring }) => (

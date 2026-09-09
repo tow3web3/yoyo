@@ -53,21 +53,21 @@ export function Monogram({ text, color = COLORS.greenDeep, size = 96 }) {
   );
 }
 
-/** The boomerang as a data URL: Satori cannot always fetch the site from inside the server. */
+/** The yo-yo as a data URL: Satori cannot always fetch the site from inside the server. */
 let logoData = null;
 export function logoUrl(site) {
   if (logoData) return logoData;
   for (const p of [path.join(process.cwd(), 'public', 'brand', 'boom-256.png'), path.join(process.cwd(), 'frontend', 'public', 'brand', 'boom-256.png')]) {
     try { logoData = 'data:image/png;base64,' + fs.readFileSync(p).toString('base64'); return logoData; } catch { /* next */ }
   }
-  return `${site}/brand/boom-256.png`;
+  return `${site}/brand/yoyo-256.png`;
 }
 
 export function Wordmark({ siteUrl: site, size = 28, color = COLORS.ink }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <img src={logoUrl(site)} width={size + 8} height={size + 8} alt="" />
-      <div style={{ display: 'flex', fontSize: size, fontWeight: 800, letterSpacing: -0.5 }}><span style={{ color: COLORS.greenDeep }}>0x</span><span style={{ color }}>div</span></div>
+      <span style={{ fontSize: size, fontWeight: 800, letterSpacing: -0.5, color }}>Yoyo</span>
       <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.greenDeep, border: `1px solid ${COLORS.green}55`, background: '#EBFCEB', borderRadius: 999, padding: '3px 10px', letterSpacing: 1.5 }}>ROBINHOOD CHAIN</span>
     </div>
   );

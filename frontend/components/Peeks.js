@@ -10,7 +10,7 @@ const GLD = getStock('GLD').address;
 const SPY = getStock('SPY').address;
 
 const SCENES = [
-  { key: 'loop', label: 'The loop', title: 'Fees in, dividends out', body: 'Your launchpad pays the dev wallet in stocks. Every cycle 0xdiv applies the policy: holders, you, buyback, treasury.' },
+  { key: 'loop', label: 'The loop', title: 'Fees in, dividends out', body: 'Your launchpad pays the dev wallet in stocks. Every cycle Yoyo applies the policy: holders, you, buyback, treasury.' },
   { key: 'policy', label: 'The policy', title: 'Four sliders, one balance sheet', body: 'Move a share, the payout ratio adjusts. Presets for the common splits. Change it any time from the dashboard or Telegram.' },
   { key: 'record', label: 'Record date', title: 'Diamond hands earn more', body: 'Weight ramps from 1x to 2x over 30 days. A wallet that sells resets to zero. A sniper who buys right before the cycle gets nothing.' },
   { key: 'receipt', label: 'The receipt', title: 'Every dividend, posted', body: 'A card lands in your Telegram group with a Share on X button. Holders check their own statement at /wallet.' },
@@ -208,7 +208,7 @@ function ReceiptScene() {
         <div className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2 text-xs text-white/60"><span className="h-6 w-6 rounded-full bg-hood-500" /> <span className="font-semibold text-white">$PEPE holders</span> · 1,204 members</div>
         <div className={`transition-all duration-500 ${step >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
           <div className="overflow-hidden rounded-xl border border-white/10 bg-paper text-ink">
-            <div className="flex items-center justify-between bg-hood-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink"><span>🪃 Dividend paid</span><span>4:00 pm ET</span></div>
+            <div className="flex items-center justify-between bg-hood-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink"><span>🪀 Dividend paid</span><span>4:00 pm ET</span></div>
             <div className="flex items-center gap-3 p-3">
               <StockLogo address={NVDA} size="h-12 w-12" text="text-xs" className="border-2 border-hood-500" />
               <div><div className="text-[11px] text-mut">Holders of $PEPE received</div><div className="figure font-display text-2xl font-extrabold text-hood-700">0.0421 <span className="text-ink">NVDA</span></div><div className="text-[11px] text-mut">412 wallets · loyalty-weighted</div></div>

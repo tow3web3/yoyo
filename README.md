@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="frontend/public/brand/boom-256.png" width="120" alt="0xdiv" />
+<img src="frontend/public/brand/yoyo-256.png" width="120" alt="Yoyo" />
 
-# 0xdiv
+# Yoyo
 
 ### The dividend policy for memecoins.
 
-**Launchpads on Robinhood Chain pay creators in real stocks. 0xdiv decides what happens next.**
+**Launchpads on Robinhood Chain pay creators in real stocks. Yoyo decides what happens next.**
 A payout ratio to holders, paid in kind. A share you keep. Buybacks. Retained earnings in a stock treasury with a published book value. A record date that rewards real holders. A yield anyone can compare. Draw the routing on one screen: fees flow to holders, wallets, buybacks and a treasury, each leg with its own share and payout asset. Telegram is the remote; your community watches it happen on a live public dashboard.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -20,7 +20,7 @@ A payout ratio to holders, paid in kind. A share you keep. Buybacks. Retained ea
 
 ## What it does
 
-Robinhood Chain is the first chain where 195 real stocks and ETFs trade as plain ERC-20s (the official Robinhood Stock Tokens), and its launchpads pay creators their fees in those stocks. A memecoin with fees in NVDA is a company with revenue. 0xdiv gives it a dividend policy, every cycle:
+Robinhood Chain is the first chain where 195 real stocks and ETFs trade as plain ERC-20s (the official Robinhood Stock Tokens), and its launchpads pay creators their fees in those stocks. A memecoin with fees in NVDA is a company with revenue. Yoyo gives it a dividend policy, every cycle:
 
 1. **💰 Sweeps** the dev wallet: every stock token balance (Multicall3, all 195) and ETH above a gas reserve, plus Uniswap V3 LP fees.
 2. **⚖️ Applies the policy**: payout ratio to holders, the share you keep (to your payout address), buyback and burn, retained earnings into a stock treasury.
@@ -39,7 +39,7 @@ Like a boomerang, **the fees always come back.**
 - 🔔 **Wall Street schedules**: closing bell (4 pm ET), opening bell, or any interval restricted to market hours.
 - 🛡️ **Fair-price guard**: a stock swap only executes if the pool delivers at least 90% of the Yahoo Finance price. Otherwise holders get ETH that cycle and the dashboard says why.
 - 🔗 **No third-party holder API**: balances are rebuilt from Transfer logs on chain; pools, routers, the token, the dev wallet and every contract are excluded.
-- 💸 **Batched payouts**: one transfer per holder in parallel waves, or one transaction per 150 holders with the optional `0xdivDisperse` contract.
+- 💸 **Batched payouts**: one transfer per holder in parallel waves, or one transaction per 150 holders with the optional `YoyoDisperse` contract.
 - 🔥 **Buyback and burn** as an alternative destination.
 - 🌐 **Live public dashboards** per token, a live ticker tape, a stock universe page, and a public read-only API.
 - 🔐 **AES-256-GCM** encrypted dev-wallet keys; decrypted in memory only, at execution time.
@@ -101,7 +101,7 @@ boomerang/
 │       ├── db/                 # Neon connection, queries, migrations
 │       └── api/                # REST endpoints
 ├── contracts/
-│   └── 0xdivDisperse.sol   # optional batch payout contract
+│   └── YoyoDisperse.sol   # optional batch payout contract
 └── frontend/
     ├── app/                    # Next.js routes + API (/api/v1/*, dashboards, /stocks, /vote)
     ├── components/             # TickerTape, Hero, StockUniverse, LiveFeed, dashboards…
@@ -145,7 +145,7 @@ node scripts/probe-stock.mjs ALL 0.01                     # all 195
 
 ### Optional: batch payouts
 
-Deploy `contracts/0xdivDisperse.sol` on Robinhood Chain (any Solidity 0.8.20+ toolchain, no constructor arguments) and set `DISPERSE_ADDRESS` in the backend `.env`. Payouts then go out 150 holders per transaction instead of one transfer each.
+Deploy `contracts/YoyoDisperse.sol` on Robinhood Chain (any Solidity 0.8.20+ toolchain, no constructor arguments) and set `DISPERSE_ADDRESS` in the backend `.env`. Payouts then go out 150 holders per transaction instead of one transfer each.
 
 ---
 
@@ -172,7 +172,7 @@ Deploy `contracts/0xdivDisperse.sol` on Robinhood Chain (any Solidity 0.8.20+ to
 
 ## ⚠️ Disclaimer
 
-0xdiv handles real funds and private keys on Robinhood Chain mainnet. Use at your own risk: start small, use a dedicated dev wallet, keep your `MASTER_ENCRYPTION_KEY` safe, and monitor executions. Not affiliated with Robinhood Markets; Stock Tokens are issued by Robinhood, 0xdiv only routes them.
+Yoyo handles real funds and private keys on Robinhood Chain mainnet. Use at your own risk: start small, use a dedicated dev wallet, keep your `MASTER_ENCRYPTION_KEY` safe, and monitor executions. Not affiliated with Robinhood Markets; Stock Tokens are issued by Robinhood, Yoyo only routes them.
 
 ---
 
@@ -183,6 +183,6 @@ MIT
 <div align="center">
 
 **Built for token creators on Robinhood Chain.**
-Your fees come back as stocks. 🪃
+Your fees come back as stocks. 🪀
 
 </div>

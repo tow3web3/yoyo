@@ -3,7 +3,7 @@
 // Setup: pick the wallet first (the connected one, or a key you import), Boomerang
 // scans the chain for the tokens that wallet created or holds, you pick one, go.
 // Everything else (routing, record date, schedule) is drawn on the canvas afterwards.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { privateKeyToAccount } from 'viem/accounts';
 import StockLogo from '../StockLogo';
 import TokenCard from './TokenCard';
@@ -27,15 +27,17 @@ export default function Wizard({ onCreated, user }) {
 
   const keyAddress = wallet.mode === 'import' && KEY_RE.test(wallet.privateKey.trim()) ? addressOfKey(wallet.privateKey.trim()) : null;
   const scanWallet = wallet.mode === 'mine' ? user?.wallet : keyAddress;
+  const scanned = useRef(null);
 
   // Scan the chosen wallet when entering the token step.
   useEffect(() => {
-    if (step !== 1 || !scanWallet || scan.wallet === scanWallet) return;
+    if (step !== 1 || !scanWallet || scanned.current === scanWallet) return;
+    scanned.current = scanWallet;
     let alive = true;
     setScan({ wallet: scanWallet, loading: true, data: null, error: null });
     fetch(`/api/app/discover?wallet=${scanWallet}`).then((r) => r.json()).then((d) => { if (!alive) return; if (d.error) setScan({ wallet: scanWallet, loading: false, data: null, error: d.error }); else setScan({ wallet: scanWallet, loading: false, data: d, error: null }); }).catch((e) => alive && setScan({ wallet: scanWallet, loading: false, data: null, error: e.message }));
-    return () => { alive = false; };
-  }, [step, scanWallet, scan.wallet]);
+    return () => { alive = false; scanned.current = null; };
+  }, [step, scanWallet]);
 
   async function checkToken(address) {
     setToken({ address, meta: null, checking: true, error: null });

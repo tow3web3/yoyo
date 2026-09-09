@@ -27,7 +27,7 @@ export default function WhyBoomerang() {
       <div className="relative z-10 max-w-2xl">
         <div className="wb-reveal eyebrow mb-3" style={{ transitionDelay: '150ms' }}>The missing layer</div>
         <h2 className="wb-reveal font-display text-3xl font-extrabold leading-tight tracking-tight text-ink sm:text-4xl" style={{ transitionDelay: '350ms' }}>
-          Memecoins have cash flow now. They need a <span className="text-gradient">dividend</span> <span className="text-gradient">policy</span>.
+          Memecoins have cash flow now. They need a <span className="text-gradient">dividend</span> <span className="whitespace-nowrap"><span className="text-gradient">policy</span>.</span>
         </h2>
         <p className="wb-reveal mt-5 text-[15px] leading-relaxed text-mut" style={{ transitionDelay: '900ms' }}>
           On Robinhood Chain, launchpads pay creators their fees in real stocks: NVDA, SPY, GLD. A memecoin with fees

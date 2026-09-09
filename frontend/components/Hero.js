@@ -78,7 +78,7 @@ export default function Hero() {
 
             <h1 className="font-display text-5xl font-extrabold leading-[0.98] tracking-tight text-ink sm:text-6xl lg:text-7xl">
               Give your memecoin<br className="hidden sm:block" /> a{' '}
-              <span className="text-gradient">dividend</span> <span className="text-gradient">policy</span>.
+              <span className="text-gradient">dividend</span> <span className="whitespace-nowrap"><span className="text-gradient">policy</span>.</span>
             </h1>
 
             <div className="mt-6 max-w-xl rounded-xl border border-line border-l-4 border-l-hood-500 bg-paper p-4 shadow-soft">

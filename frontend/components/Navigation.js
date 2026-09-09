@@ -16,7 +16,7 @@ export default function Navigation() {
             <div className="relative h-8 w-8 group-hover:animate-wiggle">
               <Image src="/brand/yoyo-256.png" alt="yo-yo" fill className="object-contain" priority />
             </div>
-            <span className="font-display text-lg font-bold tracking-tight text-ink">yo-yo</span>
+            <span className="whitespace-nowrap font-display text-lg font-bold tracking-tight text-ink">yo-yo</span>
             <span className="hidden items-center gap-1.5 whitespace-nowrap rounded-full border border-hood-300 bg-hood-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-hood-700 sm:inline-flex">
               <span className="h-1.5 w-1.5 rounded-full bg-hood-500" />
               Robinhood Chain

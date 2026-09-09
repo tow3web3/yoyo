@@ -7,7 +7,7 @@
 // scheduler applies it on the next cycle.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ReactFlow, Background, Controls, Handle, Position, BaseEdge, EdgeLabelRenderer, getBezierPath, ReactFlowProvider } from '@xyflow/react';
+import { ReactFlow, Background, Controls, Handle, Position, BaseEdge, EdgeLabelRenderer, getBezierPath, ReactFlowProvider, useNodesState } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import StockLogo from '../StockLogo';
 import Countdown from '../Countdown';
@@ -344,23 +344,35 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet }) {
   const problems = draft.legs.map(legProblem).filter(Boolean);
   const canSave = dirty && total === 10000 && problems.length === 0 && draft.legs.length > 0;
 
-  const nodes = useMemo(() => [
-    { id: SOURCE_ID, type: 'source', position: draft.sourcePos, data: { src, config, assets, selected: selected === SOURCE_ID }, draggable: true },
-    ...draft.legs.map((leg) => ({ id: leg.key, type: 'leg', position: { x: leg.posX, y: leg.posY }, data: { leg, meta, sourceSymbol: src.symbol, selected: selected === leg.key } })),
-  ], [draft, selected, src, config, assets, meta]);
+  // React Flow owns node positions while dragging (no re-render of node contents per frame,
+  // which is what made the logos blink). Positions are copied into the draft on drag stop;
+  // node contents are rebuilt only when something other than a position changes.
+  const [nodes, setNodes, onNodesChangeRF] = useNodesState([]);
+  const contentSig = JSON.stringify([draft.legs.map(({ posX, posY, ...l }) => l), selected, src.symbol, config.is_active, config.scheduleLabel, config.dev_wallet_public, (assets?.assets || []).map((a) => [a.address, a.amount]), Object.keys(meta || {})]);
+  useEffect(() => {
+    setNodes((prev) => {
+      const pos = new Map(prev.map((n) => [n.id, n.position]));
+      return [
+        { id: SOURCE_ID, type: 'source', position: pos.get(SOURCE_ID) || draft.sourcePos, data: { src, config, assets, selected: selected === SOURCE_ID }, draggable: true },
+        ...draft.legs.map((leg) => ({ id: leg.key, type: 'leg', position: pos.get(leg.key) || { x: leg.posX, y: leg.posY }, data: { leg, meta, sourceSymbol: src.symbol, selected: selected === leg.key } })),
+      ];
+    });
+  }, [contentSig]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Discard (draft reset) must also snap nodes back to the saved positions.
+  const posSig = JSON.stringify([draft.sourcePos, draft.legs.map((l) => [l.key, l.posX, l.posY])]);
+  useEffect(() => {
+    setNodes((prev) => prev.map((n) => {
+      const leg = draft.legs.find((l) => l.key === n.id);
+      const target = n.id === SOURCE_ID ? draft.sourcePos : leg ? { x: leg.posX, y: leg.posY } : null;
+      return target && (target.x !== n.position.x || target.y !== n.position.y) ? { ...n, position: target } : n;
+    }));
+  }, [posSig]); // eslint-disable-line react-hooks/exhaustive-deps
   const edges = useMemo(() => draft.legs.map((leg) => ({ id: `e-${leg.key}`, source: SOURCE_ID, target: leg.key, type: 'share', data: { shareBps: leg.shareBps, color: KIND[leg.kind].color } })), [draft.legs]);
 
-  const onNodesChange = useCallback((changes) => {
-    setDraft((d) => {
-      let next = d;
-      for (const ch of changes) {
-        if (ch.type === 'position' && ch.position) {
-          if (ch.id === SOURCE_ID) next = { ...next, sourcePos: ch.position };
-          else next = { ...next, legs: next.legs.map((l) => (l.key === ch.id ? { ...l, posX: Math.round(ch.position.x), posY: Math.round(ch.position.y) } : l)) };
-        }
-      }
-      return next;
-    });
+  const onNodesChange = useCallback((changes) => onNodesChangeRF(changes.filter((c) => c.type !== 'remove')), [onNodesChangeRF]);
+  const onNodeDragStop = useCallback((_, node) => {
+    const p = { x: Math.round(node.position.x), y: Math.round(node.position.y) };
+    setDraft((d) => (node.id === SOURCE_ID ? { ...d, sourcePos: p } : { ...d, legs: d.legs.map((l) => (l.key === node.id ? { ...l, posX: p.x, posY: p.y } : l)) }));
   }, []);
 
   function addLeg(kind) {
@@ -487,7 +499,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet }) {
       <div className="flex min-h-0 flex-1">
         {/* Canvas */}
         <div className="relative min-w-0 flex-1">
-          <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} onNodesChange={onNodesChange}
+          <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} onNodesChange={onNodesChange} onNodeDragStop={onNodeDragStop}
             onNodeClick={(_, n) => setSelected(n.id)} onPaneClick={() => { setSelected(null); setAddOpen(false); }}
             fitView fitViewOptions={{ padding: 0.25, maxZoom: 1 }} minZoom={0.4} maxZoom={1.4} proOptions={{ hideAttribution: true }} nodesConnectable={false} elementsSelectable deleteKeyCode={null} panOnScroll>
             <Background gap={24} size={1.2} color="#D9DFDA" />

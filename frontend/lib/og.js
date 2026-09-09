@@ -57,7 +57,7 @@ export function Monogram({ text, color = COLORS.greenDeep, size = 96 }) {
 let logoData = null;
 export function logoUrl(site) {
   if (logoData) return logoData;
-  for (const p of [path.join(process.cwd(), 'public', 'brand', 'boom-256.png'), path.join(process.cwd(), 'frontend', 'public', 'brand', 'boom-256.png')]) {
+  for (const p of [path.join(process.cwd(), 'public', 'brand', 'yoyo-256.png'), path.join(process.cwd(), 'frontend', 'public', 'brand', 'yoyo-256.png')]) {
     try { logoData = 'data:image/png;base64,' + fs.readFileSync(p).toString('base64'); return logoData; } catch { /* next */ }
   }
   return `${site}/brand/yoyo-256.png`;

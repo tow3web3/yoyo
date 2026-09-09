@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og';
 import { CARD, COLORS, loadFonts, siteUrl, Wordmark, logoUrl } from '../lib/og';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const size = { width: CARD.width, height: CARD.height };
 export const contentType = 'image/png';
 

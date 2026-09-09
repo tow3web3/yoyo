@@ -16,9 +16,11 @@ export default function Login({ onLoggedIn }) {
     try {
       const addr = wallet.address || (await wallet.connect());
       if (!addr) throw new Error(wallet.error || 'Connect a wallet first');
-      const { nonce, issuedAt } = await fetch('/api/app/auth/nonce', { cache: 'no-store' }).then((r) => r.json());
+      const n = await fetch('/api/app/auth/nonce', { cache: 'no-store' }).then((r) => r.json());
+      if (!n?.nonce || !n?.issuedAt) throw new Error(n?.error || 'Could not get a login nonce. Reload and try again.');
+      const { nonce, issuedAt } = n;
       const message = `Boomerang dashboard login\nChain: Robinhood Chain (4663)\nWallet: ${addr}\nNonce: ${nonce}\nIssued: ${issuedAt}\n\nThis signature costs no gas and only proves you own this wallet.`;
-      const signature = await wallet.signMessage(message);
+      const signature = await wallet.signMessage(message, addr);
       const res = await fetch('/api/app/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wallet: addr, nonce, issuedAt, signature }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');

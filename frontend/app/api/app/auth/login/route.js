@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(request) {
   try {
     const { wallet, nonce, issuedAt, signature } = await request.json();
-    if (!EVM_ADDR.test(wallet || '') || !nonce || !issuedAt || !signature) return Response.json({ error: 'Missing fields' }, { status: 400 });
+    const missing = [!EVM_ADDR.test(wallet || '') && 'wallet', !nonce && 'nonce', !issuedAt && 'issuedAt', !signature && 'signature'].filter(Boolean);
+    if (missing.length) return Response.json({ error: `Missing ${missing.join(', ')}${missing.includes('signature') ? ': the wallet returned no signature' : ''}` }, { status: 400 });
     if (Math.abs(Date.now() - new Date(issuedAt).getTime()) > 15 * 60_000) return Response.json({ error: 'Login request expired, try again' }, { status: 400 });
     const message = loginMessage({ wallet, nonce, issuedAt });
     if (!(await verifySignature({ message, signature, wallet }))) return Response.json({ error: 'Invalid signature' }, { status: 401 });

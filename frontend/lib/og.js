@@ -41,7 +41,7 @@ export const fmtUnits = (raw, decimals = 18, digits = 4) => {
 };
 
 export function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://boomerang.fun').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://yo-yo.dev').replace(/\/$/, '');
 }
 
 /** Monogram fallback when a logo cannot be fetched (Satori renders nothing for a broken img). */
@@ -67,7 +67,7 @@ export function Wordmark({ siteUrl: site, size = 28, color = COLORS.ink }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <img src={logoUrl(site)} width={size + 8} height={size + 8} alt="" />
-      <span style={{ fontSize: size, fontWeight: 800, letterSpacing: -0.5, color }}>Yoyo</span>
+      <span style={{ fontSize: size, fontWeight: 800, letterSpacing: -0.5, color }}>yo-yo</span>
       <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.greenDeep, border: `1px solid ${COLORS.green}55`, background: '#EBFCEB', borderRadius: 999, padding: '3px 10px', letterSpacing: 1.5 }}>ROBINHOOD CHAIN</span>
     </div>
   );

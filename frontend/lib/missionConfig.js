@@ -3,7 +3,7 @@ export const BOOMERANG_TOKEN = process.env.NEXT_PUBLIC_BOOMERANG_CA || process.e
 export const MIN_HOLD = 100_000;
 
 export function claimMessage(wallet) {
-  return `Yoyo Missions, claim rewards\nChain: Robinhood Chain (4663)\nWallet: ${wallet}`;
+  return `yo-yo Missions, claim rewards\nChain: Robinhood Chain (4663)\nWallet: ${wallet}`;
 }
 
 export const RANKS = [

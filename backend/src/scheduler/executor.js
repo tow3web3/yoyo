@@ -208,7 +208,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
           amount: results.totalSent.toString(), holdersPaid: results.successful.length, holdersEligible: holders.length,
           split, routing: routingLabel, legs: legResults, creatorAmount: log.creatorAmount.toString(), burnAmount: log.burnAmount.toString(), treasuryAmount: log.treasuryAmount.toString(),
           txHash: results.txHashes[0] || null,
-          receiptUrl: `${process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun'}/receipt/${saved.id}`,
+          receiptUrl: `${process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev'}/receipt/${saved.id}`,
         });
         await announceDividend({ config, log: saved, reward, sourceSymbol, results, feesLabel: `${formatUnits(holdersAmount, asset.decimals, 4)} ${asset.symbol} of fees`, holdersTotal: holders.length });
       }

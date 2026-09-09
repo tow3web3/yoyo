@@ -9,10 +9,10 @@ export function OPTIONS() {
 
 export function GET() {
   return apiJson({
-    name: 'Yoyo Public API',
+    name: 'yo-yo Public API',
     version: 'v1',
     chain: { name: 'Robinhood Chain', id: 4663, explorer: 'https://robinhoodchain.blockscout.com' },
-    description: 'Read-only data about tokens paying stock dividends with Yoyo.',
+    description: 'Read-only data about tokens paying stock dividends with yo-yo.',
     endpoints: {
       stats: { method: 'GET', path: '/api/v1/stats', description: 'Global stats.' },
       tokens: { method: 'GET', path: '/api/v1/tokens', description: 'Every token with an active bot.' },

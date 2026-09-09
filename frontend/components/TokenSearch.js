@@ -97,7 +97,7 @@ export default function TokenSearch() {
               <div className="rounded-2xl border border-hood-300 bg-hood-50 p-5 shadow-soft">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-hood-500 text-ink"><Check className="h-4 w-4" /></span>
-                  <span className="font-display text-lg font-bold text-ink">Paying dividends with Yoyo</span>
+                  <span className="font-display text-lg font-bold text-ink">Paying dividends with yo-yo</span>
                   <span className={`ml-auto chip ${result.data.config.isActive ? 'text-hood-700' : 'text-mut'}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${result.data.config.isActive ? 'bg-hood-500' : 'bg-mut'}`} />
                     {result.data.config.isActive ? 'Active' : 'Paused'}
@@ -126,7 +126,7 @@ export default function TokenSearch() {
             {result.kind === 'notfound' && (
               <div className="rounded-2xl border border-line bg-paper p-5 text-center shadow-soft">
                 <p className="font-display text-lg font-bold text-ink">Not linked yet</p>
-                <p className="mt-1 text-sm text-mut">This token isn't running Yoyo. Set it up in the Telegram bot to start paying dividends.</p>
+                <p className="mt-1 text-sm text-mut">This token isn't running yo-yo. Set it up in the Telegram bot to start paying dividends.</p>
               </div>
             )}
             {result.kind === 'invalid' && (

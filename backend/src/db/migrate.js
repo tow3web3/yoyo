@@ -321,7 +321,7 @@ async function migrate() {
       ['whale-1m', 'Whale', 'Hold at least 1,000,000 $YOYO.', 'hold', { minAmount: 1000000 }, 200, '1000000000000000', '50000000000000000'],
       ['first-vote', 'Cast your first vote', 'Vote in any Community Vote cycle.', 'vote', {}, 75, '200000000000000', '20000000000000000'],
       ['active-voter', 'Active voter', 'Vote in 3 different Community Vote cycles.', 'vote_count', { count: 3 }, 150, '500000000000000', '20000000000000000'],
-      ['link-token', 'Become a customer', 'Link one of your tokens to Yoyo.', 'customer', {}, 200, '1000000000000000', '50000000000000000'],
+      ['link-token', 'Become a customer', 'Link one of your tokens to yo-yo.', 'customer', {}, 200, '1000000000000000', '50000000000000000'],
       ['roulette-on', 'Spin the wheel', 'Enable Stock Roulette on one of your tokens.', 'roulette_mode', {}, 120, '500000000000000', '20000000000000000'],
       ['vote-on', 'Power to the people', 'Enable Community Vote on one of your tokens.', 'vote_mode', {}, 120, '500000000000000', '20000000000000000'],
     ];

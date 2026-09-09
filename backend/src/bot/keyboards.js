@@ -2,11 +2,11 @@ import { Markup } from 'telegraf';
 import { FEATURED_TICKERS, BASKETS, BASKET_KEYS } from '../chain/stocks.js';
 import { INTERVAL_OPTIONS } from '../services/schedule.js';
 
-const WEBSITE = process.env.WEBSITE_URL || process.env.FRONTEND_URL || 'https://boomerang.fun';
+const WEBSITE = process.env.WEBSITE_URL || process.env.FRONTEND_URL || 'https://yo-yo.dev';
 
 export function welcomeKeyboard() {
   return Markup.inlineKeyboard([
-    [Markup.button.callback('🚀 Set up Yoyo', 'setup')],
+    [Markup.button.callback('🚀 Set up yo-yo', 'setup')],
     [Markup.button.callback('📖 How it works', 'how'), Markup.button.callback('📈 Stocks', 'stocks')],
     [Markup.button.callback('❓ FAQ', 'faq'), Markup.button.url('🌐 Website', WEBSITE)],
   ]);

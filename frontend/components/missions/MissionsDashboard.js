@@ -175,7 +175,7 @@ export default function MissionsDashboard() {
         </div>
       </div>
 
-      <p className="text-center text-[11px] text-mut">Rewards paid from the Yoyo treasury after you claim · on-chain missions only.</p>
+      <p className="text-center text-[11px] text-mut">Rewards paid from the yo-yo treasury after you claim · on-chain missions only.</p>
     </div>
   );
 }

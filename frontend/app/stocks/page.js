@@ -5,8 +5,8 @@ import StockUniverse from '../../components/StockUniverse';
 import CTA from '../../components/CTA';
 
 export const metadata = {
-  title: 'Stocks · Yoyo',
-  description: 'The 195 Robinhood Stock Tokens on Robinhood Chain that Yoyo can pay as dividends.',
+  title: 'Stocks · yo-yo',
+  description: 'The 195 Robinhood Stock Tokens on Robinhood Chain that yo-yo can pay as dividends.',
 };
 
 export default function StocksPage() {

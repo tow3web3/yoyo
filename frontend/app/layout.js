@@ -6,24 +6,24 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-manrope' })
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], weight: ['500', '600'], variable: '--font-jetbrains' })
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://boomerang.fun'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://yo-yo.dev'
 const DESCRIPTION =
-  'Launchpads on Robinhood Chain pay creators in real stocks. Yoyo gives your memecoin a dividend policy: payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury with a published book value, and a yield anyone can compare.'
+  'Launchpads on Robinhood Chain pay creators in real stocks. yo-yo gives your memecoin a dividend policy: payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury with a published book value, and a yield anyone can compare.'
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Yoyo: the dividend policy for memecoins',
+  title: 'yo-yo: the dividend policy for memecoins',
   description: DESCRIPTION,
   keywords: 'robinhood chain, stock tokens, dividend policy, payout ratio, memecoin dividends, telegram bot, NVDA, SPY, GLD',
   icons: { icon: '/brand/yoyo-64.png', apple: '/brand/yoyo-256.png' },
   openGraph: {
-    title: 'Yoyo: the dividend policy for memecoins',
+    title: 'yo-yo: the dividend policy for memecoins',
     description: DESCRIPTION,
     url: SITE_URL,
-    siteName: 'Yoyo',
+    siteName: 'yo-yo',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Yoyo: the dividend policy for memecoins', description: DESCRIPTION },
+  twitter: { card: 'summary_large_image', title: 'yo-yo: the dividend policy for memecoins', description: DESCRIPTION },
 }
 
 export default function RootLayout({ children }) {

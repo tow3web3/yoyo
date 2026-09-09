@@ -7,7 +7,7 @@ import bot from '../bot/telegram.js';
 import { formatEth, formatUnits } from '../chain/config.js';
 import { scheduleLabel } from './schedule.js';
 
-const FRONTEND = process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun';
+const FRONTEND = process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev';
 const X_HANDLE = process.env.X_HANDLE || 'Boomerang_tek';
 
 export function receiptUrl(logId) {

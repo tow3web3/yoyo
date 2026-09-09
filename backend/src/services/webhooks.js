@@ -1,11 +1,11 @@
 // Webhooks to launchpads. Every event is a JSON POST signed with HMAC-SHA256
 // over the raw body using the launchpad's webhook secret (header
-// X-Yoyo-Signature: sha256=<hex>), plus X-Yoyo-Event and a timestamp.
+// X-yo-yo-Signature: sha256=<hex>), plus X-yo-yo-Event and a timestamp.
 // Delivery is best effort with one retry; failures never affect the cycle.
 import crypto from 'crypto';
 import * as db from '../db/queries.js';
 
-const FRONTEND = process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://boomerang.fun';
+const FRONTEND = process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev';
 
 export function sign(secret, body) {
   return 'sha256=' + crypto.createHmac('sha256', secret).update(body).digest('hex');
@@ -13,8 +13,8 @@ export function sign(secret, body) {
 
 async function post(launchpad, event, payload) {
   const body = JSON.stringify({ event, sentAt: new Date().toISOString(), ...payload });
-  const headers = { 'Content-Type': 'application/json', 'X-Yoyo-Event': event, 'User-Agent': 'Yoyo-Webhooks/1.0' };
-  if (launchpad.webhook_secret) headers['X-Yoyo-Signature'] = sign(launchpad.webhook_secret, body);
+  const headers = { 'Content-Type': 'application/json', 'X-yo-yo-Event': event, 'User-Agent': 'yo-yo-Webhooks/1.0' };
+  if (launchpad.webhook_secret) headers['X-yo-yo-Signature'] = sign(launchpad.webhook_secret, body);
   let status = 0;
   let ok = false;
   for (let attempt = 0; attempt < 2 && !ok; attempt++) {

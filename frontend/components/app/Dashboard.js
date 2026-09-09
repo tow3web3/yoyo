@@ -203,7 +203,7 @@ export default function Dashboard({ data, refresh, onLogout }) {
               <p className="text-sm text-mut">Linked{user.telegramUsername ? ` to @${user.telegramUsername}` : ''}. Send <span className="font-mono text-ink">/announce</span> in your project group so every dividend posts a receipt card there.</p>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm text-mut">Get every cycle's result on Telegram, post receipt cards in your group, and control the same Yoyo from the bot.</p>
+                <p className="text-sm text-mut">Get every cycle's result on Telegram, post receipt cards in your group, and control the same yo-yo from the bot.</p>
                 {tg ? <a href={tg} target="_blank" rel="noopener noreferrer" className="btn-primary !py-2 text-xs">Open Telegram to link <Arrow className="h-3.5 w-3.5" /></a> : <Button variant="ghost" className="!py-2 text-xs" onClick={() => act('tg')} busy={busy === 'tg'}>Link Telegram</Button>}
               </div>
             )}

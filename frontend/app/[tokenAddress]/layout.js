@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const { tokenAddress } = await params;
-  const fallback = { title: 'Token dashboard · Yoyo', description: 'Live dividend dashboard for a token paying its holders in Robinhood Stock Tokens.' };
+  const fallback = { title: 'Token dashboard · yo-yo', description: 'Live dividend dashboard for a token paying its holders in Robinhood Stock Tokens.' };
   if (!EVM_ADDR.test(tokenAddress)) return fallback;
   try {
     const data = await getDashboard(tokenAddress);
@@ -18,8 +18,8 @@ export async function generateMetadata({ params }) {
     const y = await tokenYield(src, meta[src]?.marketCap ?? null);
     const apy = fmtApy(y.apy);
     const sym = meta[src]?.symbol ? `$${meta[src].symbol}` : 'This token';
-    const title = `${sym} pays dividends in ${meta[tgt]?.symbol || 'stocks'}${apy ? ` · ${apy} APY` : ''} · Yoyo`;
-    const description = `${data.stats.execution_count || 0} dividends paid to holders on Robinhood Chain${apy ? `, ${apy} annualized yield` : ''}. Live dashboard by Yoyo.`;
+    const title = `${sym} pays dividends in ${meta[tgt]?.symbol || 'stocks'}${apy ? ` · ${apy} APY` : ''} · yo-yo`;
+    const description = `${data.stats.execution_count || 0} dividends paid to holders on Robinhood Chain${apy ? `, ${apy} annualized yield` : ''}. Live dashboard by yo-yo.`;
     return { title, description, openGraph: { title, description }, twitter: { card: 'summary_large_image', title, description } };
   } catch {
     return fallback;

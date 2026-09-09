@@ -1,5 +1,5 @@
 // Launchpad hook. POST (Bearer <apiKey>) with a token address: returns a
-// Telegram deep link that prefills the creator's Yoyo setup, plus the
+// Telegram deep link that prefills the creator's yo-yo setup, plus the
 // dashboard and badge URLs the launchpad can show immediately.
 import { parseAbi } from 'viem';
 import { getSql } from '../../../../../lib/db';

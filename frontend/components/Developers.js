@@ -41,7 +41,7 @@ export default function Developers() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="eyebrow mb-2">Developers</div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Build on Yoyo</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Build on yo-yo</h2>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-mut">A free, public, read-only API. No key required. Query token links, dividends, live stats and the stock registry.</p>
         </div>
         <a href="/api/v1" target="_blank" rel="noopener noreferrer" className="btn-ghost shrink-0 self-start">View API root</a>
@@ -55,12 +55,12 @@ export default function Developers() {
             <h3 className="font-display text-xl font-bold tracking-tight text-ink">Your creators earn stocks. Make their holders earn them too.</h3>
             <p className="mt-1 max-w-xl text-sm text-mut">You already pay creators in stock tokens. One call per launch adds a dividend policy on top: the creator gets a Telegram link that pre-fills the setup, you get a signed webhook for every dividend, a yield badge and a balance sheet for the token page.</p>
           </div>
-          <a href="mailto:hello@boomerang.fun?subject=Launchpad%20integration" className="btn-ink shrink-0 self-start text-xs">Request an API key</a>
+          <a href="mailto:hello@yo-yo.dev?subject=Launchpad%20integration" className="btn-ink shrink-0 self-start text-xs">Request an API key</a>
         </div>
         <ol className="grid gap-3 text-sm text-mut sm:grid-cols-3">
           <li className="rounded-xl border border-line bg-paper p-4"><span className="font-mono text-xs font-bold text-hood-700">1 · POST /api/v1/hooks/launch</span><br />Send the token address (plus the creator wallet and fee source if you know them). Get back <span className="font-mono">telegramUrl</span>, <span className="font-mono">dashboardUrl</span>, <span className="font-mono">badgeUrl</span>.</li>
           <li className="rounded-xl border border-line bg-paper p-4"><span className="font-mono text-xs font-bold text-hood-700">2 · Show the link</span><br />The creator opens Telegram, sends the dev key, picks a stock and a schedule. Token and fee source are already filled in.</li>
-          <li className="rounded-xl border border-line bg-paper p-4"><span className="font-mono text-xs font-bold text-hood-700">3 · Receive webhooks</span><br /><span className="font-mono">token.linked</span> and <span className="font-mono">dividend.paid</span>, HMAC-signed (<span className="font-mono">X-Yoyo-Signature</span>). Poll <span className="font-mono">GET ?code=</span> if you prefer.</li>
+          <li className="rounded-xl border border-line bg-paper p-4"><span className="font-mono text-xs font-bold text-hood-700">3 · Receive webhooks</span><br /><span className="font-mono">token.linked</span> and <span className="font-mono">dividend.paid</span>, HMAC-signed (<span className="font-mono">X-yo-yo-Signature</span>). Poll <span className="font-mono">GET ?code=</span> if you prefer.</li>
         </ol>
         <div className="mt-4 overflow-x-auto rounded-xl border border-ink bg-tape p-4">
           <pre className="font-mono text-xs leading-relaxed text-gold-200">

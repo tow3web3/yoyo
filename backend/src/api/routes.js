@@ -76,7 +76,7 @@ router.get('/dashboard/:tokenAddress', async (req, res) => {
     const { tokenAddress } = req.params;
     if (!isAddress(tokenAddress)) return res.status(400).json({ error: 'Invalid address' });
     const config = await db.getBotConfigBySourceToken(tokenAddress);
-    if (!config) return res.status(404).json({ error: 'Token not found', message: 'No active Yoyo configuration for this token' });
+    if (!config) return res.status(404).json({ error: 'Token not found', message: 'No active yo-yo configuration for this token' });
     const stats = await db.getTokenStats(tokenAddress);
     const recentExecutions = await db.getRecentExecutions(tokenAddress, 10);
     res.json({

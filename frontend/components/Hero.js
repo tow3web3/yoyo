@@ -78,13 +78,13 @@ export default function Hero() {
 
             <h1 className="font-display text-5xl font-extrabold leading-[0.98] tracking-tight text-ink sm:text-6xl lg:text-7xl">
               Give your memecoin<br className="hidden sm:block" /> a{' '}
-              <span className="text-gradient">dividend policy</span>.
+              <span className="text-gradient">dividend</span> <span className="text-gradient">policy</span>.
             </h1>
 
             <div className="mt-6 max-w-xl rounded-xl border border-line border-l-4 border-l-hood-500 bg-paper p-4 shadow-soft">
               <p className="text-[15px] leading-relaxed text-mut">
                 Your launchpad pays you in real stocks.{' '}
-                <span className="font-semibold text-ink">Yoyo decides what happens next: a payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury.</span>{' '}
+                <span className="font-semibold text-ink">yo-yo decides what happens next: a payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury.</span>{' '}
                 NVDA fees become NVDA dividends. Drawn on one screen, run on schedule.
               </p>
             </div>
@@ -112,7 +112,7 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Yoyo with orbiting stocks + a dividend statement */}
+          {/* yo-yo with orbiting stocks + a dividend statement */}
           <div className="relative mx-auto w-full max-w-md">
             <div className="relative aspect-square w-full">
               <div className="absolute inset-10 rounded-full bg-hood-300/30 blur-3xl" />
@@ -132,7 +132,7 @@ export default function Hero() {
                   className={`boom-throw relative block h-full w-full cursor-pointer ${thrown ? 'is-thrown' : ''}`}
                 >
                   <div ref={spinnerRef} className="boom-spin relative h-full w-full">
-                    <Image src="/brand/yoyo.png" alt="Yoyo" fill priority className="object-contain drop-shadow-[0_18px_30px_rgba(11,15,12,0.18)]" />
+                    <Image src="/brand/yoyo.png" alt="yo-yo" fill priority className="object-contain drop-shadow-[0_18px_30px_rgba(11,15,12,0.18)]" />
                   </div>
                 </button>
               </div>

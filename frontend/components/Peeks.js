@@ -10,7 +10,7 @@ const GLD = getStock('GLD').address;
 const SPY = getStock('SPY').address;
 
 const SCENES = [
-  { key: 'loop', label: 'The loop', title: 'Fees in, dividends out', body: 'Your launchpad pays the dev wallet in stocks. Every cycle Yoyo applies the policy: holders, you, buyback, treasury.' },
+  { key: 'loop', label: 'The loop', title: 'Fees in, dividends out', body: 'Your launchpad pays the dev wallet in stocks. Every cycle yo-yo applies the policy: holders, you, buyback, treasury.' },
   { key: 'policy', label: 'The policy', title: 'Four sliders, one balance sheet', body: 'Move a share, the payout ratio adjusts. Presets for the common splits. Change it any time from the dashboard or Telegram.' },
   { key: 'record', label: 'Record date', title: 'Diamond hands earn more', body: 'Weight ramps from 1x to 2x over 30 days. A wallet that sells resets to zero. A sniper who buys right before the cycle gets nothing.' },
   { key: 'receipt', label: 'The receipt', title: 'Every dividend, posted', body: 'A card lands in your Telegram group with a Share on X button. Holders check their own statement at /wallet.' },

@@ -1,6 +1,6 @@
 // End-to-end check of the creator dashboard API against a running site:
 //   node scripts/e2e-app.mjs https://boomerang.65-20-103-177.sslip.io
-// Logs in with a throwaway wallet, creates a Yoyo on a real token with a
+// Logs in with a throwaway wallet, creates a yo-yo on a real token with a
 // generated dev wallet, edits the policy, runs a cycle, screenshots, deletes.
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
@@ -18,7 +18,7 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
 
 const account = privateKeyToAccount(generatePrivateKey());
 const { data: n } = await api('/api/app/auth/nonce');
-const message = `Yoyo dashboard login\nChain: Robinhood Chain (4663)\nWallet: ${account.address}\nNonce: ${n.nonce}\nIssued: ${n.issuedAt}\n\nThis signature costs no gas and only proves you own this wallet.`;
+const message = `yo-yo dashboard login\nChain: Robinhood Chain (4663)\nWallet: ${account.address}\nNonce: ${n.nonce}\nIssued: ${n.issuedAt}\n\nThis signature costs no gas and only proves you own this wallet.`;
 const signature = await account.signMessage({ message });
 let r = await api('/api/app/auth/login', { method: 'POST', body: JSON.stringify({ wallet: account.address, nonce: n.nonce, issuedAt: n.issuedAt, signature }) });
 check('login', r.status === 200 && r.data.ok, JSON.stringify(r.data));

@@ -103,6 +103,7 @@ function LegNode({ data }) {
   return (
     <div className={`w-[250px] rounded-2xl border-2 bg-paper p-3.5 shadow-soft transition ${selected ? 'border-ink' : problem ? 'border-red-300' : 'border-line'}`} style={{ borderLeftColor: k.color, borderLeftWidth: 6 }}>
       <Handle type="target" position={Position.Left} className="!h-3 !w-3 !border-2 !border-paper" style={{ background: k.color }} />
+      {(leg.kind === 'holders' || leg.kind === 'burn') && <Handle type="source" position={Position.Right} className={`!h-2 !w-2 !border-0 ${data.notify ? '!bg-ink' : '!bg-line'}`} />}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className={`text-[10px] font-bold uppercase tracking-[0.16em] ${k.text}`}>{k.emoji} {k.label}</div>

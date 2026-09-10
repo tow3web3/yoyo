@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { getReceipt } from '../../../../../lib/queries';
 import { fetchTokenMeta } from '../../../../../lib/tokenMeta';
-import { CARD, COLORS, loadFonts, assetLogo, fmtUnits, siteUrl, Monogram, Wordmark } from '../../../../../lib/og';
+import { CARD, COLORS, loadFonts, logoCandidates, inlineLogo, fmtUnits, siteUrl, Monogram, Wordmark } from '../../../../../lib/og';
 import { getStock } from '../../../../../lib/stocks';
 
 export const runtime = 'nodejs';
@@ -22,8 +22,10 @@ export async function GET(request, { params }) {
   const fonts = await loadFonts();
   const font = fonts.length ? 'Manrope' : undefined;
   const when = new Date(r.execution_time).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' });
-  const rewardLogo = assetLogo(r.reward_token_used, site);
-  const sourceLogo = src.image || assetLogo(r.source_token_address, site);
+  const [rewardLogo, sourceLogo] = await Promise.all([
+    inlineLogo(logoCandidates(r.reward_token_used, rew, site)),
+    inlineLogo(logoCandidates(r.source_token_address, src, site), 96),
+  ]);
 
   return new ImageResponse(
     (

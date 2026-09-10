@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { getWalletStatement } from '../../../../../lib/queries';
 import { fetchTokenMeta } from '../../../../../lib/tokenMeta';
-import { CARD, COLORS, loadFonts, assetLogo, fmtUnits, siteUrl, Monogram, Wordmark, logoUrl } from '../../../../../lib/og';
+import { CARD, COLORS, loadFonts, logoCandidates, inlineLogo, fmtUnits, siteUrl, Monogram, Wordmark, logoUrl } from '../../../../../lib/og';
 import { EVM_ADDR } from '../../../../../lib/stocks';
 
 export const runtime = 'nodejs';
@@ -24,6 +24,7 @@ export async function GET(request, { params }) {
     byReward.set(k, cur);
   }
   const rows = [...byReward.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 4);
+  const logos = Object.fromEntries(await Promise.all(rows.map(async ([reward]) => [reward, await inlineLogo(logoCandidates(reward, meta[reward], site), 144)])));
   const dividends = totals.reduce((s, t) => s + t.n, 0);
   const sources = [...new Set(totals.map((t) => t.source_token))];
   const fonts = await loadFonts();
@@ -49,7 +50,7 @@ export async function GET(request, { params }) {
             {rows.length === 0 && <div style={{ fontSize: 64, fontWeight: 800, color: COLORS.green }}>Hold a token on yo-yo.</div>}
             {rows.map(([reward, v]) => {
               const m = meta[reward] || {};
-              const logo = assetLogo(reward, site);
+              const logo = logos[reward];
               return (
                 <div key={reward} style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
                   {logo ? <img src={logo} width={72} height={72} style={{ borderRadius: 72, border: '3px solid #fff' }} alt="" /> : <Monogram text={m.symbol} size={72} />}

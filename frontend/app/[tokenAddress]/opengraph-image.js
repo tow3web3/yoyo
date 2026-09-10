@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 import { getDashboard, scheduleLabel } from '../../lib/queries';
 import { fetchTokenMeta } from '../../lib/tokenMeta';
 import { tokenYield, fmtApy } from '../../lib/yield';
-import { CARD, COLORS, loadFonts, assetLogo, siteUrl, Monogram, Wordmark } from '../../lib/og';
+import { CARD, COLORS, loadFonts, logoCandidates, inlineLogo, siteUrl, Monogram, Wordmark } from '../../lib/og';
 import { getStock, EVM_ADDR } from '../../lib/stocks';
 
 export const runtime = 'nodejs';
@@ -34,8 +34,10 @@ export default async function Image({ params }) {
   const stock = getStock(tgt);
   const rewardSymbol = meta[tgt]?.symbol || stock?.ticker || 'ETH';
   const apy = fmtApy(y.apy);
-  const srcLogo = meta[src]?.image || assetLogo(src, site);
-  const rewLogo = assetLogo(tgt, site);
+  const [srcLogo, rewLogo] = await Promise.all([
+    inlineLogo(logoCandidates(src, meta[src], site), 144),
+    inlineLogo(logoCandidates(tgt, meta[tgt], site)),
+  ]);
   const modeLabel = MODE[config.reward_mode];
 
   return new ImageResponse(

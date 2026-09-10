@@ -31,7 +31,50 @@ export function assetLogo(address, siteUrl) {
   if (isNative(address)) return `${siteUrl}/eth.svg`;
   const s = STOCK_BY_ADDRESS[String(address || '').toLowerCase()];
   if (s) return `https://assets.parqet.com/logos/symbol/${s.ticker}?format=png&size=128`;
-  return address ? `https://dd.dexscreener.com/ds-data/tokens/robinhood/${address}.png?size=lg` : null;
+  return null;
+}
+
+/** Candidate logo URLs for an asset, best first: the screener image, then the stock or ETH artwork. */
+export function logoCandidates(address, meta, siteUrl) {
+  return [meta?.image || null, assetLogo(address, siteUrl)].filter(Boolean);
+}
+
+// Satori draws nothing for an <img> it cannot decode, and the CDNs answer with
+// AVIF or WebP (or a redirect) when asked by a plain fetch. So every logo is
+// fetched here, converted to PNG with sharp and inlined as a data URL.
+const inlineCache = new Map();
+const INLINE_TTL = 60 * 60 * 1000;
+export async function inlineLogo(candidates, size = 256) {
+  for (const url of candidates || []) {
+    if (!url) continue;
+    if (url.startsWith('data:')) return url;
+    const hit = inlineCache.get(url);
+    if (hit && Date.now() - hit.ts < INLINE_TTL) { if (hit.data) return hit.data; continue; }
+    let data = null;
+    try {
+      let buf;
+      let type = '';
+      if (url.startsWith('/')) {
+        buf = fs.readFileSync(path.join(process.cwd(), 'public', url));
+        type = url.endsWith('.svg') ? 'image/svg+xml' : 'image/png';
+      } else {
+        const res = await fetch(url, { headers: { Accept: 'image/png,image/jpeg,image/svg+xml,image/*;q=0.8', 'User-Agent': 'Mozilla/5.0 (yo-yo card renderer)' }, redirect: 'follow', signal: AbortSignal.timeout(6000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        type = res.headers.get('content-type') || '';
+        buf = Buffer.from(await res.arrayBuffer());
+      }
+      if (type.includes('svg')) {
+        data = 'data:image/svg+xml;base64,' + buf.toString('base64');
+      } else {
+        const sharp = (await import('sharp')).default;
+        const png = await sharp(buf).resize(size, size, { fit: 'cover' }).png().toBuffer();
+        data = 'data:image/png;base64,' + png.toString('base64');
+      }
+    } catch { data = null; }
+    inlineCache.set(url, { data, ts: Date.now() });
+    if (data) return data;
+  }
+  return null;
 }
 
 export const fmtUnits = (raw, decimals = 18, digits = 4) => {

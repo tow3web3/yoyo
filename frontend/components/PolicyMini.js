@@ -12,6 +12,7 @@ const KIND = {
   wallet: { label: 'Wallet', emoji: '👤', color: '#0B0F0C', text: 'text-ink', chip: 'bg-tile text-ink' },
   burn: { label: 'Buyback & burn', emoji: '🔥', color: '#FF7A1A', text: 'text-orange-700', chip: 'bg-orange-100 text-orange-800' },
   treasury: { label: 'Treasury', emoji: '🏦', color: '#F6C343', text: 'text-gold-700', chip: 'bg-gold-100 text-gold-800' },
+  lottery: { label: 'Lottery', emoji: '🎟️', color: '#FF3D8A', text: 'text-pink-600', chip: 'bg-pink-100 text-pink-700' },
 };
 const short = (a) => (a && a.length > 10 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a || '');
 const pct = (bps) => `${(bps / 100).toFixed(bps % 100 ? 1 : 0)}%`;
@@ -107,10 +108,10 @@ export default function PolicyMini({ source, devWallet, schedule, legs: rawLegs,
       {/* legs */}
       {legs.map((l, i) => {
         const k = KIND[l.kind] || KIND.wallet;
-        const dest = l.kind === 'holders' ? `every $${sym} holder` : l.kind === 'burn' ? `buys $${sym}, burns it` : l.address ? short(l.address) : 'address not set';
-        const chip = l.kind === 'burn' ? 'buyback' : l.assetSymbol ? `in ${l.assetSymbol}` : 'in kind';
+        const dest = l.dest || (l.kind === 'holders' ? `every $${sym} holder` : l.kind === 'burn' ? `buys $${sym}, burns it` : l.kind === 'lottery' ? 'one holder wins, every 24h' : l.address ? short(l.address) : 'address not set');
+        const chip = l.chip || (l.kind === 'burn' ? 'buyback' : l.assetSymbol ? `in ${l.assetSymbol}` : 'in kind');
         return (
-          <div key={i} className="absolute rounded-2xl border-2 border-line bg-paper p-3 shadow-soft" style={{ left: legX, top: 6 + i * (LEG_H + LEG_GAP), width: legW, height: LEG_H, borderLeftColor: k.color, borderLeftWidth: 5 }}>
+          <div key={i} className={`absolute rounded-2xl border-2 bg-paper p-3 shadow-soft ${l.featured ? 'border-pink-400 ring-4 ring-pink-200/60' : 'border-line'}`} style={{ left: legX, top: 6 + i * (LEG_H + LEG_GAP), width: legW, height: LEG_H, borderLeftColor: k.color, borderLeftWidth: 5 }}>
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className={`text-[9px] font-bold uppercase tracking-[0.16em] ${k.text}`}>{k.emoji} {k.label}</div>

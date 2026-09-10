@@ -12,6 +12,7 @@ import { useWallet } from '../../lib/useWallet';
 import { signIn } from '../../lib/authClient';
 import { explorerAddress, explorerTx } from '../../lib/stocks';
 import { Arrow, Check } from '../../components/Icons';
+import PolicyMini from '../../components/PolicyMini';
 
 const CA = process.env.NEXT_PUBLIC_BOOMERANG_CA || '';
 const short = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '');
@@ -37,7 +38,14 @@ export default function LotteryPage() {
 
 function Lottery() {
   const [data, setData] = useState(null);
+  const [dash, setDash] = useState(null);
   const [busy, setBusy] = useState(null);
+  useEffect(() => {
+    if (!CA) return undefined;
+    let alive = true;
+    fetch(`/api/dashboard/${CA}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => alive && d && setDash(d)).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const wallet = useWallet();
   const toast = useToast();
   const load = useCallback(async () => {
@@ -80,8 +88,8 @@ function Lottery() {
         <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
           <div>
             <div className="eyebrow mb-2">🎟️ Holders lottery</div>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Win 0.5% of the creator fees of $YOYO</h1>
-            <p className="mt-3 text-base text-mut">One draw every 24 hours. One ticket per wallet. The prize is paid in ETH from the dev wallet, straight to the winner.</p>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Win 0.5% of the creator fees of $YOYO. <span className="text-gradient">Forever.</span></h1>
+            <p className="mt-3 text-base text-mut">One draw every 24 hours, forever. One ticket per wallet. The prize is paid in ETH from the dev wallet, straight to the winner.</p>
             <ol className="mt-6 space-y-3">
               {[
                 ['Hold at least 1,000,000 $YOYO', 'for more than 2 hours. Sending or selling resets your clock.'],
@@ -146,6 +154,26 @@ function Lottery() {
             </div>
           </div>
         </div>
+
+        {dash && (
+          <div className="mt-12">
+            <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="font-display text-xl font-bold text-ink">Where the fees go, and where you come in</h2>
+                <p className="text-sm text-mut">The $YOYO routing as the creator drew it, plus the slice one holder takes home every day. Forever.</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 px-3 py-1 text-xs font-bold text-pink-700">🎟️ YOU 0.5% · every 24h · forever</span>
+            </div>
+            <PolicyMini
+              source={dash.sourceToken}
+              devWallet={dash.devWallet}
+              schedule={dash.config.scheduleLabel}
+              legs={[...(dash.legs || []), { kind: 'lottery', shareBps: 50, label: 'YOU', assetSymbol: 'ETH', dest: 'one holder wins, every 24h, forever', chip: 'in ETH', featured: true }]}
+              split={dash.config.split}
+              countdown={{ intervalMinutes: dash.config.intervalMinutes, scheduleKind: dash.config.scheduleKind, active: dash.config.isActive }}
+            />
+          </div>
+        )}
 
         <div className="mt-12">
           <h2 className="font-display text-xl font-bold text-ink">Past draws</h2>

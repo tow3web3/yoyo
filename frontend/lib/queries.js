@@ -162,11 +162,12 @@ export async function getDashboard(address) {
     sql`
       SELECT COALESCE(SUM(total_airdropped), 0)::text AS total_airdropped,
              COALESCE(SUM(bought_token_amount), 0)::text AS total_bought_back,
+             COALESCE(SUM(burn_amount), 0)::text AS total_burned,
              COALESCE(SUM(claimed_eth_wei), 0)::text AS total_eth_claimed,
-             COUNT(*)::int AS execution_count,
+             COUNT(*) FILTER (WHERE el.holder_count > 0)::int AS execution_count,
              MAX(execution_time) AS last_execution
       FROM execution_logs el JOIN bot_configs bc ON el.config_id = bc.id
-      WHERE bc.source_token_address = ${addr} AND el.status = 'success' AND el.holder_count > 0
+      WHERE bc.source_token_address = ${addr} AND el.status = 'success' AND (el.holder_count > 0 OR el.burn_amount > 0)
     `,
     sql`
       SELECT at.holder_address, COUNT(*)::int AS airdrop_count,

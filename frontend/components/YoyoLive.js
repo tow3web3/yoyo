@@ -28,7 +28,7 @@ export default function YoyoLive() {
   const sym = data.sourceToken?.symbol || 'YOYO';
   const stats = [
     ['Paid to holders', `${fmt(data.stats.totalAirdropped)} $${sym}`],
-    ['Bought back', `${fmt(data.stats.totalBoughtBack)} $${sym}`],
+    ['Bought back and burned', `${fmt(data.stats.totalBurned)} $${sym}`],
     ['Cycles', String(data.stats.totalExecutions || 0)],
     ['Holders', String(data.stats.holderCount || 0)],
   ];

@@ -68,6 +68,7 @@ export async function GET(request, { params }) {
       stats: {
         totalAirdropped: stats.total_airdropped || '0',
         totalBoughtBack: stats.total_bought_back || '0',
+        totalBurned: stats.total_burned || '0',
         totalEthClaimed: stats.total_eth_claimed || '0',
         totalExecutions: stats.execution_count || 0,
         lastExecution: stats.last_execution,

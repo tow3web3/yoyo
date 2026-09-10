@@ -47,8 +47,8 @@ export default async function WalletPage({ params }) {
   const site = siteUrl();
   const headline = [...byReward.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 3).map(([k, v]) => `${fmtUnits(v.total, dec(k))} ${sym(k)}`).join(', ');
   const shareText = dividends > 0
-    ? `I earned ${headline} just by holding on Robinhood Chain 📈 Stock dividends by @Boomerang_tek`
-    : 'Memecoins that pay real stock dividends on Robinhood Chain 📈 @Boomerang_tek';
+    ? `I earned ${headline} just by holding on Robinhood Chain 📈 Stock dividends by @yo_yo_tech`
+    : 'Memecoins that pay real stock dividends on Robinhood Chain 📈 @yo_yo_tech';
   const shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(`${site}/wallet/${address}`)}`;
 
   return (

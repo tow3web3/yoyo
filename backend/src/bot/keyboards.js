@@ -2,13 +2,18 @@ import { Markup } from 'telegraf';
 import { FEATURED_TICKERS, BASKETS, BASKET_KEYS } from '../chain/stocks.js';
 import { INTERVAL_OPTIONS } from '../services/schedule.js';
 
-const WEBSITE = process.env.WEBSITE_URL || process.env.FRONTEND_URL || 'https://yo-yo.dev';
+const WEBSITE = (process.env.WEBSITE_URL || process.env.FRONTEND_URL || 'https://yo-yo.dev').replace(/\/$/, '');
+const DASHBOARD = `${WEBSITE}/app`;
+const COMMUNITY = process.env.COMMUNITY_URL || 'https://t.me/yoyocommu';
+const X_URL = `https://x.com/${process.env.X_HANDLE || 'yo_yo_tech'}`;
 
 export function welcomeKeyboard() {
   return Markup.inlineKeyboard([
-    [Markup.button.callback('🚀 Set up yo-yo', 'setup')],
-    [Markup.button.callback('📖 How it works', 'how'), Markup.button.callback('📈 Stocks', 'stocks')],
-    [Markup.button.callback('❓ FAQ', 'faq'), Markup.button.url('🌐 Website', WEBSITE)],
+    [Markup.button.url('🧭 Open the canvas', DASHBOARD)],
+    [Markup.button.callback('🚀 Guided setup here', 'setup')],
+    [Markup.button.callback('📖 How it works', 'how'), Markup.button.callback('❓ FAQ', 'faq')],
+    [Markup.button.callback('📈 Stocks', 'stocks'), Markup.button.url('💬 Community', COMMUNITY)],
+    [Markup.button.url('𝕏 @yo_yo_tech', X_URL), Markup.button.url('🌐 yo-yo.dev', WEBSITE)],
   ]);
 }
 
@@ -16,9 +21,47 @@ export function dashboardKeyboard(config) {
   const toggle = config.is_active ? Markup.button.callback('⏸️ Pause', 'pause') : Markup.button.callback('▶️ Resume', 'resume');
   return Markup.inlineKeyboard([
     [Markup.button.callback('📊 Status', 'status'), Markup.button.callback('⚡ Run now', 'runnow')],
-    [Markup.button.callback('⚙️ Settings', 'settings'), toggle],
-    [Markup.button.callback('❓ Help', 'help')],
+    [Markup.button.callback('🧭 Routing', 'split'), Markup.button.callback('🏅 Record date', 'loyalty')],
+    [Markup.button.callback('🎛️ Reward mode', 'reward_mode'), Markup.button.callback('⏱️ Schedule', 'change_interval')],
+    [Markup.button.callback('📣 Receipts in a group', 'announce_help'), Markup.button.callback('⚙️ Settings', 'settings')],
+    [toggle, Markup.button.url('🧭 Open the canvas', DASHBOARD)],
+    [Markup.button.callback('❓ Help', 'help'), Markup.button.url('💬 Community', COMMUNITY)],
   ]);
+}
+
+export function helpKeyboard() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('📖 How it works', 'how'), Markup.button.callback('❓ FAQ', 'faq')],
+    [Markup.button.url('🧭 Open the canvas', DASHBOARD), Markup.button.url('💬 Community', COMMUNITY)],
+    [Markup.button.callback('⬅️ Menu', 'menu')],
+  ]);
+}
+
+export function howKeyboard() {
+  return Markup.inlineKeyboard([
+    [Markup.button.url('🧭 Open the canvas', DASHBOARD), Markup.button.callback('🚀 Guided setup here', 'setup')],
+    [Markup.button.callback('❓ FAQ', 'faq'), Markup.button.callback('📈 Stocks', 'stocks')],
+    [Markup.button.callback('⬅️ Menu', 'menu')],
+  ]);
+}
+
+export function faqKeyboard(page, total) {
+  const nav = [];
+  if (page > 1) nav.push(Markup.button.callback('⬅️ Previous', `faq_${page - 1}`));
+  if (page < total) nav.push(Markup.button.callback('Next ➡️', `faq_${page + 1}`));
+  return Markup.inlineKeyboard([
+    nav,
+    [Markup.button.callback('📖 How it works', 'how'), Markup.button.url('💬 Ask the community', COMMUNITY)],
+    [Markup.button.callback('⬅️ Menu', 'menu')],
+  ].filter((r) => r.length));
+}
+
+export function dashboardLinkKeyboard() {
+  return Markup.inlineKeyboard([[Markup.button.url('🧭 Open the canvas', DASHBOARD)], [Markup.button.callback('⬅️ Menu', 'menu')]]);
+}
+
+export function communityKeyboard() {
+  return Markup.inlineKeyboard([[Markup.button.url('💬 Telegram', COMMUNITY), Markup.button.url('𝕏 @yo_yo_tech', X_URL)], [Markup.button.callback('⬅️ Menu', 'menu')]]);
 }
 
 export function settingsKeyboard(config) {
@@ -29,8 +72,8 @@ export function settingsKeyboard(config) {
   return Markup.inlineKeyboard([
     [Markup.button.callback('📈 Change reward', 'change_target')],
     [Markup.button.callback('🎛️ Reward mode', 'reward_mode')],
-    [Markup.button.callback(config.loyalty_enabled ? '🏅 Loyalty rewards: ON' : '🏅 Loyalty rewards', 'loyalty')],
-    [Markup.button.callback('💼 Dividend policy', 'split')],
+    [Markup.button.callback(config.loyalty_enabled ? '🏅 Record date: ON' : '🏅 Record date', 'loyalty')],
+    [Markup.button.callback('🧭 Routing & policy', 'split')],
     [Markup.button.callback('⏱️ Schedule', 'change_interval')],
     [hours],
     [toggle],
@@ -124,7 +167,8 @@ export function confirmationKeyboard() {
 export function statusKeyboard() {
   return Markup.inlineKeyboard([
     [Markup.button.callback('🔄 Refresh', 'status'), Markup.button.callback('⚡ Run now', 'runnow')],
-    [Markup.button.callback('⚙️ Settings', 'settings'), Markup.button.callback('⬅️ Menu', 'menu')],
+    [Markup.button.callback('⚙️ Settings', 'settings'), Markup.button.url('🧭 Open the canvas', DASHBOARD)],
+    [Markup.button.callback('⬅️ Menu', 'menu')],
   ]);
 }
 

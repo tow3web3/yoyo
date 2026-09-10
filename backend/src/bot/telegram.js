@@ -13,11 +13,19 @@ export function initBot() {
   bot.command('status', commands.handleStatus);
   bot.command('stocks', commands.handleStocks);
   bot.command('announce', commands.handleAnnounce);
+  bot.command('dashboard', commands.handleDashboardLink);
+  bot.command('canvas', commands.handleDashboardLink);
+  bot.command('faq', (ctx) => commands.handleFaq(ctx, 1));
+  bot.command('how', commands.handleHowItWorks);
+  bot.command('community', commands.handleCommunity);
+  bot.command('routing', commands.handleSplitMenu);
 
   bot.action('menu', commands.handleMenu);
   bot.action('help', commands.handleHelp);
   bot.action('how', commands.handleHowItWorks);
-  bot.action('faq', commands.handleFaq);
+  bot.action('faq', (ctx) => commands.handleFaq(ctx, 1));
+  bot.action(/^faq_(\d)$/, (ctx) => commands.handleFaq(ctx, Number(ctx.match[1])));
+  bot.action('announce_help', commands.handleAnnounceHelp);
   bot.action('stocks', commands.handleStocks);
 
   // Setup flow
@@ -71,11 +79,17 @@ export function initBot() {
 
   bot.telegram
     .setMyCommands([
-      { command: 'start', description: '🪀 Open the yo-yo menu' },
-      { command: 'setup', description: '🚀 Set up your dividends' },
-      { command: 'status', description: '📊 View your bot status' },
-      { command: 'stocks', description: '📈 The 195 Robinhood Stock Tokens' },
-      { command: 'help', description: '❓ How it works and FAQ' },
+      { command: 'start', description: '🪀 Menu' },
+      { command: 'dashboard', description: '🧭 Open the canvas' },
+      { command: 'setup', description: '🚀 Guided setup, five steps' },
+      { command: 'status', description: '📊 Wallet, schedule, last cycle' },
+      { command: 'routing', description: '💼 Shares, payout address, treasury' },
+      { command: 'announce', description: '📣 Post receipts in this group' },
+      { command: 'stocks', description: '📈 The 195 Stock Tokens' },
+      { command: 'how', description: '📖 How it works' },
+      { command: 'faq', description: '❓ Questions people ask' },
+      { command: 'community', description: '💬 The yo-yo group' },
+      { command: 'help', description: '🆘 Commands and safety' },
     ])
     .catch(() => { /* offline or missing token */ });
 

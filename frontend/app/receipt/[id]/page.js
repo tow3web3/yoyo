@@ -55,7 +55,7 @@ export default async function ReceiptPage({ params }) {
 
   const { r, src, rew, stock, rewardSymbol, amount } = d;
   const site = siteUrl();
-  const shareText = `$${src.symbol || 'Token'} just paid its holders ${amount} ${rewardSymbol} 📈\n${r.paid_count || r.holder_count} wallets, pro-rata, on Robinhood Chain.\nDividends by @Boomerang_tek`;
+  const shareText = `$${src.symbol || 'Token'} just paid its holders ${amount} ${rewardSymbol} 📈\n${r.paid_count || r.holder_count} wallets, pro-rata, on Robinhood Chain.\nDividends by @yo_yo_tech`;
   const shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(`${site}/receipt/${r.id}`)}`;
   const when = new Date(r.execution_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/New_York' });
 

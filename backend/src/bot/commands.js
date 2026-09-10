@@ -1,5 +1,6 @@
 import * as db from '../db/queries.js';
 import * as keyboards from './keyboards.js';
+import * as copy from './copy.js';
 import { encryptPrivateKey, isValidPrivateKey } from '../services/encryption.js';
 import {
   accountFromKey, publicClient, readTokenMeta, isAddress, short, formatEth, erc20Abi, NATIVE_ETH, isNative, explorerAddress,
@@ -80,86 +81,53 @@ export async function handleStart(ctx) {
     if (/^t_0x[0-9a-fA-F]{40}$/.test(payload)) return startFromToken(ctx, payload.slice(2), null);
   }
 
-  if (config) {
-    return ctx.replyWithMarkdown(
-      `🪀 *Welcome back!*\n\nYour policy is ${config.is_active ? '🟢 *running*' : '⏸️ *paused*'}: ` +
-      `paying holders of \`${short(config.source_token_address)}\` ${scheduleLabel(config)}.\n\nWhat would you like to do?`,
-      keyboards.dashboardKeyboard(config)
-    );
-  }
+  if (config) return ctx.replyWithMarkdown(copy.welcomeBack(config, short(config.source_token_address), scheduleLabel(config)), keyboards.dashboardKeyboard(config));
 
-  await ctx.replyWithMarkdown(
-    `🪀 *yo-yo: the dividend policy for your memecoin*\n\n` +
-    `Your launchpad pays you in real stocks. yo-yo decides what happens next, every cycle:\n` +
-    `🎁 *Payout ratio*: a share to your holders, paid in kind (NVDA fees become NVDA dividends)\n` +
-    `👤 *Your share*: sent to your own payout address\n` +
-    `🔥 *Buyback*: buy your token and burn it\n` +
-    `🏦 *Retained earnings*: a stock treasury with a published book value\n` +
-    `🏅 *Record date*: loyalty weighting, snipers earn less\n\n` +
-    `Ready when you are 👇`,
-    keyboards.welcomeKeyboard()
-  );
+  await ctx.replyWithMarkdown(copy.welcome(), keyboards.welcomeKeyboard());
 }
 
 export async function handleMenu(ctx) {
   const { config } = await getUserConfig(ctx.from.id);
-  const text = config
-    ? `🪀 *Main menu*\n\nyo-yo is ${config.is_active ? '🟢 running' : '⏸️ paused'}. Pick an option:`
-    : `🪀 *Main menu*\n\nLet's turn your fees into dividends:`;
-  await edit(ctx, text, config ? keyboards.dashboardKeyboard(config) : keyboards.welcomeKeyboard());
+  await edit(ctx, copy.menu(config), config ? keyboards.dashboardKeyboard(config) : keyboards.welcomeKeyboard());
 }
 
 export async function handleHelp(ctx) {
-  await edit(ctx,
-    `❓ *yo-yo, help*\n\n` +
-    `*Commands*\n/start: open the menu\n/setup: configure your bot\n/status: view your bot\n/stocks: the stock universe\n/help: this message\n\n` +
-    `*The loop*\nOn schedule, yo-yo sweeps the dev wallet (stock tokens and ETH, plus Uniswap V3 LP fees), applies your dividend policy ` +
-    `(payout ratio, your share, buyback, treasury) and pays holders in proportion to what they hold, weighted by loyalty if enabled. Stocks go out in kind; ETH is converted to your reward.\n\n` +
-    `*Modes*\n🎯 Fixed: one stock (or ETH, or any token)\n🎰 Roulette: a random liquid stock each cycle\n🚀 Top Gainer: the day's best stock\n📊 Portfolio: rotate through a basket\n🗳️ Community Vote: holders choose\n🏅 Loyalty: weight dividends by holding time, snipers earn less\n\n` +
-    `*Good to know*\n🔐 Your key is AES-256 encrypted, decrypted only at run time\n🛡️ Swaps are guarded against the real market price (Yahoo Finance)\n⏸️ Pause, resume or delete anytime`,
-    keyboards.backToMenuKeyboard()
-  );
+  await edit(ctx, copy.help(), keyboards.helpKeyboard());
 }
 
 export async function handleHowItWorks(ctx) {
-  const dash = `${(process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev')}/app`;
-  await edit(ctx,
-    `📖 *How yo-yo works*\n\n` +
-    `Your launchpad on Robinhood Chain pays you in real Stock Tokens (NVDA, SPY, GLD, 195 of them) or ETH. yo-yo is the dividend policy on top: it decides where every cycle's fees go.\n\n` +
-    `🧭 *Routing canvas*: draw it on the dashboard (${dash}). Fees flow from the dev wallet to as many legs as you like, each with its own share:\n` +
-    `  🎁 Holders: the dividend, paid *in kind* (NVDA fees become NVDA dividends, no swap)\n` +
-    `  👤 Wallets: you, a partner, marketing, a DAO, any address\n` +
-    `  🔥 Buyback & burn: buys your own token on Uniswap and burns it\n` +
-    `  🏦 Treasury: retained earnings in stocks, book value per token published live\n\n` +
-    `🪙 *Any token, by address*: each leg can convert its share into a stock, ETH, or any token on Robinhood Chain by contract address. Pay a partner in their coin, pay holders in yours.\n\n` +
-    `🏅 *Record date*: dividends weighted by holding time, 1x to 2x over 30 days, minimum hold, selling resets the clock. Snipers earn less than diamond hands.\n\n` +
-    `🎛️ *ETH fees*: fixed reward, 🎰 Stock Roulette, 🚀 Top Gainer of the day, 📊 Portfolio baskets (Magnificent 7, AI & Semis, Degen Street, Safe Haven) or 🗳️ holder vote.\n\n` +
-    `🔔 *Calendar*: every 1 to 60 minutes, or once a day at the closing bell (4:00 pm New York), market hours only if you want.\n\n` +
-    `⚖️ *Fair-price guard*: every swap is checked against Yahoo Finance (stocks) or DexScreener (tokens). Thin pool, no fill: that leg pays in kind instead of a bad price.\n\n` +
-    `🧾 *Receipts & statements*: every dividend posts a card here with Share on X. Holders get a statement page, tokens get a public dashboard, a yield figure and an embeddable badge.\n\n` +
-    `🔗 *Launchpads* plug in with one link: a token lands here already configured.\n\n` +
-    `🔐 Keys are AES-256 encrypted, decrypted in memory at run time only. Use a dedicated dev wallet. 🪀`,
-    keyboards.welcomeKeyboard()
+  await edit(ctx, copy.howItWorks(), keyboards.howKeyboard());
+}
+
+export async function handleFaq(ctx, page = 1) {
+  const pages = copy.faqPages();
+  const p = Math.min(pages.length, Math.max(1, Number(page) || 1));
+  await edit(ctx, pages[p - 1], keyboards.faqKeyboard(p, pages.length));
+}
+
+export async function handleAnnounceHelp(ctx) {
+  await edit(ctx, copy.announceHelp(), keyboards.backToMenuKeyboard());
+}
+
+export async function handleDashboardLink(ctx) {
+  const { config } = await getUserConfig(ctx.from.id);
+  await ctx.replyWithMarkdown(
+    config
+      ? `🧭 *Your canvas*\n\nDrag the legs, change shares and payout assets, watch holdings and cycles.\n\n${copy.links.dashboard()}\n\nPublic page of your coin: ${copy.links.site()}/${config.source_token_address}`
+      : `🧭 *The canvas*\n\nConnect your wallet, pick your coin, draw the routing. Two minutes.\n\n${copy.links.dashboard()}`,
+    keyboards.dashboardLinkKeyboard()
   );
 }
 
-export async function handleFaq(ctx) {
-  await edit(ctx,
-    `❓ *FAQ*\n\n` +
-    `*Are my funds safe?*\nYour key is encrypted (AES-256-GCM) and only decrypted in memory at run time. Use a *dedicated wallet*.\n\n` +
-    `*What can the bot do with my wallet?*\nCollect fees, swap on Uniswap, send each leg where you routed it: holders, your wallets, the burn address, your treasury. Nothing else.\n\n` +
-    `*Which stocks?*\nAll 195 official Robinhood Stock Tokens. The liquid ones (${LIQUID_TICKERS.join(', ')}) fill at fair value today; others are guarded and fall back to ETH when their pool is too thin.\n\n` +
-    `*Who counts as a holder?*\nReal wallets only. Pools, routers, the token contract and any smart contract are excluded.\n\n` +
-    `*Can I stop it?*\nYes: pause, resume or delete anytime from the menu.`,
-    keyboards.welcomeKeyboard()
-  );
+export async function handleCommunity(ctx) {
+  await ctx.replyWithMarkdown(`💬 *The yo-yo community*\n\nCreators, holders, questions, receipts.\n\n${copy.links.community()}\n${copy.links.x()}`, keyboards.communityKeyboard());
 }
 
 export async function handleStocks(ctx) {
   const bySector = {};
   for (const s of STOCKS) (bySector[s.sector] ??= []).push(s.ticker);
   const lines = Object.entries(bySector).map(([sector, tickers]) => `*${sector}*: ${tickers.join(' ')}`);
-  const text = `📈 *${STOCKS.length} Robinhood Stock Tokens*\n\nLiquid today: ${LIQUID_TICKERS.join(', ')}\n\n${lines.join('\n\n')}`;
+  const text = copy.stocksIntro(STOCKS.length, LIQUID_TICKERS.join(' ')) + lines.join('\n\n');
   if (ctx.callbackQuery) {
     await ctx.answerCbQuery().catch(() => {});
     return ctx.replyWithMarkdown(text, keyboards.backToMenuKeyboard());
@@ -242,7 +210,7 @@ export async function handleWarningAccept(ctx) {
   if (!session || session.step !== 'warning') return ctx.answerCbQuery('Session expired. Send /setup to start again.');
   session.step = 'private_key';
   await edit(ctx,
-    `🔐 *Step 1 of 5: dev wallet key*\n\nSend the *private key* of your dedicated dev wallet (64 hex characters, with or without 0x).\n\n_Your message is deleted the instant it's received._`,
+    `🔐 *Step 1 of 5: dev wallet*\n\nSend the *private key* of the wallet that receives your creator fees (64 hex characters, with or without 0x).\n\nUse a dedicated wallet, never your main one. The key is AES-256 encrypted at rest.\n\n_Your message is deleted the instant it's received._\n\nPrefer a mouse? The canvas does the same with a wallet connect: ${copy.links.dashboard()}`,
     keyboards.cancelKeyboard()
   );
 }
@@ -333,7 +301,7 @@ async function handlePrivateKeyInput(ctx, session, privateKey) {
   session.step = 'source_token';
   await ctx.replyWithMarkdown(
     `✅ Key received and encrypted.\n📍 Wallet: \`${publicKey}\`${balanceLine}${gateLine}\n\n` +
-    `💎 *Step 2 of 5: your token*\n\nSend the *contract address* of your token on Robinhood Chain: its holders will receive the dividends.`,
+    `💎 *Step 2 of 5: your coin*\n\nSend the *contract address* of your coin on Robinhood Chain. Its holders receive the dividends.`,
     keyboards.cancelKeyboard()
   );
 }
@@ -369,7 +337,7 @@ export async function handleFeeSourceSelection(ctx, source) {
   session.step = 'reward';
   await edit(ctx,
     `✅ Fee source: ${FEE_SOURCES[source].emoji} ${FEE_SOURCES[source].label}\n\n` +
-    `📈 *Step 4 of 5: the reward*\n\nWhat should holders receive? A stock (195 available), ETH, or *any token on Robinhood Chain*: paste its contract address and holders get paid in it, even another memecoin.`,
+    `📈 *Step 4 of 5: the dividend asset*\n\nWhat do holders receive? A stock (195 available), ETH, or *any coin on Robinhood Chain*: paste its contract address and holders get paid in it, even another memecoin.\n\nStock fees are paid in kind by default. This choice applies to ETH fees and to converted legs.`,
     keyboards.rewardKeyboard('reward', 'cancel')
   );
 }
@@ -475,7 +443,7 @@ export async function handleSetupConfirmation(ctx, confirmed) {
       await emitForConfig(config, 'token.linked', { symbol: session.data.sourceMeta?.symbol || null, rewardToken: config.target_token_address, schedule: scheduleLabel(config) });
     }
     await edit(ctx,
-      `🎉 *yo-yo is live!*\n\nDividends go out ${scheduleLabel(config)}.\n\n📊 Dashboard: ${dashboardLink(config)}\n\n` +
+      `🎉 *Your policy is live*\n\nDividends go out ${scheduleLabel(config)}.\n\n🧭 Canvas: ${copy.links.dashboard()}\n📈 Public page: ${dashboardLink(config)}\n📣 Receipts: add me to your group and send /announce there.\n\n` +
       `Tip: hit *⚡ Run now* to fire the first cycle. The first run also builds the holder ledger from chain logs, which can take a minute.`,
       keyboards.dashboardKeyboard(config)
     );
@@ -512,10 +480,10 @@ export async function handleStatus(ctx) {
   }
 
   await ctx.replyWithMarkdown(
-    `📊 *Your yo-yo*\n\n📍 Status: ${config.is_active ? '🟢 Running' : '⏸️ Paused'}\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n` +
+    `📊 *Status*\n\n📍 Policy: ${config.is_active ? '🟢 Running' : '⏸️ Paused'}\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n` +
     `🔐 Wallet: \`${config.dev_wallet_public}\`${balanceLine}\n💎 Your token: \`${short(config.source_token_address)}\`\n` +
     `💰 Fees: ${FEE_SOURCES[config.fee_source]?.label || config.fee_source}\n${modeLine(config)}\n` +
-    `💼 Policy: ${splitLabel(config)}${lastLine}\n\n📈 Dashboard: ${dashboardLink(config)}\n🔎 ${explorerAddress(config.dev_wallet_public)}`,
+    `🧭 Routing: ${splitLabel(config)}${lastLine}\n\n🧭 Canvas: ${copy.links.dashboard()}\n📈 Public page: ${dashboardLink(config)}\n🔎 ${explorerAddress(config.dev_wallet_public)}`,
     keyboards.statusKeyboard()
   );
   if (ctx.callbackQuery) await ctx.answerCbQuery();
@@ -527,8 +495,8 @@ export async function handleSettings(ctx) {
   const { config } = await getUserConfig(ctx.from.id);
   if (!config) { if (ctx.callbackQuery) await ctx.answerCbQuery('No config yet.'); return ctx.replyWithMarkdown('You have no bot yet.', keyboards.welcomeKeyboard()); }
   await edit(ctx,
-    `⚙️ *Settings*\n\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n${modeLine(config)}\n🏅 Loyalty: ${loyaltyLabel(config)}\n` +
-    `💼 Policy: ${splitLabel(config)}\n📍 ${config.is_active ? '🟢 Running' : '⏸️ Paused'}`,
+    `⚙️ *Settings*\n_Same policy as the canvas, with buttons._\n\n⏱️ Schedule: ${scheduleLabel(config)}${config.market_hours_only ? ' (market hours only)' : ''}\n${modeLine(config)}\n🏅 Record date: ${loyaltyLabel(config)}\n` +
+    `🧭 Routing: ${splitLabel(config)}\n📍 ${config.is_active ? '🟢 Running' : '⏸️ Paused'}`,
     keyboards.settingsKeyboard(config)
   );
 }
@@ -603,12 +571,11 @@ export async function handleBasketSelection(ctx, key) {
 
 function splitText(config) {
   if (config.legs_enabled) {
-    const url = (process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev') + '/app';
-    return `🧭 *Fee routing*
+    return `🧭 *Routing*
 
-This yo-yo uses the routing canvas: fees flow to several destinations (holders, wallets, buyback, treasury), each with its own share and payout asset.
+This policy is drawn on the canvas: fees flow to several legs (holders, wallets, buyback, treasury), each with its own share and payout asset.
 
-Edit it on the dashboard: ${url}
+Edit it there: ${copy.links.dashboard()}
 
 Picking a preset below replaces the canvas with a simple split.`;
   }
@@ -616,9 +583,9 @@ Picking a preset below replaces the canvas with a simple split.`;
   const asset = config.treasury_asset ? rewardLabel(config.treasury_asset) : 'SPY (default)';
   const inKind = (config.payout_mode || 'in_kind') !== 'convert';
   return (
-    `💼 *Dividend policy*\n\n` +
-    `Your launchpad pays you in stocks. Each cycle, everything that landed in the dev wallet is split:\n` +
-    `🎁 *Holders*: the payout ratio, the dividend itself\n👤 *You*: what you keep, sent to your payout address\n🔥 *Burn*: buys your own token and burns it\n🏦 *Treasury*: retained earnings, stocks kept in your treasury wallet (book value published on the dashboard)\n\n` +
+    `🧭 *Routing*\n\n` +
+    `Each cycle, everything that landed in the dev wallet is split:\n` +
+    `🎁 *Holders*: the payout ratio, the dividend itself\n👤 *You*: what you keep, sent to your payout address\n🔥 *Burn*: buys your own token and burns it\n🏦 *Treasury*: retained earnings, stocks kept in your treasury wallet (book value published on your public page)\n\n` +
     `${inKind ? '📦 Stocks are paid *in kind*: NVDA fees become NVDA dividends, no swap.' : '🔁 Stocks are *converted* to your chosen reward before the payout.'} ETH fees are converted to the reward.\n\n` +
     `Current: *${splitLabel(config)}*\n👤 Payout address: ${config.creator_address ? `\`${config.creator_address}\`` : '_not set (your share goes to holders until you set one)_'}\n` +
     `🏦 Treasury: ${config.treasury_address ? `\`${config.treasury_address}\`` : '_not set (treasury share goes to holders until you set one)_'}\n📈 Treasury asset: ${asset}` +
@@ -753,7 +720,7 @@ export async function handleAnnounce(ctx) {
 // ---------- loyalty ----------
 
 const LOYALTY_TEXT =
-  `🏅 *Loyalty rewards*\n\n` +
+  `🏅 *Record date*\n\n` +
   `Dividends weighted by *holding time*, not just balance. The multiplier ramps from 1x to the max over the ramp period; ` +
   `wallets younger than the minimum hold get nothing this cycle; with the reset on, any sell restarts a wallet's clock.\n\n` +
   `Snipers who buy right before the record date earn less than the holders who have been there for weeks. Voting weight follows the same rules.`;

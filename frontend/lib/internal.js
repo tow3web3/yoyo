@@ -22,3 +22,4 @@ export async function internal(path, body = {}) {
 
 export const reschedule = (configId) => internal(`/reschedule/${configId}`);
 export const runNow = (configId) => internal(`/run/${configId}`);
+export const policyCreated = (configId) => internal(`/created/${configId}`);

@@ -3,7 +3,7 @@ import { parseAbi } from 'viem';
 import { sessionUser } from '../../../../lib/session';
 import { getConfigForUser, createConfig, updateConfig, deleteConfig, replaceLegs, getLegs } from '../../../../lib/appQueries';
 import { encryptPrivateKey, isValidPrivateKey, normalizeKey, addressOf, generateDevWallet } from '../../../../lib/crypto';
-import { reschedule } from '../../../../lib/internal';
+import { reschedule, policyCreated } from '../../../../lib/internal';
 import { rpc } from '../../../../lib/evm';
 import { EVM_ADDR, getStock, ZERO } from '../../../../lib/stocks';
 
@@ -80,6 +80,7 @@ export async function POST(request) {
       loyalty: b.loyalty ? { enabled: Boolean(b.loyalty.enabled), minHoldHours: Number(b.loyalty.minHoldHours || 0), rampDays: Number(b.loyalty.rampDays || 30), maxBps: Number(b.loyalty.maxBps || 20000), sellReset: b.loyalty.sellReset !== false } : null,
     });
     await reschedule(config.id);
+    policyCreated(config.id).catch(() => {});
     return Response.json({ ok: true, configId: config.id, devWallet: devWalletPublic, generated, symbol }, { status: 201 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

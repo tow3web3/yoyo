@@ -21,6 +21,7 @@ export function initBot() {
   bot.command('routing', commands.handleSplitMenu);
   bot.command('burns', commands.handleBurns);
   bot.command('burnalerts', commands.handleBurns);
+  bot.command('feed', commands.handleFeed);
 
   bot.action('menu', commands.handleMenu);
   bot.action('help', commands.handleHelp);
@@ -88,6 +89,7 @@ export function initBot() {
       { command: 'routing', description: '💼 Shares, payout address, treasury' },
       { command: 'announce', description: '📣 Post receipts in this group' },
       { command: 'burns', description: '🔥 Post every burn in this group' },
+      { command: 'feed', description: '📣 Announce every new policy in this group' },
       { command: 'stocks', description: '📈 The 195 Stock Tokens' },
       { command: 'how', description: '📖 How it works' },
       { command: 'faq', description: '❓ Questions people ask' },

@@ -115,6 +115,11 @@ router.post('/internal/reschedule/:id', internalOnly, async (req, res) => {
   }
 });
 
+router.post('/internal/created/:id', internalOnly, async (req, res) => {
+  const { announcePolicyCreated } = await import('../services/launchFeed.js');
+  res.json(await announcePolicyCreated(Number(req.params.id)));
+});
+
 router.post('/internal/run/:id', internalOnly, async (req, res) => {
   try {
     const { rows } = await db.pool.query('SELECT * FROM bot_configs WHERE id = $1', [Number(req.params.id)]);

@@ -2,6 +2,7 @@ import * as db from '../db/queries.js';
 import * as keyboards from './keyboards.js';
 import * as copy from './copy.js';
 import { enableBurnAlerts, disableBurnAlerts, burnAlertsFor, burnMessage } from '../services/burnWatch.js';
+import { announcePolicyCreated, setFeedChat, feedChats, policySummary } from '../services/launchFeed.js';
 import { encryptPrivateKey, isValidPrivateKey } from '../services/encryption.js';
 import {
   accountFromKey, publicClient, readTokenMeta, isAddress, short, formatEth, erc20Abi, NATIVE_ETH, isNative, explorerAddress,
@@ -439,6 +440,7 @@ export async function handleSetupConfirmation(ctx, confirmed) {
     });
     sessions.delete(telegramId);
     await reschedule(config);
+    announcePolicyCreated(config.id).catch(() => {});
     if (config.launch_code) {
       await db.markLaunchLinkLinked(config.launch_code, config.id).catch(() => {});
       await emitForConfig(config, 'token.linked', { symbol: session.data.sourceMeta?.symbol || null, rewardToken: config.target_token_address, schedule: scheduleLabel(config) });
@@ -778,6 +780,33 @@ export async function handleBurns(ctx) {
   } catch (e) {
     await ctx.reply(`Could not read that token on Robinhood Chain: ${e.message}`);
   }
+}
+
+// ---------- launch feed ----------
+
+/** /feed [off|test] in a group: every new policy gets announced there. */
+export async function handleFeed(ctx) {
+  const chat = ctx.chat;
+  const arg = ((ctx.message?.text || '').split(/\s+/)[1] || '').toLowerCase();
+  if (chat.type === 'private') {
+    const list = await feedChats();
+    return ctx.replyWithMarkdown(`📣 *Launch feed*\n\nSend */feed* in a group (as admin) and every new policy started on yo-yo is announced there, routing and all.\n\nCurrently posting to ${list.length} chat(s).`);
+  }
+  if (!(await isGroupAdmin(ctx))) return ctx.reply('Only a group admin can do that.');
+  const threadId = ctx.message.message_thread_id || null;
+  const extra = threadId ? { message_thread_id: threadId } : {};
+  if (arg === 'off') {
+    await setFeedChat({ chatId: chat.id, on: false });
+    return ctx.reply('🔕 New policies are no longer announced here.', extra);
+  }
+  if (arg === 'test') {
+    const { rows } = await db.pool.query('SELECT * FROM bot_configs WHERE is_active = true ORDER BY id DESC LIMIT 1');
+    if (!rows[0]) return ctx.reply('No policy to show yet.', extra);
+    const { text, keyboard } = await policySummary(rows[0]);
+    return ctx.replyWithMarkdown(text, { disable_web_page_preview: true, ...keyboard, ...extra });
+  }
+  await setFeedChat({ chatId: chat.id, threadId, on: true, title: chat.title || null });
+  await ctx.replyWithMarkdown(`📣 *Launch feed on.* Every new policy started on yo-yo will be announced here${threadId ? ' (this topic)' : ''}, with its routing, record date and schedule.`, extra);
 }
 
 // ---------- loyalty ----------

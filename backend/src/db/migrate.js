@@ -365,6 +365,14 @@ async function migrate() {
       CREATE INDEX IF NOT EXISTS idx_burn_events_token ON burn_events(token, block_number DESC);
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bot_settings (
+        key TEXT PRIMARY KEY,
+        value JSONB NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     console.log('Migration complete');
     process.exit(0);
   } catch (error) {

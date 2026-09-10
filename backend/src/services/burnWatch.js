@@ -9,7 +9,7 @@ import bot from '../bot/telegram.js';
 import { publicClient, erc20Abi, ZERO, DEAD, explorerTx, short } from '../chain/config.js';
 
 const TRANSFER = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)');
-const POLL_MS = Number(process.env.BURN_WATCH_POLL_MS || 20_000);
+const POLL_MS = Number(process.env.BURN_WATCH_POLL_MS || 30_000);
 const MAX_SPAN = 20_000n; // blocks per getLogs call: the public RPC serves this comfortably
 const BURN_ADDRESSES = [ZERO, DEAD];
 const lc = (a) => String(a).toLowerCase();

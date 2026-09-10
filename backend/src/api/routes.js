@@ -5,7 +5,7 @@ import { STOCKS, LIQUID_TICKERS, BASKETS } from '../chain/stocks.js';
 import { getQuotes } from '../services/oracle.js';
 import { isAddress } from '../chain/config.js';
 import { scheduleConfig } from '../scheduler/cron.js';
-import { executeBotConfig } from '../scheduler/executor.js';
+import { executeBotConfig, busyConfigs } from '../scheduler/executor.js';
 
 // Internal endpoints used by the web app (same box): guarded by INTERNAL_API_KEY.
 function internalOnly(req, res, next) {
@@ -17,7 +17,7 @@ function internalOnly(req, res, next) {
 const router = express.Router();
 
 router.get('/health', (req, res) => {
-  res.json({ status: 'ok', chain: 4663, timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', chain: 4663, busy: busyConfigs(), timestamp: new Date().toISOString() });
 });
 
 router.get('/status', async (req, res) => {

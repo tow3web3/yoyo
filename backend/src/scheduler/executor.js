@@ -24,9 +24,12 @@ import { resolveReward, describeReward } from '../services/rewards.js';
 import { stockOracle, tokenOracle } from '../services/oracle.js';
 import { isMarketOpen, scheduleLabel } from '../services/schedule.js';
 import { sendNotification } from '../bot/telegram.js';
+import { settleLotteryPayouts } from '../services/lottery.js';
 
 const MIN_DISTRIBUTE_WEI = parseEther(process.env.MIN_DISTRIBUTE_ETH || '0.0005');
 const runningConfigs = new Set();
+/** Config ids with a cycle in flight: the deploy script waits for this to be empty before restarting. */
+export const busyConfigs = () => [...runningConfigs];
 
 function newLog(config, cycleKey) {
   return {
@@ -65,9 +68,10 @@ export async function executeBotConfig(config, { force = false } = {}) {
     if (!inKind) for (const n of await liquidateStocks({ privateKey, owner: account.address })) console.log(`   convert: ${n}`);
 
     // 2. Collect
-    const assets = (await collectAssets({ owner: account.address, gasReserveWei: config.gas_reserve_wei, includeStocks: inKind }))
+    const assets = (await collectAssets({ owner: account.address, gasReserveWei: config.gas_reserve_wei, includeStocks: inKind, extraTokens: [config.target_token_address] }))
       .filter((a) => (a.isNative ? a.amount >= MIN_DISTRIBUTE_WEI : a.valueWei >= MIN_ASSET_VALUE_WEI || a.valueWei === 0n));
     console.log(`2. Payable: ${assets.length ? describeAssets(assets) : 'nothing above the minimums'}`);
+    try { await settleLotteryPayouts({ config, privateKey, assets }); } catch (e) { console.error(`   Lottery payout failed: ${e.message}`); }
     if (!assets.length) {
       const log = newLog(config, cycleKey);
       log.status = 'success';

@@ -41,7 +41,10 @@ export default function YoyoLive() {
           <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">${sym} runs on yo-yo, live</h2>
           <p className="mt-2 max-w-xl text-sm text-mut">The coin behind the product uses the product: {data.config.scheduleLabel?.toLowerCase()}, creator fees are routed as drawn below. Every cycle is public.</p>
         </div>
-        <Link href={`/${CA}`} className="btn-primary whitespace-nowrap">Open the ${sym} dashboard <Arrow className="h-4 w-4" /></Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/lottery" className="btn-ghost whitespace-nowrap">🎟️ Daily lottery: 0.5% of fees</Link>
+          <Link href={`/${CA}`} className="btn-primary whitespace-nowrap">Open the ${sym} dashboard <Arrow className="h-4 w-4" /></Link>
+        </div>
       </div>
       <PolicyMini source={data.sourceToken} devWallet={data.devWallet} schedule={data.config.scheduleLabel} legs={data.legs} split={data.config.split} countdown={{ intervalMinutes: data.config.intervalMinutes, scheduleKind: data.config.scheduleKind, active: data.config.isActive }} />
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">

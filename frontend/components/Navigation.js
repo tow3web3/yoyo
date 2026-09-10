@@ -31,6 +31,7 @@ export default function Navigation() {
             <Link href="/wallet" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">My dividends</Link>
             <Link href="/vote" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-hood-700 transition hover:text-hood-600">Vote</Link>
             <Link href="/missions" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-gold-700 transition hover:text-gold-600">Missions</Link>
+            {process.env.NEXT_PUBLIC_BOOMERANG_CA && <Link href="/lottery" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-gold-700 transition hover:text-gold-600">🎟️ Lottery</Link>}
             <a href="/#developers" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">API</a>
           </div>
 

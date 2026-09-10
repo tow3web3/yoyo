@@ -1,13 +1,21 @@
 // Robinhood Chain (id 4663), an Arbitrum-based L2 where gas is ETH and the
 // official Robinhood Stock Tokens live as plain ERC-20s. Every address below was
 // verified on mainnet in earlier deployments (RobinPad, Stock16, ripple).
-import { defineChain, createPublicClient, createWalletClient, http, parseAbi } from 'viem';
+import { defineChain, createPublicClient, createWalletClient, http, fallback, parseAbi } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 export const RPC_URL = process.env.RH_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com';
+// A second endpoint takes over when the first one errors or rate-limits (the public
+// RPC answers with Cloudflare challenges under load).
+export const RPC_FALLBACK_URL = process.env.RH_RPC_FALLBACK_URL || '';
+export function rpcTransport(opts = {}) {
+  const primary = http(RPC_URL, { retryCount: 2, retryDelay: 500, timeout: 30_000, ...opts });
+  if (!RPC_FALLBACK_URL || RPC_FALLBACK_URL === RPC_URL) return primary;
+  return fallback([primary, http(RPC_FALLBACK_URL, { retryCount: 2, retryDelay: 500, timeout: 30_000, ...opts })], { rank: false, retryCount: 0 });
+}
 
 export const robinhoodChain = defineChain({
   id: 4663,
@@ -70,7 +78,7 @@ export function publicClient() {
   if (!_public) {
     _public = createPublicClient({
       chain: robinhoodChain,
-      transport: http(RPC_URL, { retryCount: 3, retryDelay: 600, timeout: 30_000 }),
+      transport: rpcTransport(),
     });
   }
   return _public;
@@ -89,7 +97,7 @@ export function accountFromKey(privateKey) {
 /** Wallet client bound to a config's dev wallet key (never cached: keys differ per config). */
 export function walletFor(privateKey) {
   const account = accountFromKey(privateKey);
-  const wallet = createWalletClient({ account, chain: robinhoodChain, transport: http(RPC_URL, { timeout: 30_000 }) });
+  const wallet = createWalletClient({ account, chain: robinhoodChain, transport: rpcTransport() });
   return { account, wallet };
 }
 

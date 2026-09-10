@@ -39,6 +39,13 @@ cd /root/boomerang/frontend && npm ci --include=dev --no-audit --no-fund 2>&1 | 
 SA="$(dirname "$(find .next/standalone -maxdepth 2 -name server.js | head -1)")"
 mkdir -p "$SA/.next" && cp -r .next/static "$SA/.next/" && cp -r public "$SA/"
 
+echo "Waiting for running cycles to finish before restarting the bot"
+for i in $(seq 1 72); do
+  H="$(curl -sf --max-time 5 http://127.0.0.1:5400/api/health || echo '"busy":[]')"
+  if printf '%s' "$H" | grep -qF '"busy":[]'; then break; fi
+  echo "  cycle in flight ($H), waiting"
+  sleep 5
+done
 systemctl restart boomerang-bot boomerang-web
 sleep 3
 systemctl is-active boomerang-bot boomerang-web

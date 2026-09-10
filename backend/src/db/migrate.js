@@ -373,6 +373,41 @@ async function migrate() {
       );
     `);
 
+    // Holders lottery: one round per token at a time, one ticket per wallet.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS lottery_rounds (
+        id SERIAL PRIMARY KEY,
+        token TEXT NOT NULL,
+        config_id INTEGER REFERENCES bot_configs(id) ON DELETE SET NULL,
+        opens_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        draws_at TIMESTAMP NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        min_hold NUMERIC(30, 0) NOT NULL DEFAULT 1000000,
+        min_hours NUMERIC(6, 2) NOT NULL DEFAULT 2,
+        prize_bps INTEGER NOT NULL DEFAULT 50,
+        carry_wei NUMERIC(78, 0) NOT NULL DEFAULT 0,
+        rolled BOOLEAN NOT NULL DEFAULT false,
+        prize_wei NUMERIC(78, 0),
+        winner TEXT,
+        tx_hash TEXT,
+        entries_count INTEGER,
+        eligible_count INTEGER,
+        drawn_at TIMESTAMP,
+        paid_at TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_lottery_rounds_token ON lottery_rounds(token, status);
+      CREATE TABLE IF NOT EXISTS lottery_entries (
+        round_id INTEGER NOT NULL REFERENCES lottery_rounds(id) ON DELETE CASCADE,
+        wallet TEXT NOT NULL,
+        balance_at_entry NUMERIC(78, 0) NOT NULL,
+        entered_block BIGINT,
+        entered_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        disqualified_at TIMESTAMP,
+        reason TEXT,
+        PRIMARY KEY (round_id, wallet)
+      );
+    `);
+
     console.log('Migration complete');
     process.exit(0);
   } catch (error) {

@@ -6,7 +6,7 @@
 import { parseAbi, parseEther } from 'viem';
 import { publicClient, erc20Abi, ZERO, NATIVE_ETH, formatEth, formatUnits } from '../chain/config.js';
 import { STOCKS } from '../chain/stocks.js';
-import { getQuotes } from './oracle.js';
+import { getQuotes, tokenOracle } from './oracle.js';
 import { swapTokenForEth } from './swap.js';
 
 export const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
@@ -37,7 +37,7 @@ export async function stockBalances(owner) {
  * Everything payable this cycle.
  * @returns {Promise<Array<{address, symbol, name, decimals, ticker, isNative, isStock, amount: bigint, valueWei: bigint, priceUsd}>>}
  */
-export async function collectAssets({ owner, gasReserveWei, includeStocks = true }) {
+export async function collectAssets({ owner, gasReserveWei, includeStocks = true, extraTokens = [] }) {
   const client = publicClient();
   const assets = [];
   const balance = await client.getBalance({ address: owner });
@@ -56,6 +56,28 @@ export async function collectAssets({ owner, gasReserveWei, includeStocks = true
         const valueWei = ethUsd > 0 && usd > 0 ? parseEther((units * usd / ethUsd).toFixed(18)) : 0n;
         assets.push({ address: stock.address, symbol: stock.ticker, name: stock.name, decimals: 18, ticker: stock.ticker, isNative: false, isStock: true, amount, valueWei, priceUsd: usd || null });
       }
+    }
+  }
+  // Other ERC-20s the policy pays in (its reward token, typically): a balance left
+  // by an interrupted cycle, or sent there on purpose, goes out at the next one.
+  const seen = new Set(assets.map((a) => a.address.toLowerCase()));
+  for (const t of extraTokens.filter(Boolean)) {
+    const addr = String(t).toLowerCase();
+    if (addr === ZERO || seen.has(addr) || STOCKS.some((s) => s.address.toLowerCase() === addr)) continue;
+    seen.add(addr);
+    try {
+      const [amount, decimals, symbol] = await Promise.all([
+        client.readContract({ address: t, abi: erc20Abi, functionName: 'balanceOf', args: [owner] }),
+        client.readContract({ address: t, abi: erc20Abi, functionName: 'decimals' }),
+        client.readContract({ address: t, abi: erc20Abi, functionName: 'symbol' }).catch(() => 'TOKEN'),
+      ]);
+      if (amount <= 0n) continue;
+      const q = await tokenOracle(t).catch(() => null);
+      const units = Number(amount) / 10 ** Number(decimals);
+      const valueWei = q?.stockUsd > 0 && q?.ethUsd > 0 ? parseEther((units * q.stockUsd / q.ethUsd).toFixed(18)) : 0n;
+      assets.push({ address: t, symbol: String(symbol), name: String(symbol), decimals: Number(decimals), ticker: null, isNative: false, isStock: false, amount, valueWei, priceUsd: q?.stockUsd || null });
+    } catch (e) {
+      console.log(`   Could not read ${addr.slice(0, 8)}… balance: ${e.shortMessage || e.message}`);
     }
   }
   return assets;

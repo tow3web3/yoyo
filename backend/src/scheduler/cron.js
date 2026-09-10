@@ -3,6 +3,7 @@ import * as db from '../db/queries.js';
 import { executeBotConfig } from './executor.js';
 import { tickVoteCycles } from '../services/voteService.js';
 import { tickMissionClaims } from '../services/missionPayout.js';
+import { tickLottery } from '../services/lottery.js';
 import { cronFor } from '../services/schedule.js';
 
 const activeCronJobs = new Map();
@@ -24,6 +25,11 @@ export async function initScheduler() {
   cron.schedule('*/2 * * * *', async () => {
     try { await tickMissionClaims(); } catch (e) { console.error('Mission payout tick failed:', e.message); }
   });
+
+  cron.schedule('* * * * *', async () => {
+    try { await tickLottery(); } catch (e) { console.error('Lottery tick failed:', e.message); }
+  });
+  tickLottery().catch((e) => console.error('Initial lottery tick failed:', e.message));
 }
 
 export function scheduleConfig(config) {

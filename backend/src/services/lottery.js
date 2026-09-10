@@ -53,6 +53,12 @@ async function roundFeesWei(round) {
   return BigInt(rows[0].f);
 }
 
+/** The open round of a policy, if any (read only). */
+export async function openRoundFor(configId) {
+  const { rows } = await pool.query(`SELECT * FROM lottery_rounds WHERE config_id = $1 AND status = 'open' ORDER BY id DESC LIMIT 1`, [configId]);
+  return rows[0] || null;
+}
+
 export async function prizeSoFar(round) {
   const fees = await roundFeesWei({ ...round, draws_at: new Date() });
   return (fees * BigInt(round.prize_bps || PRIZE_BPS)) / 10000n + BigInt(round.carry_wei || 0);

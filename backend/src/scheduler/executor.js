@@ -11,7 +11,7 @@ import { parseEther } from 'viem';
 import * as db from '../db/queries.js';
 import { decryptPrivateKey } from '../services/encryption.js';
 import { accountFromKey, explorerTx, formatEth, formatUnits, short, readTokenMeta } from '../chain/config.js';
-import { announceDividend } from '../services/announce.js';
+import { announceCycle } from '../services/announce.js';
 import { effectiveSplit } from '../services/treasury.js';
 import { legsFor, legsLabel, splitAmounts, runLeg, convertAsset } from '../services/legs.js';
 import { emitForConfig } from '../services/webhooks.js';
@@ -158,6 +158,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
         const savedIdle = await db.createExecutionLog(log);
         if (legResults.length) await db.setExecutionLegs(savedIdle.id, legResults).catch(() => {});
         summary.push(`${asset.symbol}: ${creator && !creator.failed ? `👤 ${formatUnits(creator.amount, asset.decimals, 4)} to you` : ''}${burn && !burn.failed ? ` 🔥 burned ${formatUnits(burn.amount, 18, 2)}` : ''}${treasury && !treasury.failed ? ` 🏦 +${formatUnits(treasury.amount, treasury.decimals, 4)} ${treasury.symbol}` : ''}`.trim());
+        if (legResults.some((l) => !l.failed)) await announceCycle({ config, log: savedIdle, asset, legs, legResults, holdersAmount, holdersTotal: 0, results: null, reward, sourceSymbol }).catch(() => {});
         continue;
       }
 
@@ -185,7 +186,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
       if (!holders.length) {
         log.status = 'success';
         note(log, 'No eligible holders');
-        if (legResults.length) { const savedNoH = await db.createExecutionLog(log); await db.setExecutionLegs(savedNoH.id, legResults).catch(() => {}); continue; }
+        if (legResults.length) { const savedNoH = await db.createExecutionLog(log); await db.setExecutionLegs(savedNoH.id, legResults).catch(() => {}); if (legResults.some((l) => !l.failed)) await announceCycle({ config, log: savedNoH, asset, legs, legResults, holdersAmount, holdersTotal: 0, results: null, reward, sourceSymbol }).catch(() => {}); continue; }
         await db.createExecutionLog(log);
         continue;
       }
@@ -214,7 +215,7 @@ export async function executeBotConfig(config, { force = false } = {}) {
           txHash: results.txHashes[0] || null,
           receiptUrl: `${process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev'}/receipt/${saved.id}`,
         });
-        await announceDividend({ config, log: saved, reward, sourceSymbol, results, feesLabel: `${formatUnits(holdersAmount, asset.decimals, 4)} ${asset.symbol} of fees`, holdersTotal: holders.length });
+        await announceCycle({ config, log: saved, asset, legs, legResults, holdersAmount, holdersTotal: holders.length, results, reward, sourceSymbol }).catch((e) => console.error(`   Cycle report failed: ${e.message}`));
       }
       summary.push(
         `${asset.symbol}: 📈 ${formatUnits(results.totalSent, reward.decimals, 4)} ${reward.symbol} to ${results.successful.length}/${holders.length} holders` +

@@ -17,7 +17,7 @@ import { emitForConfig } from '../services/webhooks.js';
 
 // Optional holders-only gate: the dev wallet must hold MIN_HOLD_TO_ACTIVATE $YOYO.
 const BOOMERANG_TOKEN = isAddress(process.env.BOOMERANG_TOKEN_ADDRESS) ? process.env.BOOMERANG_TOKEN_ADDRESS : null;
-const MIN_HOLD_TO_ACTIVATE = Number(process.env.MIN_HOLD_TO_ACTIVATE || 1_000_000);
+const MIN_HOLD_TO_ACTIVATE = process.env.MIN_HOLD_TO_ACTIVATE === undefined || process.env.MIN_HOLD_TO_ACTIVATE === '' ? 1_000_000 : Number(process.env.MIN_HOLD_TO_ACTIVATE);
 
 const sessions = new Map();
 const FRONTEND = process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev';

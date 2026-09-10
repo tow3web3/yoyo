@@ -39,7 +39,7 @@ export default function Navigation() {
             <a href="https://x.com/Boomerang_tek" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on X" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
               <X className="h-[18px] w-[18px]" />
             </a>
-            <a href="https://github.com/tow3web3/boomerang" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on GitHub" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
+            <a href="https://github.com/tow3web3/yoyo" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on GitHub" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
               <Github className="h-[18px] w-[18px]" />
             </a>
             <Link href="/app" className="btn-primary whitespace-nowrap">

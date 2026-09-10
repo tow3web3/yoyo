@@ -12,7 +12,7 @@ export default function Footer() {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-5 text-sm text-mut">
           <a href="https://x.com/Boomerang_tek" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on X" className="flex items-center transition hover:text-ink"><X className="h-4 w-4" /></a>
-          <a href="https://github.com/tow3web3/boomerang" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on GitHub" className="flex items-center transition hover:text-ink"><Github className="h-4 w-4" /></a>
+          <a href="https://github.com/tow3web3/yoyo" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on GitHub" className="flex items-center transition hover:text-ink"><Github className="h-4 w-4" /></a>
           <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener noreferrer" className="transition hover:text-ink">Blockscout</a>
           <a href="https://app.uniswap.org" target="_blank" rel="noopener noreferrer" className="transition hover:text-ink">Uniswap</a>
           <a href="https://dexscreener.com/robinhood" target="_blank" rel="noopener noreferrer" className="transition hover:text-ink">DexScreener</a>

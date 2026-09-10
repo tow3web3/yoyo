@@ -20,6 +20,6 @@ export function GET() {
       stocks: { method: 'GET', path: '/api/v1/stocks', description: 'The 195 Robinhood Stock Tokens.' },
       activity: { method: 'GET', path: '/api/v1/activity?limit=20', description: 'Recent linked tokens and dividends.' },
     },
-    docs: 'https://github.com/tow3web3/boomerang',
+    docs: 'https://github.com/tow3web3/yoyo',
   });
 }

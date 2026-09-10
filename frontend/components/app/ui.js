@@ -143,6 +143,7 @@ export function useTokenResearch(address) {
 export function StockPicker({ value, onChange, allowEth = true, allowAddress = true, compact = false }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState('stocks'); // stocks | custom
   const custom = useCustomToken(value);
   const selected = value ? (value === 'ETH' || /^0x0{40}$/i.test(value) ? { symbol: 'ETH', name: 'Ether', address: '0x0000000000000000000000000000000000000000' } : getStock(value) ? { symbol: getStock(value).ticker, name: getStock(value).name, address: getStock(value).address } : { symbol: custom?.symbol || `${value.slice(0, 6)}…`, name: custom?.name ? `${custom.name} · custom token` : 'Custom token', address: value, image: custom?.image || null }) : null;
   const list = useMemo(() => {
@@ -150,8 +151,9 @@ export function StockPicker({ value, onChange, allowEth = true, allowAddress = t
     const base = STOCKS.filter((s) => !needle || s.ticker.toLowerCase().includes(needle) || s.name.toLowerCase().includes(needle));
     return base.sort((a, b) => Number(LIQUID_TICKERS.includes(b.ticker)) - Number(LIQUID_TICKERS.includes(a.ticker))).slice(0, compact ? 8 : 14);
   }, [q, compact]);
-  useEffect(() => { if (!open) setQ(''); }, [open]);
+  useEffect(() => { if (!open) { setQ(''); setTab('stocks'); } }, [open]);
   const isAddr = /^0x[0-9a-fA-F]{40}$/.test(q.trim());
+  useEffect(() => { if (isAddr) setTab('custom'); }, [isAddr]);
   const probe = useTokenResearch(isAddr ? q.trim() : null);
 
   return (
@@ -159,14 +161,34 @@ export function StockPicker({ value, onChange, allowEth = true, allowAddress = t
       <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-3 rounded-xl border border-line bg-paper px-3 py-2.5 text-left transition hover:border-hood-300">
         {selected ? <StockLogo address={selected.address} meta={{ symbol: selected.symbol, image: selected.image }} size="h-8 w-8" text="text-[9px]" /> : <span className="stock-logo h-8 w-8 bg-tile" />}
         <span className="min-w-0 flex-1">
-          <span className="block font-mono text-sm font-bold text-ink">{selected ? selected.symbol : 'Pick a stock'}</span>
-          <span className="block truncate text-xs text-mut">{selected ? selected.name : 'A stock, ETH, or any token address'}</span>
+          <span className="block font-mono text-sm font-bold text-ink">{selected ? selected.symbol : 'Pick a token'}</span>
+          <span className="block truncate text-xs text-mut">{selected ? selected.name : 'A stock, ETH, or any token by contract address'}</span>
         </span>
         <span className="text-mut">▾</span>
       </button>
       {open && (
         <div className="absolute left-0 right-0 top-full z-20 mt-2 min-w-[320px] overflow-hidden rounded-2xl border border-line bg-paper shadow-lg">
-          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={allowAddress ? 'Search ticker, company, or paste any token CA' : 'Search ticker or company'} className="w-full border-b border-line px-4 py-2.5 text-sm outline-none" />
+          {allowAddress && (
+            <div className="flex gap-1 border-b border-line bg-ground p-1.5">
+              <button type="button" onClick={() => setTab('stocks')} className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${tab === 'stocks' ? 'bg-ink text-white' : 'text-mut hover:text-ink'}`}>📈 Stocks{allowEth ? ' & ETH' : ''}</button>
+              <button type="button" onClick={() => setTab('custom')} className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${tab === 'custom' ? 'bg-ink text-white' : 'text-mut hover:text-ink'}`}>🪙 Any token (paste a CA)</button>
+            </div>
+          )}
+          {tab === 'custom' ? (
+            <div className="p-3">
+              <p className="mb-2 text-xs text-mut">Any ERC-20 on Robinhood Chain: a memecoin, a partner token, your own coin. Paste its contract address.</p>
+              <input autoFocus value={q} onChange={(e) => setQ(e.target.value.trim())} placeholder="0x… contract address" className={inputCls} />
+              {isAddr ? (
+                <div className="mt-2">
+                  {probe?.loading || !probe ? <div className="flex items-center gap-2 px-2 py-3 text-xs text-mut"><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-line border-t-hood-500" /> Looking up {q.trim().slice(0, 10)}… on chain, DexScreener and GeckoTerminal</div>
+                    : probe.error ? <div className="px-2 py-3 text-xs text-down">{probe.error}</div>
+                    : <TokenCard token={probe} compact action={{ label: 'Use this token', onClick: () => { onChange(q.trim()); setOpen(false); } }} />}
+                </div>
+              ) : q ? <p className="mt-2 text-xs text-mut">Keep typing: 42 characters starting with 0x.</p> : null}
+            </div>
+          ) : (
+          <>
+          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={allowAddress ? 'Search ticker or company (or paste a CA)' : 'Search ticker or company'} className="w-full border-b border-line px-4 py-2.5 text-sm outline-none" />
           <div className="max-h-[420px] overflow-y-auto">
             {allowEth && !q && (
               <button type="button" onClick={() => { onChange('ETH'); setOpen(false); }} className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-hood-50">
@@ -181,15 +203,10 @@ export function StockPicker({ value, onChange, allowEth = true, allowAddress = t
                 {LIQUID_TICKERS.includes(s.ticker) && <span className="rounded-full bg-hood-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-hood-700">Liquid</span>}
               </button>
             ))}
-            {allowAddress && isAddr && (
-              <div className="p-2">
-                {probe?.loading || !probe ? <div className="flex items-center gap-2 px-2 py-3 text-xs text-mut"><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-line border-t-hood-500" /> Looking up {q.trim().slice(0, 10)}… on chain, DexScreener and GeckoTerminal</div>
-                  : probe.error ? <div className="px-2 py-3 text-xs text-down">{probe.error}</div>
-                  : <TokenCard token={probe} compact action={{ label: 'Use this token', onClick: () => { onChange(q.trim()); setOpen(false); } }} />}
-              </div>
-            )}
-            {list.length === 0 && !isAddr && <div className="px-4 py-4 text-center text-xs text-mut">No ticker matches.</div>}
+            {list.length === 0 && !isAddr && <div className="px-4 py-4 text-center text-xs text-mut">No ticker matches. Looking for another token? Use the "Any token" tab.</div>}
           </div>
+          </>
+          )}
         </div>
       )}
     </div>

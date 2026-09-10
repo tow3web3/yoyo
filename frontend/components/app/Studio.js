@@ -189,6 +189,7 @@ function LegInspector({ leg, draft, setDraft, meta, sourceSymbol, onRemove }) {
       {leg.kind === 'holders' && (
         <Section title="ETH fees convert to">
           <RewardEditor value={draft.reward} onChange={(v) => setDraft((d) => ({ ...d, reward: v }))} />
+          <p className="mt-2 rounded-xl border border-gold-200 bg-gold-50 px-3 py-2 text-xs text-gold-700">Not a stock? Open the picker and use the <span className="font-bold">Any token</span> tab: paste any contract address on Robinhood Chain and holders get paid in it.</p>
         </Section>
       )}
       {leg.kind !== 'burn' && (

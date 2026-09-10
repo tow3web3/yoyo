@@ -31,7 +31,7 @@ export function RewardEditor({ value, onChange }) {
       <p className="text-xs text-mut">Applies to <span className="font-semibold text-ink">ETH fees</span> (and to stock fees in convert mode). In-kind stock fees are paid as they are.</p>
       <Seg value={value.rewardMode} onChange={(v) => set({ rewardMode: v })} options={MODES} size="sm" />
       {value.rewardMode === 'fixed' && (
-        <Field label="Reward" hint="One of the 195 Robinhood Stock Tokens, ETH, or any token address">
+        <Field label="Reward" hint="A stock, ETH, or any token on Robinhood Chain (Any token tab, paste the contract address)">
           <StockPicker value={value.reward} onChange={(v) => set({ reward: v })} />
         </Field>
       )}

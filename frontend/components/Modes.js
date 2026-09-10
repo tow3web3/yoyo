@@ -24,7 +24,7 @@ export default function Modes() {
     <div id="modes" className="scroll-mt-20">
       <div className="mb-8">
         <div className="eyebrow mb-2">The policy</div>
-        <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Every decision a listed company makes about its cash</h2>
+        <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl lg:text-5xl">Every decision a listed company makes about its cash</h2>
         <p className="mt-2 max-w-xl text-sm text-mut">Payout ratio, record date, retained earnings, buybacks, calendar, yield. For a memecoin, from Telegram. Each card shows the option in action.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

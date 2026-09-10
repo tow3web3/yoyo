@@ -25,6 +25,7 @@ export default function Home() {
       <Hero />
 
       <div className="mx-auto max-w-6xl space-y-20 px-5 py-24">
+        <Reveal><Modes /></Reveal>
         <WhyBoomerang />
         <Reveal><Peeks /></Reveal>
         <Reveal><StatsBar /></Reveal>
@@ -40,7 +41,6 @@ export default function Home() {
           <Reveal><LiveFeed /></Reveal>
         </div>
         <Reveal><Screener /></Reveal>
-        <Reveal><Modes /></Reveal>
         <Reveal><Developers /></Reveal>
         <Reveal><Security /></Reveal>
         <Reveal><FAQ /></Reveal>

@@ -81,7 +81,12 @@ export default function YoyoSim({ className = '' }) {
         s.y += s.v * dt;
         s.omega = Math.max(0, -s.v / AXLE); // winding eats spin
         if (s.v >= 0) { s.mode = 'down'; s.omega = 0.2; } // stalled: falls back, rewinds spin on the way down
-        if (s.y <= 0) { s.y = 0; s.v = 0; s.mode = 'hand'; s.omega = 0; s.catchPulse = 1; s.returns += 1; setReturns(s.returns); s.thetaV *= 0.3; }
+        if (s.y <= 0) {
+          // touches the hand and goes straight back down: the yo-yo never parks at the top
+          s.y = 0; s.catchPulse = 1; s.returns += 1; setReturns(s.returns); s.thetaV *= 0.3;
+          s.mode = 'down'; s.v = Math.min(560, Math.max(380, -s.v * 0.8)); s.omega = s.v / AXLE;
+          setHint('Tug when it sleeps');
+        }
       } else {
         s.omega *= Math.exp(-dt / 0.4);
       }
@@ -157,6 +162,7 @@ export default function YoyoSim({ className = '' }) {
       for (let i = 0; i < 3; i++) step(dt / 3);
       draw();
       if (s.mode === 'hand' && s.idle > 4 && s.returns === 0) setHint('Click the yo-yo to throw it');
+      if (s.mode === 'sleep' && s.idle > 5) setHint('Click to tug it home');
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -175,7 +181,7 @@ export default function YoyoSim({ className = '' }) {
         s.mode = 'up'; s.v = -Math.max(700, s.omega * AXLE * 0.95); setHint('Coming home');
       } else {
         // not enough spin: a weak hop, it drops back
-        s.mode = 'up'; s.v = -Math.max(220, s.omega * AXLE * 0.8); s.omega = Math.max(s.omega, 6); setHint('Too slow, it stalls. Throw again');
+        s.mode = 'up'; s.v = -Math.max(220, s.omega * AXLE * 0.8); s.omega = Math.max(s.omega, 6); setHint('Too slow, it drops back. Tug again');
       }
       s.thetaV += 0.8 * (Math.random() - 0.5);
     } else if (s.mode === 'down') {

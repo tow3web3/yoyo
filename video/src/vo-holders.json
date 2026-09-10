@@ -1,0 +1,78 @@
+{
+  "fps": 30,
+  "total": 1641,
+  "lines": [
+    {
+      "id": "pump",
+      "text": "Your coin just pumped. And the launchpad paid you creator fees. In real stocks.",
+      "file": "line-01.mp3",
+      "duration": 4.944,
+      "startFrame": 18,
+      "endFrame": 183
+    },
+    {
+      "id": "question",
+      "text": "Now the question every creator gets: what about the holders who stayed?",
+      "file": "line-02.mp3",
+      "duration": 3.984,
+      "startFrame": 183,
+      "endFrame": 319
+    },
+    {
+      "id": "answer",
+      "text": "With yo-yo, you pay them. Automatically. Here is how.",
+      "file": "line-03.mp3",
+      "duration": 3.6,
+      "startFrame": 319,
+      "endFrame": 452
+    },
+    {
+      "id": "connect",
+      "text": "Open the dashboard, connect your wallet, and pick your coin. yo-yo finds the ones you created.",
+      "file": "line-04.mp3",
+      "duration": 5.232,
+      "startFrame": 452,
+      "endFrame": 626
+    },
+    {
+      "id": "route",
+      "text": "On the canvas, route the fees. Say, seventy percent to holders. The rest to you, a buyback, a treasury.",
+      "file": "line-05.mp3",
+      "duration": 7.104,
+      "startFrame": 626,
+      "endFrame": 855
+    },
+    {
+      "id": "loyalty",
+      "text": "Turn on the record date. Wallets that held longer earn more. A sniper who bought five minutes ago gets nothing.",
+      "file": "line-06.mp3",
+      "duration": 6,
+      "startFrame": 855,
+      "endFrame": 1052
+    },
+    {
+      "id": "asset",
+      "text": "Choose what they receive. NVDA, in kind. Or any coin on Robinhood Chain, by contract address.",
+      "file": "line-07.mp3",
+      "duration": 6.576,
+      "startFrame": 1052,
+      "endFrame": 1266
+    },
+    {
+      "id": "save",
+      "text": "Save. Every closing bell, the fees go out, and a receipt lands in your Telegram group.",
+      "file": "line-08.mp3",
+      "duration": 5.52,
+      "startFrame": 1266,
+      "endFrame": 1460
+    },
+    {
+      "id": "outro",
+      "text": "Real holders. Really paid. yo dash yo dot dev.",
+      "file": "line-09.mp3",
+      "duration": 3.504,
+      "startFrame": 1460,
+      "endFrame": 1605
+    }
+  ]
+}

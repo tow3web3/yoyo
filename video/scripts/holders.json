@@ -1,0 +1,11 @@
+[
+  { "id": "pump", "text": "Your coin just pumped. And the launchpad paid you creator fees. In real stocks." },
+  { "id": "question", "text": "Now the question every creator gets: what about the holders who stayed?" },
+  { "id": "answer", "text": "With yo-yo, you pay them. Automatically. Here is how.", "hold": 0.3 },
+  { "id": "connect", "text": "Open the dashboard, connect your wallet, and pick your coin. yo-yo finds the ones you created." },
+  { "id": "route", "text": "On the canvas, route the fees. Say, seventy percent to holders. The rest to you, a buyback, a treasury." },
+  { "id": "loyalty", "text": "Turn on the record date. Wallets that held longer earn more. A sniper who bought five minutes ago gets nothing." },
+  { "id": "asset", "text": "Choose what they receive. NVDA, in kind. Or any coin on Robinhood Chain, by contract address." },
+  { "id": "save", "text": "Save. Every closing bell, the fees go out, and a receipt lands in your Telegram group.", "hold": 0.4 },
+  { "id": "outro", "text": "Real holders. Really paid. yo dash yo dot dev.", "hold": 0.8 }
+]

@@ -6,7 +6,7 @@ import { Markup } from 'telegraf';
 import bot from '../bot/telegram.js';
 import { formatEth, formatUnits } from '../chain/config.js';
 import { scheduleLabel } from './schedule.js';
-import { explorerTx, explorerAddress, short, isNative } from '../chain/config.js';
+import { explorerTx, explorerAddress, short, publicClient } from '../chain/config.js';
 import { openRoundFor, prizeSoFar } from './lottery.js';
 
 const FRONTEND = process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev';
@@ -112,6 +112,11 @@ export async function cycleReport({ config, log, asset, legs, legResults, holder
       lines.push('', `🎟️ Lottery pool: +${formatEth(add, 5)} ETH this cycle, *${formatEth(pool, 5)} ETH* so far, draw in ${hrs >= 1 ? `${Math.round(hrs)}h` : `${Math.round(hrs * 60)} min`}`);
     }
   } catch { /* the report is fine without it */ }
+  try {
+    const gas = await publicClient().getBalance({ address: config.dev_wallet_public });
+    const reserve = BigInt(config.gas_reserve_wei || 2_000_000_000_000_000n);
+    if (gas < reserve) lines.push(`⛽ Dev wallet gas is low: ${formatEth(gas, 4)} ETH left. Send ~0.01 ETH to [${short(config.dev_wallet_public)}](${explorerAddress(config.dev_wallet_public)}) so cycles keep paying.`);
+  } catch { /* skip the gas line */ }
   if (log.error_message || log.errorMessage) lines.push(`ℹ️ ${log.error_message || log.errorMessage}`);
   lines.push(`⏱ Next cycle ${scheduleLabel(config)}`);
   return lines.join('\n');

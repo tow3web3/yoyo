@@ -46,7 +46,7 @@ function AppShell({ children, wallet, studio, onSwitch, onLogout, onConnect, con
           </Link>
           <div className="flex items-center gap-3 text-sm">
             <Link href="/stocks" className="hidden text-mut hover:text-ink sm:inline">Stocks</Link>
-            <Link href="/#screener" className="hidden text-mut hover:text-ink sm:inline">Screener</Link>
+            <Link href="/#check" className="hidden text-mut hover:text-ink sm:inline">Token check</Link>
             {wallet ? <WalletMenu wallet={wallet} onSwitch={onSwitch} onLogout={onLogout} /> : <button type="button" onClick={onConnect} disabled={connecting} className="btn-primary !py-1.5 text-xs">{connecting ? 'Check your wallet…' : 'Connect wallet'}</button>}
           </div>
         </div>

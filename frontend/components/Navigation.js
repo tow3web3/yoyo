@@ -35,9 +35,10 @@ export default function Navigation() {
 
           <div className="flex items-center gap-2">
             <CopyCA className="hidden xl:inline-flex" />
-            <a href="https://x.com/Boomerang_tek" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on X" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
+            <a href="https://x.com/yo_yo_tech" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on X" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
               <X className="h-[18px] w-[18px]" />
             </a>
+            <a href="https://t.me/yoyocommu" target="_blank" rel="noopener noreferrer" aria-label="yo-yo community on Telegram" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-4 w-4"><path d="M21.9 4.6 18.6 20c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.2-8.3c.4-.4-.1-.6-.6-.2L6.1 13.7 1.3 12.2c-1-.3-1-1 .2-1.5L20.6 3.1c.9-.3 1.6.2 1.3 1.5z"/></svg></a>
             <a href="https://github.com/tow3web3/yoyo" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on GitHub" className="flex h-8 w-8 items-center justify-center rounded-md text-mut transition hover:text-ink">
               <Github className="h-[18px] w-[18px]" />
             </a>

@@ -265,3 +265,10 @@ body {
 @keyframes bubble-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 .bubble { animation: bubble-float 4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .bubble { animation: none; } }
+
+/* How it works: the yo-yo rides the string */
+@keyframes hw-ride { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
+@keyframes hw-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.hw-yoyo { offset-rotate: 0deg; animation: hw-ride 9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite; }
+.hw-yoyo img { animation: hw-spin 0.9s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .hw-yoyo, .hw-yoyo img { animation: none; } }

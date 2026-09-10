@@ -8,7 +8,7 @@ import { formatEth, formatUnits } from '../chain/config.js';
 import { scheduleLabel } from './schedule.js';
 
 const FRONTEND = process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev';
-const X_HANDLE = process.env.X_HANDLE || 'Boomerang_tek';
+const X_HANDLE = process.env.X_HANDLE || 'yo_yo_tech';
 
 export function receiptUrl(logId) {
   return `${FRONTEND}/receipt/${logId}`;

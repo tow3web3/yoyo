@@ -155,7 +155,8 @@ export async function getWalletStatement(address) {
 export async function getDashboard(address) {
   const sql = getSql();
   const addr = address.toLowerCase();
-  const [config] = await sql`SELECT * FROM bot_configs WHERE source_token_address = ${addr} AND is_active = true LIMIT 1`;
+  // Several policies can point at one coin; the public page shows the one that pays, then the oldest.
+  const [config] = await sql`SELECT * FROM bot_configs WHERE source_token_address = ${addr} AND is_active = true ORDER BY (SELECT COUNT(*) FROM execution_logs e WHERE e.config_id = bot_configs.id AND e.holder_count > 0) DESC, id ASC LIMIT 1`;
   if (!config) return null;
 
   const [[stats], topRecipients, recentExecutions, [holders]] = await Promise.all([

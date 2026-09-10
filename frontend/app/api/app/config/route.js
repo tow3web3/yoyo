@@ -1,7 +1,7 @@
 // Create, update or delete the logged-in creator's yo-yo. Mirrors the bot.
 import { parseAbi } from 'viem';
 import { sessionUser } from '../../../../lib/session';
-import { getConfigForUser, createConfig, updateConfig, deleteConfig, replaceLegs, getLegs } from '../../../../lib/appQueries';
+import { getConfigForUser, createConfig, updateConfig, deleteConfig, replaceLegs, getLegs, activeConfigForToken } from '../../../../lib/appQueries';
 import { encryptPrivateKey, isValidPrivateKey, normalizeKey, addressOf, generateDevWallet } from '../../../../lib/crypto';
 import { reschedule, policyCreated } from '../../../../lib/internal';
 import { rpc } from '../../../../lib/evm';
@@ -40,6 +40,8 @@ export async function POST(request) {
     if (!EVM_ADDR.test(b.sourceToken || '')) return Response.json({ error: 'Token address is invalid' }, { status: 400 });
     const symbol = await tokenExists(b.sourceToken);
     if (!symbol) return Response.json({ error: 'No ERC-20 found at that address on Robinhood Chain' }, { status: 422 });
+    const taken = await activeConfigForToken(b.sourceToken, user.id);
+    if (taken) return Response.json({ error: `$${symbol} already runs a yo-yo policy from another wallet. If you are its creator and that policy is not yours, reach us at t.me/yoyocommu.` }, { status: 409 });
 
     // Dev wallet: generated here, or imported.
     let privateKey;

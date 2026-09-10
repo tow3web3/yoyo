@@ -210,3 +210,10 @@ export async function replaceLegs(configId, input) {
   }
   return getLegs(configId);
 }
+
+/** An active policy on this coin owned by someone else, if any. */
+export async function activeConfigForToken(token, exceptUserId = null) {
+  const sql = getSql();
+  const [row] = await sql`SELECT id, user_id, dev_wallet_public FROM bot_configs WHERE source_token_address = ${lc(token)} AND is_active = true AND user_id <> ${exceptUserId ?? -1} ORDER BY id LIMIT 1`;
+  return row || null;
+}

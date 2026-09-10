@@ -174,7 +174,7 @@ export async function createAirdropTransactionsBatch(transactions) {
 // ========== DASHBOARD ==========
 
 export async function getBotConfigBySourceToken(tokenAddress) {
-  const result = await pool.query('SELECT * FROM bot_configs WHERE source_token_address = $1 AND is_active = true LIMIT 1', [tokenAddress.toLowerCase()]);
+  const result = await pool.query('SELECT * FROM bot_configs WHERE source_token_address = $1 AND is_active = true ORDER BY (SELECT COUNT(*) FROM execution_logs e WHERE e.config_id = bot_configs.id AND e.holder_count > 0) DESC, id ASC LIMIT 1', [tokenAddress.toLowerCase()]);
   return result.rows[0];
 }
 

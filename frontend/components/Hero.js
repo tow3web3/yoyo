@@ -43,8 +43,8 @@ export default function Hero() {
 
             <div className="mt-6 max-w-xl rounded-xl border border-line border-l-4 border-l-hood-500 bg-paper p-4 shadow-soft">
               <p className="text-[15px] leading-relaxed text-mut">
-                <span className="font-semibold text-ink">Link any coin.</span> Pons, ARROW, your own contract: if it is an ERC-20 on Robinhood Chain with fees, it can pay dividends.{' '}
-                Your launchpad pays you in real stocks; yo-yo decides what happens next: a payout ratio to holders, paid in NVDA or in any memecoin you pick, a share you keep, buybacks, a stock treasury. Drawn on one screen, run on schedule.
+                <span className="font-semibold text-ink">Link any coin on Robinhood Chain.</span> Your launchpad pays you in real stocks. yo-yo decides where they go: a dividend to holders in NVDA or any memecoin, a share for you, a buyback, a stock treasury.{' '}
+                <span className="font-semibold text-ink">Draw it once on the canvas. It runs every closing bell.</span>
               </p>
             </div>
 

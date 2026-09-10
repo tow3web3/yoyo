@@ -31,3 +31,13 @@ export function generateDevWallet() {
   const privateKey = generatePrivateKey();
   return { privateKey, address: privateKeyToAccount(privateKey).address };
 }
+
+/** Inverse of encryptPrivateKey. Accepts the stored JSON string or the object. */
+export function decryptPrivateKey(encryptedData) {
+  const data = typeof encryptedData === 'string' ? JSON.parse(encryptedData) : encryptedData;
+  const decipher = crypto.createDecipheriv(ALGORITHM, masterKey(), Buffer.from(data.iv, 'hex'));
+  decipher.setAuthTag(Buffer.from(data.authTag, 'hex'));
+  let out = decipher.update(data.encrypted, 'hex', 'utf8');
+  out += decipher.final('utf8');
+  return out;
+}

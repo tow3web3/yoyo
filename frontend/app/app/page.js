@@ -9,7 +9,7 @@ import { DEMO_DATA, blankData } from '../../lib/demoData';
 import Studio from '../../components/app/Studio';
 import { ToastProvider, useToast } from '../../components/app/ui';
 import { useWallet } from '../../lib/useWallet';
-import { signIn, signOut } from '../../lib/authClient';
+import { signIn, signOut, revealDevKey } from '../../lib/authClient';
 
 /** Header chip: the signed-in wallet, with Switch wallet and Disconnect. */
 function WalletMenu({ wallet, onSwitch, onLogout }) {
@@ -133,7 +133,7 @@ function AppInner() {
         ) : !state.data.config ? (
           <Studio data={blankData(state.data.user)} setup onCreated={load} refresh={load} onLogout={logout} onSwitchWallet={switchWallet} />
         ) : (
-          <Studio data={state.data} refresh={load} onLogout={logout} onSwitchWallet={switchWallet} />
+          <Studio data={state.data} refresh={load} onLogout={logout} onSwitchWallet={switchWallet} onRevealKey={() => revealDevKey(injected, injected.address || wallet, state.data.config.dev_wallet_public)} />
         )}
       </AppShell>
     </>

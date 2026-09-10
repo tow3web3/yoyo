@@ -58,3 +58,6 @@ export async function sessionUser() {
 
 export const loginMessage = ({ wallet, nonce, issuedAt }) =>
   `yo-yo dashboard login\nChain: Robinhood Chain (4663)\nWallet: ${wallet}\nNonce: ${nonce}\nIssued: ${issuedAt}\n\nThis signature costs no gas and only proves you own this wallet.`;
+
+export const revealMessage = ({ wallet, devWallet, nonce, issuedAt }) =>
+  `yo-yo: reveal my dev wallet private key\nDev wallet: ${devWallet}\nSigned in as: ${wallet}\nNonce: ${nonce}\nIssued: ${issuedAt}\n\nOnly sign this on yo-yo.dev. Anyone holding the key controls the fees.`;

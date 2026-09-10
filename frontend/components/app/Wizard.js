@@ -7,16 +7,17 @@ import { useEffect, useRef, useState } from 'react';
 import { privateKeyToAccount } from 'viem/accounts';
 import StockLogo from '../StockLogo';
 import TokenCard from './TokenCard';
+import SharePanel from './Share';
 import { Button, Field, inputCls, useToast, shortAddr, fmtNum, fmtUsd } from './ui';
 
-const STEPS = ['Wallet', 'Token', 'Launch'];
+const STEPS = ['Wallet', 'Token', 'Launch', 'Share'];
 const KEY_RE = /^(0x)?[0-9a-fA-F]{64}$/;
 
 function addressOfKey(pk) {
   try { return privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`).address; } catch { return null; }
 }
 
-export default function Wizard({ onCreated, user, onSwitchWallet, onLogout, embedded = false }) {
+export default function Wizard({ onCreated, onLaunched, user, onSwitchWallet, onLogout, embedded = false }) {
   const toast = useToast();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -24,6 +25,7 @@ export default function Wizard({ onCreated, user, onSwitchWallet, onLogout, embe
   const [scan, setScan] = useState({ wallet: null, loading: false, data: null, error: null });
   const [token, setToken] = useState({ address: '', meta: null, checking: false, error: null });
   const [manual, setManual] = useState('');
+  const [live, setLive] = useState(null); // the created policy, once launched
 
   const keyAddress = wallet.mode === 'import' && KEY_RE.test(wallet.privateKey.trim()) ? addressOfKey(wallet.privateKey.trim()) : null;
   const scanWallet = wallet.mode === 'mine' ? user?.wallet : keyAddress;
@@ -69,8 +71,10 @@ export default function Wizard({ onCreated, user, onSwitchWallet, onLogout, embe
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not create');
-      toast(data.generated ? `yo-yo is live for your token. Dev wallet ${shortAddr(data.devWallet)} created for you. Now draw the routing.` : 'yo-yo is live for your token. Now draw the routing.');
-      onCreated(data);
+      toast(data.generated ? `yo-yo is live for your token. Dev wallet ${shortAddr(data.devWallet)} created for you.` : 'yo-yo is live for your token.');
+      setLive(data);
+      setStep(3);
+      onLaunched?.(data);
     } catch (e) {
       toast(e.message, 'err');
     } finally {
@@ -178,11 +182,36 @@ export default function Wizard({ onCreated, user, onSwitchWallet, onLogout, embe
           </div>
         )}
 
+        {step === 3 && live && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-hood-100 text-xl">🎉</span>
+              <div>
+                <h2 className="font-display text-lg font-bold text-ink">{token.meta ? `$${token.meta.symbol}` : 'Your coin'} pays dividends now</h2>
+                <p className="text-sm text-mut">First cycle at the closing bell{live.generated ? `, once fees land in ${shortAddr(live.devWallet)}` : ''}.</p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-hood-300 bg-hood-50 p-4">
+              <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-hood-800">Here is the link to share with your community</div>
+              <SharePanel address={token.address} symbol={token.meta?.symbol} />
+            </div>
+            {live.generated && (
+              <div className="rounded-xl border border-line bg-ground p-3 text-xs text-mut">
+                <span className="font-semibold text-ink">One more thing.</span> Set <span className="font-mono text-ink">{live.devWallet}</span> as the fee recipient on your launchpad. Nothing moves until fees land there.
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mt-6 flex items-center justify-between border-t border-line pt-4">
-          <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || busy}>Back</Button>
-          {step < STEPS.length - 1
-            ? <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext}>Continue</Button>
-            : <Button onClick={create} busy={busy}>Launch and open the canvas</Button>}
+          {step === 3
+            ? <span className="text-xs text-mut">Next: draw the routing on the canvas.</span>
+            : <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || busy}>Back</Button>}
+          {step === 3
+            ? <Button onClick={() => onCreated(live)}>Open the canvas</Button>
+            : step < 2
+              ? <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext}>Continue</Button>
+              : <Button onClick={create} busy={busy}>Launch</Button>}
         </div>
       </div>
     </div>

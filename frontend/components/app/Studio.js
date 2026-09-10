@@ -16,6 +16,7 @@ import { LoyaltyEditor, RewardEditor, ScheduleEditor } from './Editors';
 import { Button, Seg, Slider, StockPicker, inputCls, useToast, useCustomToken, useTokenResearch, shortAddr, fmtUsd, fmtNum, units, scheduleValue, parseSchedule } from './ui';
 import TokenCard from './TokenCard';
 import Wizard from './Wizard';
+import SharePanel from './Share';
 import { describeAddress, explorerAddress, explorerTx, getStock, ZERO } from '../../lib/stocks';
 
 const KIND = {
@@ -77,7 +78,13 @@ function SourceNode({ data }) {
         <div className="min-w-0"><div className="truncate font-display text-base font-extrabold">{src.name || `$${src.symbol || 'TOKEN'}`}</div><div className="font-mono text-[11px] text-white/60">dev wallet {shortAddr(config.dev_wallet_public)}</div></div>
         <span className={`ml-auto h-2.5 w-2.5 rounded-full ${config.is_active ? 'bg-hood-500' : 'bg-white/30'}`} title={config.is_active ? 'Running' : 'Paused'} />
       </div>
-      <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/50">Lands here, goes out {config.scheduleLabel?.toLowerCase()}</div>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/50">In the dev wallet</div>
+          <div className="figure font-display text-2xl font-extrabold text-hood-500">{assets ? fmtUsd(assets.totalUsd || 0) : '…'}</div>
+        </div>
+        <div className="text-right text-[10px] text-white/50">goes out<br /><span className="font-semibold text-white/80">{config.scheduleLabel?.toLowerCase()}</span></div>
+      </div>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {payable.length ? payable.map((a) => <span key={a.address} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold"><StockLogo address={a.address} meta={{ symbol: a.symbol }} size="h-3.5 w-3.5" text="text-[5px]" />{fmtNum(a.isNative ? a.spendable : a.amount)} {a.symbol}</span>) : <span className="text-xs text-white/50">Nothing payable yet. Fees land here first.</span>}
       </div>
@@ -227,7 +234,37 @@ function AssetResearch({ address }) {
   return <TokenCard token={info} compact />;
 }
 
-function SourceInspector({ data, draft, setDraft, act, busy, tg }) {
+function DevKeyReveal({ onRevealKey, address }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const [key, setKey] = useState(null);
+  const reveal = async () => {
+    setBusy(true);
+    try {
+      const r = await onRevealKey();
+      if (r?.address && address && r.address.toLowerCase() !== address.toLowerCase()) throw new Error('Key does not match this dev wallet');
+      setKey(r.privateKey);
+    } catch (e) { toast(e.message, 'err'); } finally { setBusy(false); }
+  };
+  if (!onRevealKey) return null;
+  return (
+    <div className="mt-3 rounded-xl border border-line bg-ground p-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs"><span className="font-semibold text-ink">Your wallet, your key.</span> <span className="text-mut">Export it anytime to import the dev wallet elsewhere.</span></div>
+        {!key && <Button variant="ghost" className="!py-1 text-[11px]" onClick={reveal} busy={busy}>Reveal private key</Button>}
+      </div>
+      {key && (
+        <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-2.5">
+          <div className="break-all font-mono text-[11px] text-ink">{key}</div>
+          <div className="mt-2 flex items-center gap-2"><CopyBtn text={key} label="Copy key" /><button type="button" onClick={() => setKey(null)} className="rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold text-mut hover:text-ink">Hide</button></div>
+          <p className="mt-2 text-[11px] text-red-700">Anyone holding this key controls the fees. Store it offline, never paste it in a chat.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SourceInspector({ data, draft, setDraft, act, busy, tg, onRevealKey }) {
   const { config, assets, user } = data;
   const eth = assets?.assets?.find((a) => a.isNative);
   const lowGas = eth && eth.amount < (assets.gasReserveEth || 0.002);
@@ -239,6 +276,7 @@ function SourceInspector({ data, draft, setDraft, act, busy, tg }) {
         <div className="mt-2 flex gap-2"><CopyBtn text={config.dev_wallet_public} label="Copy address" /><a href={explorerAddress(config.dev_wallet_public)} target="_blank" rel="noopener noreferrer" className="rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-mut hover:border-hood-400 hover:text-hood-700">Blockscout ↗</a></div>
         <p className="mt-2 text-xs text-mut">Set this address as the fee recipient on your launchpad. Whatever lands here is what the next cycle routes.</p>
         {lowGas && <div className="mt-2 rounded-xl border border-gold-300 bg-gold-50 p-2.5 text-xs text-gold-700">⛽ Low gas: {fmtNum(eth.amount)} ETH. Send ~0.005 ETH so cycles can pay transfers.</div>}
+        <DevKeyReveal onRevealKey={onRevealKey} address={config.dev_wallet_public} />
       </div>
       <Section title="Holdings" aside={assets && <span className="figure text-xs font-bold text-ink">{fmtUsd(assets.totalUsd)}</span>}>
         {assets?.error && <p className="text-xs text-down">{assets.error}</p>}
@@ -353,7 +391,7 @@ function Tour({ onDone }) {
   );
 }
 
-function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, onConnect, setup = false, onCreated }) {
+function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, onConnect, setup = false, onCreated, onRevealKey }) {
   const [guide, setGuide] = useState(true);
   const [tour, setTour] = useState(false);
   useEffect(() => {
@@ -371,6 +409,8 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
   const [tg, setTg] = useState(null);
   const [showCycles, setShowCycles] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [launched, setLaunched] = useState(null);
   const dirty = JSON.stringify(stripPos(draft)) !== JSON.stringify(stripPos(initial));
   const initialKey = JSON.stringify(stripPos(initial));
   useEffect(() => { setDraft((d) => (JSON.stringify(stripPos(d)) === initialKey ? initial : d)); }, [initialKey, initial]); // refreshes keep the draft when dirty
@@ -508,7 +548,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
       {/* Top bar */}
       <div className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-paper px-4">
         <StockLogo address={config.source_token_address} meta={src} size="h-8 w-8" text="text-[9px]" />
-        <div className="min-w-0"><div className="truncate font-display text-sm font-extrabold text-ink">{src.name || `$${src.symbol}`} <span className="font-mono text-xs font-semibold text-mut">${src.symbol}</span></div><div className="flex items-center gap-1.5 text-[11px] text-mut"><span className={`h-1.5 w-1.5 rounded-full ${config.is_active ? 'bg-hood-500' : 'bg-mut'}`} />{config.is_active ? 'Running' : 'Paused'} · {config.scheduleLabel}{data.yield?.apy ? ` · ${data.yield.apy.toFixed(1)}% yield` : ''}</div></div>
+        <div className="min-w-0"><div className="truncate font-display text-sm font-extrabold text-ink">{src.name || `$${src.symbol}`} <span className="font-mono text-xs font-semibold text-mut">${src.symbol}</span></div><div className="flex items-center gap-1.5 text-[11px] text-mut"><span className={`h-1.5 w-1.5 rounded-full ${config.is_active ? 'bg-hood-500' : 'bg-mut'}`} />{config.is_active ? 'Running' : 'Paused'} · {config.scheduleLabel}{assets ? ` · ${fmtUsd(assets.totalUsd || 0)} in dev wallet` : ''}{data.yield?.apy ? ` · ${data.yield.apy.toFixed(1)}% yield` : ''}</div></div>
         {config.is_active && <div className="ml-2 hidden items-center gap-2 rounded-full bg-ink px-3 py-1 text-xs text-white/70 md:flex">next cycle <span className="figure font-mono text-sm font-bold text-hood-500"><Countdown intervalMinutes={config.interval_minutes} scheduleKind={config.schedule_kind} /></span></div>}
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">
@@ -529,7 +569,15 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
           {config.is_active ? <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => act('pause')} busy={busy === 'pause'}><Pause className="h-3.5 w-3.5" /></Button> : <Button variant="ink" className="!py-1.5 text-xs" onClick={() => act('resume')} busy={busy === 'resume'}>▶ Resume</Button>}
           {dirty && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setDraft(initial)} disabled={busy === 'save'}>Discard</Button>}
           <Button className="!py-1.5 text-xs" onClick={save} busy={busy === 'save'} disabled={demo ? false : !canSave}>{demo ? 'Connect to save' : setup ? 'Pick your coin first' : dirty ? 'Save routing' : 'Saved'}</Button>
-          <Link href={`/${config.source_token_address}`} className="hidden text-xs font-semibold text-hood-700 hover:underline lg:inline">Public ↗</Link>
+          <div className="relative">
+            <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => { setAddOpen(false); setShareOpen((o) => !o); }}>Share</Button>
+            {shareOpen && (
+              <div className="absolute right-0 top-full z-30 mt-1 w-[22rem] max-w-[90vw] rounded-2xl border border-line bg-paper p-3 shadow-lg">
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-mut">Your coin's public page</div>
+                <SharePanel address={config.source_token_address} symbol={src.symbol} compact />
+              </div>
+            )}
+          </div>
           {!demo && onSwitchWallet && <button type="button" onClick={onSwitchWallet} className="text-xs text-mut hover:text-ink" title={`Signed in as ${data.user.wallet}`}>Switch wallet</button>}
           {!demo && <button type="button" onClick={onLogout} className="text-xs text-mut hover:text-ink">Sign out</button>}
         </div>
@@ -544,8 +592,8 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
       {setup && guide && (
         <div className="absolute inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 p-4 pt-8 backdrop-blur-sm sm:pt-12">
           <div className="relative w-full max-w-2xl rounded-3xl border border-line bg-ground p-5 shadow-lg reveal-pop">
-            <button type="button" onClick={() => setGuide(false)} className="absolute right-4 top-4 rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold text-mut hover:text-ink">Look around first</button>
-            <Wizard embedded user={data.user} onCreated={onCreated} onSwitchWallet={onSwitchWallet} onLogout={onLogout} />
+            <button type="button" onClick={() => (launched ? onCreated(launched) : setGuide(false))} className="absolute right-4 top-4 rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold text-mut hover:text-ink">{launched ? 'Close' : 'Look around first'}</button>
+            <Wizard embedded user={data.user} onCreated={onCreated} onLaunched={setLaunched} onSwitchWallet={onSwitchWallet} onLogout={onLogout} />
           </div>
         </div>
       )}
@@ -575,7 +623,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
 
         {/* Inspector */}
         <aside className="w-[360px] shrink-0 overflow-y-auto border-l border-line bg-paper">
-          {selected === SOURCE_ID ? <SourceInspector data={data} draft={draft} setDraft={setDraft} act={act} busy={busy} tg={tg} />
+          {selected === SOURCE_ID ? <SourceInspector data={data} draft={draft} setDraft={setDraft} act={act} busy={busy} tg={tg} onRevealKey={onRevealKey} />
             : selectedLeg ? <LegInspector key={selectedLeg.key} leg={selectedLeg} draft={draft} setDraft={setDraft} meta={meta} sourceSymbol={src.symbol} onRemove={() => removeLeg(selectedLeg.key)} />
             : <RoutingSummary draft={draft} meta={meta} select={setSelected} />}
         </aside>

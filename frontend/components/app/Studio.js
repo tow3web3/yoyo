@@ -122,7 +122,7 @@ function ShareEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
   return (
     <>
       <BaseEdge id={id} path={path} style={{ stroke: data.color, strokeWidth: w, opacity: 0.35 }} />
-      <path d={path} fill="none" stroke={data.color} strokeWidth={Math.max(1.5, w / 2)} strokeDasharray="6 10" className="bm-flow" style={{ animationDuration: `${Math.max(0.6, 2.4 - (data.shareBps / 10000) * 1.6)}s` }} />
+      <path d={path} fill="none" stroke={data.color} strokeWidth={Math.max(1.5, w / 2)} strokeDasharray="6 10" className={data.active === false ? '' : 'bm-flow'} style={{ animationDuration: `${Math.max(0.6, 2.4 - (data.shareBps / 10000) * 1.6)}s`, opacity: data.active === false ? 0.45 : 1 }} />
       <EdgeLabelRenderer>
         <div className="pointer-events-none absolute rounded-full border border-line bg-paper px-2 py-0.5 font-mono text-[11px] font-bold text-ink shadow-soft" style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>{(data.shareBps / 100).toFixed(data.shareBps % 100 ? 1 : 0)}%</div>
       </EdgeLabelRenderer>
@@ -134,6 +134,27 @@ const nodeTypes = { source: SourceNode, leg: LegNode };
 const edgeTypes = { share: ShareEdge };
 
 /* ---------------- inspector panels ---------------- */
+/** Loud state: a play sign with moving bars while the policy runs, a pause sign when it does not. */
+function RunBadge({ active }) {
+  if (!active) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-300 bg-gold-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold-700" title="Nothing goes out until you resume">
+        <span className="flex h-3 w-3 items-center justify-center"><span className="mr-[2px] h-2.5 w-[3px] rounded-sm bg-gold-600" /><span className="h-2.5 w-[3px] rounded-sm bg-gold-600" /></span>Paused
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-hood-500" title="Cycles fire on schedule">
+      <span className="relative flex h-3 w-3 items-center justify-center">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-hood-500 opacity-40" />
+        <svg viewBox="0 0 10 10" className="relative h-2.5 w-2.5" aria-hidden><path d="M2 1.5v7l6-3.5z" fill="currentColor" /></svg>
+      </span>
+      Running
+      <span className="run-bars ml-0.5 flex items-end gap-[2px]" aria-hidden><i /><i /><i /></span>
+    </span>
+  );
+}
+
 function CopyBtn({ text, label = 'Copy' }) {
   const [ok, setOk] = useState(false);
   return (
@@ -442,7 +463,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
       return target && (target.x !== n.position.x || target.y !== n.position.y) ? { ...n, position: target } : n;
     }));
   }, [posSig]); // eslint-disable-line react-hooks/exhaustive-deps
-  const edges = useMemo(() => draft.legs.map((leg) => ({ id: `e-${leg.key}`, source: SOURCE_ID, target: leg.key, type: 'share', data: { shareBps: leg.shareBps, color: KIND[leg.kind].color } })), [draft.legs]);
+  const edges = useMemo(() => draft.legs.map((leg) => ({ id: `e-${leg.key}`, source: SOURCE_ID, target: leg.key, type: 'share', data: { shareBps: leg.shareBps, color: KIND[leg.kind].color, active: demo || setup ? true : Boolean(config.is_active) } })), [draft.legs, config.is_active, demo, setup]);
 
   const onNodesChange = useCallback((changes) => onNodesChangeRF(changes.filter((c) => c.type !== 'remove')), [onNodesChangeRF]);
   const onNodeDragStop = useCallback((_, node) => {
@@ -548,7 +569,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
       {/* Top bar */}
       <div className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-paper px-4">
         <StockLogo address={config.source_token_address} meta={src} size="h-8 w-8" text="text-[9px]" />
-        <div className="min-w-0"><div className="flex items-center gap-2"><span className="truncate font-display text-sm font-extrabold text-ink">{src.name || `$${src.symbol}`} <span className="font-mono text-xs font-semibold text-mut">${src.symbol}</span></span><CopyBtn text={config.source_token_address} label={`CA ${shortAddr(config.source_token_address)}`} /></div><div className="flex items-center gap-1.5 text-[11px] text-mut"><span className={`h-1.5 w-1.5 rounded-full ${config.is_active ? 'bg-hood-500' : 'bg-mut'}`} />{config.is_active ? 'Running' : 'Paused'} · {config.scheduleLabel}{assets ? ` · ${fmtUsd(assets.totalUsd || 0)} in dev wallet` : ''}{data.yield?.apy ? ` · ${data.yield.apy.toFixed(1)}% yield` : ''}</div></div>
+        <div className="min-w-0"><div className="flex items-center gap-2"><span className="truncate font-display text-sm font-extrabold text-ink">{src.name || `$${src.symbol}`} <span className="font-mono text-xs font-semibold text-mut">${src.symbol}</span></span><CopyBtn text={config.source_token_address} label={`CA ${shortAddr(config.source_token_address)}`} /><Link href={`/${config.source_token_address}`} target="_blank" className="inline-flex items-center gap-1 rounded-full border border-hood-300 bg-hood-50 px-2.5 py-1 text-[11px] font-semibold text-hood-800 transition hover:border-hood-500" title="The public page of your coin: share it with your community">Community page ↗</Link></div><div className="flex items-center gap-1.5 text-[11px] text-mut"><RunBadge active={config.is_active} /><span>{config.scheduleLabel}{assets ? ` · ${fmtUsd(assets.totalUsd || 0)} in dev wallet` : ''}{data.yield?.apy ? ` · ${data.yield.apy.toFixed(1)}% yield` : ''}</span></div></div>
         {config.is_active && <div className="ml-2 hidden items-center gap-2 rounded-full bg-ink px-3 py-1 text-xs text-white/70 md:flex">next cycle <span className="figure font-mono text-sm font-bold text-hood-500"><Countdown intervalMinutes={config.interval_minutes} scheduleKind={config.schedule_kind} /></span></div>}
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">

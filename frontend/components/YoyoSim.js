@@ -56,7 +56,7 @@ export default function YoyoSim({ className = '' }) {
       const btn = document.querySelector('nav a[href="/app"]');
       const br = btn ? btn.getBoundingClientRect() : null;
       const cx = br ? br.left + br.width / 2 - rect.left : -1;
-      if (br && rect.top < br.bottom && cx > s.R + 8 && cx < rect.width - s.R - 8) { s.fromButton = true; s.x0 = cx; s.y0 = br.bottom - rect.top - 2; }
+      if (br && rect.top < br.bottom && cx > 8 && cx < rect.width - 8) { s.fromButton = true; s.x0 = cx; s.y0 = br.bottom - rect.top - 2; }
       else { s.fromButton = false; s.x0 = rect.width * 0.6; s.y0 = 34; }
       s.L = Math.max(120, Math.min(rect.height - s.y0 - 2 * s.R - 26, rect.height * 0.6 - s.y0 - 2 * s.R));
     };

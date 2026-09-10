@@ -77,7 +77,7 @@ export default function Hero() {
             <div className="relative aspect-square w-full">
               <div className="absolute inset-10 rounded-full bg-hood-300/30 blur-3xl" />
               {/* The finger sits up in the header: the sim box starts above the hero, over the nav, and only the disc itself takes clicks. */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 top-0 z-50 lg:-top-[12rem]">
+              <div className="pointer-events-none absolute -inset-x-16 bottom-0 top-0 z-50 lg:-top-[12rem]">
                 <YoyoSim />
               </div>
             </div>

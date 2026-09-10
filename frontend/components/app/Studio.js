@@ -326,7 +326,7 @@ function Cycles({ logs, meta, onClose }) {
 }
 
 /* ---------------- the studio ---------------- */
-function StudioInner({ data, refresh, onLogout, onSwitchWallet }) {
+function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, onConnect }) {
   const { config, assets, logs, meta, user } = data;
   const toast = useToast();
   const src = meta[config.source_token_address] || {};
@@ -402,6 +402,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet }) {
   }
 
   async function save() {
+    if (demo) { toast('This is the sample policy. Connect a wallet to route your own coin.'); onConnect?.(); return; }
     setBusy('save');
     try {
       const s = parseSchedule(draft.schedule.schedule);
@@ -426,6 +427,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet }) {
 
   async function act(kind) {
     setAddOpen(false);
+    if (demo) { toast(kind === 'tg' ? 'Connect a wallet first, then link Telegram.' : 'Connect a wallet to run this on your own coin.'); onConnect?.(); return; }
     setBusy(kind);
     try {
       if (kind === 'run') {
@@ -490,13 +492,19 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet }) {
           <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => act('run')} busy={busy === 'run'} disabled={!config.is_active}><Bolt className="h-3.5 w-3.5" /> Run now</Button>
           {config.is_active ? <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => act('pause')} busy={busy === 'pause'}><Pause className="h-3.5 w-3.5" /></Button> : <Button variant="ink" className="!py-1.5 text-xs" onClick={() => act('resume')} busy={busy === 'resume'}>▶ Resume</Button>}
           {dirty && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setDraft(initial)} disabled={busy === 'save'}>Discard</Button>}
-          <Button className="!py-1.5 text-xs" onClick={save} busy={busy === 'save'} disabled={!canSave}>{dirty ? 'Save routing' : 'Saved'}</Button>
+          <Button className="!py-1.5 text-xs" onClick={save} busy={busy === 'save'} disabled={demo ? false : !canSave}>{demo ? 'Connect to save' : dirty ? 'Save routing' : 'Saved'}</Button>
           <Link href={`/${config.source_token_address}`} className="hidden text-xs font-semibold text-hood-700 hover:underline lg:inline">Public ↗</Link>
-          {onSwitchWallet && <button type="button" onClick={onSwitchWallet} className="text-xs text-mut hover:text-ink" title={`Signed in as ${data.user.wallet}`}>Switch wallet</button>}
-          <button type="button" onClick={onLogout} className="text-xs text-mut hover:text-ink">Sign out</button>
+          {!demo && onSwitchWallet && <button type="button" onClick={onSwitchWallet} className="text-xs text-mut hover:text-ink" title={`Signed in as ${data.user.wallet}`}>Switch wallet</button>}
+          {!demo && <button type="button" onClick={onLogout} className="text-xs text-mut hover:text-ink">Sign out</button>}
         </div>
       </div>
 
+      {demo && (
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-hood-300 bg-hood-100 px-4 py-2 text-sm text-hood-800">
+          <span><span className="font-bold">Sample policy.</span> This is what a creator's canvas looks like: drag the nodes, open them, change shares and payout assets. Nothing is saved until you connect a wallet and pick your coin.</span>
+          <Button className="!py-1.5 text-xs" onClick={onConnect}>Connect wallet and start</Button>
+        </div>
+      )}
       <div className="flex min-h-0 flex-1">
         {/* Canvas */}
         <div className="relative min-w-0 flex-1">

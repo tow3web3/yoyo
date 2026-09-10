@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import TickerTape from '../../components/TickerTape';
 import Footer from '../../components/Footer';
-import Login from '../../components/app/Login';
+import { DEMO_DATA } from '../../lib/demoData';
 import Wizard from '../../components/app/Wizard';
 import Studio from '../../components/app/Studio';
 import { ToastProvider, useToast } from '../../components/app/ui';
@@ -34,7 +34,7 @@ function WalletMenu({ wallet, onSwitch, onLogout }) {
   );
 }
 
-function AppShell({ children, wallet, studio, onSwitch, onLogout }) {
+function AppShell({ children, wallet, studio, onSwitch, onLogout, onConnect, connecting }) {
   return (
     <div className={studio ? 'flex h-screen flex-col overflow-hidden' : ''}>
       {!studio && <TickerTape />}
@@ -48,7 +48,7 @@ function AppShell({ children, wallet, studio, onSwitch, onLogout }) {
           <div className="flex items-center gap-3 text-sm">
             <Link href="/stocks" className="hidden text-mut hover:text-ink sm:inline">Stocks</Link>
             <Link href="/#screener" className="hidden text-mut hover:text-ink sm:inline">Screener</Link>
-            <WalletMenu wallet={wallet} onSwitch={onSwitch} onLogout={onLogout} />
+            {wallet ? <WalletMenu wallet={wallet} onSwitch={onSwitch} onLogout={onLogout} /> : <button type="button" onClick={onConnect} disabled={connecting} className="btn-primary !py-1.5 text-xs">{connecting ? 'Check your wallet…' : 'Connect wallet'}</button>}
           </div>
         </div>
       </nav>
@@ -91,6 +91,23 @@ function AppInner() {
     setState({ loading: false, data: null });
   }
 
+  const [connecting, setConnecting] = useState(false);
+  // Connect: pick an account in the extension, sign the login message, load the real dashboard.
+  async function connect() {
+    setConnecting(true);
+    try {
+      const addr = injected.address || (await injected.connect());
+      if (!addr) throw new Error(injected.error || 'No wallet found. Install MetaMask or Rabby, or open this page in your wallet browser.');
+      await signIn(injected, addr);
+      toast(`Signed in as ${addr.slice(0, 6)}…${addr.slice(-4)}`);
+      await load();
+    } catch (e) {
+      toast(e.message, 'err');
+    } finally {
+      setConnecting(false);
+    }
+  }
+
   // Switch wallet: sign out, let the extension pick another account, sign in with it.
   async function switchWallet() {
     try {
@@ -109,11 +126,11 @@ function AppInner() {
   const wallet = state.data?.user?.wallet;
   return (
     <>
-      <AppShell wallet={wallet} studio={Boolean(state.data?.config)} onSwitch={switchWallet} onLogout={logout}>
+      <AppShell wallet={wallet} studio={!state.loading && (!state.data?.user || Boolean(state.data?.config))} onSwitch={switchWallet} onLogout={logout} onConnect={connect} connecting={connecting}>
         {state.loading ? (
           <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-hood-500" /></div>
         ) : !state.data?.user ? (
-          <Login onLoggedIn={load} />
+          <Studio data={DEMO_DATA} demo onConnect={connect} refresh={() => {}} onLogout={() => {}} />
         ) : !state.data.config ? (
           <Wizard onCreated={load} user={state.data.user} onSwitchWallet={switchWallet} onLogout={logout} />
         ) : (

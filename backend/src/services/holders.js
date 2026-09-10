@@ -261,6 +261,12 @@ export function applyLoyalty(holders, config, headBlock) {
     const bps = Math.round(10000 + (maxBps - 10000) * frac);
     out.push({ ...h, weight: (h.balance * BigInt(bps)) / 10000n, multiplierBps: bps, heldBlocks: held });
   }
+  if (skipped && out.length === 0 && minHold > 0n) {
+    // A young token: no wallet can have held for the minimum yet. Paying nobody
+    // helps nobody, so this cycle weighs by balance and ramp only.
+    console.log(`   Loyalty: minimum hold of ${config.loyalty_min_hold_hours}h waived this cycle, no wallet has held that long yet`);
+    return applyLoyalty(holders, { ...config, loyalty_min_hold_hours: 0 }, headBlock);
+  }
   if (skipped) console.log(`   Loyalty: ${skipped} wallets below the minimum holding time skipped`);
   return out;
 }

@@ -333,6 +333,38 @@ async function migrate() {
       );
     }
 
+    // Burn alerts: groups bound with /burns, watcher cursor per token, every burn seen.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS burn_alert_chats (
+        chat_id BIGINT NOT NULL,
+        token TEXT NOT NULL,
+        thread_id BIGINT,
+        initial_supply NUMERIC(78, 0) NOT NULL,
+        decimals INTEGER NOT NULL DEFAULT 18,
+        symbol TEXT,
+        enabled_by BIGINT,
+        chat_title TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (chat_id, token)
+      );
+      CREATE TABLE IF NOT EXISTS burn_watch_state (
+        token TEXT PRIMARY KEY,
+        last_block BIGINT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS burn_events (
+        tx_hash TEXT NOT NULL,
+        log_index INTEGER NOT NULL,
+        token TEXT NOT NULL,
+        block_number BIGINT NOT NULL,
+        from_addr TEXT,
+        amount NUMERIC(78, 0) NOT NULL,
+        burned_pct NUMERIC(10, 4),
+        created_at TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (tx_hash, log_index)
+      );
+      CREATE INDEX IF NOT EXISTS idx_burn_events_token ON burn_events(token, block_number DESC);
+    `);
+
     console.log('Migration complete');
     process.exit(0);
   } catch (error) {

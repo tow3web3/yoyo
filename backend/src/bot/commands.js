@@ -1,6 +1,7 @@
 import * as db from '../db/queries.js';
 import * as keyboards from './keyboards.js';
 import * as copy from './copy.js';
+import { enableBurnAlerts, disableBurnAlerts, burnAlertsFor, burnMessage } from '../services/burnWatch.js';
 import { encryptPrivateKey, isValidPrivateKey } from '../services/encryption.js';
 import {
   accountFromKey, publicClient, readTokenMeta, isAddress, short, formatEth, erc20Abi, NATIVE_ETH, isNative, explorerAddress,
@@ -715,6 +716,50 @@ export async function handleAnnounce(ctx) {
   const threadId = ctx.message.message_thread_id || null;
   await db.setAnnounceChat(config.id, chat.id, threadId);
   await ctx.replyWithMarkdown(`📣 *Bound.* Dividend receipts for \`${short(config.source_token_address)}\` will be posted here${threadId ? ' (this topic)' : ''}.`);
+}
+
+// ---------- burn alerts ----------
+
+async function isGroupAdmin(ctx) {
+  try {
+    const m = await ctx.telegram.getChatMember(ctx.chat.id, ctx.from.id);
+    return ['creator', 'administrator'].includes(m.status);
+  } catch { return false; }
+}
+
+/** /burns [token|off] in a group: post every burn of the token there. Defaults to $YOYO. */
+export async function handleBurns(ctx) {
+  const chat = ctx.chat;
+  const arg = (ctx.message?.text || '').split(/\s+/)[1] || '';
+  if (chat.type === 'private') {
+    return ctx.replyWithMarkdown(
+      `🔥 *Burn alerts*\n\nAdd me to your group, then send */burns* there (inside the topic you want, if the group uses topics). ` +
+      `Every burn of ${BOOMERANG_TOKEN ? '$YOYO' : 'the token'} posts a card with the share of supply burned and the transaction.\n\n` +
+      `Another coin: */burns <contract address>*. Stop: */burns off*.`
+    );
+  }
+  if (!(await isGroupAdmin(ctx))) return ctx.reply('Only a group admin can do that.');
+  if (arg.toLowerCase() === 'off') {
+    const n = await disableBurnAlerts({ chatId: chat.id });
+    return ctx.replyWithMarkdown(n ? '🔕 Burn alerts are off for this group.' : 'No burn alerts were set here.');
+  }
+  if (arg.toLowerCase() === 'test') {
+    const list = await burnAlertsFor(chat.id);
+    if (!list.length) return ctx.reply('Send /burns first.');
+    return ctx.replyWithMarkdown(burnMessage({ burnedPct: 12.3456, txHash: '0x' + 'ab'.repeat(32) }), { disable_web_page_preview: true, ...(ctx.message.message_thread_id ? { message_thread_id: ctx.message.message_thread_id } : {}) });
+  }
+  const token = isAddress(arg) ? arg : BOOMERANG_TOKEN;
+  if (!token) return ctx.reply('Tell me which token: /burns <contract address>');
+  try {
+    const info = await enableBurnAlerts({ chatId: chat.id, threadId: ctx.message.message_thread_id || null, token, enabledBy: ctx.from.id, chatTitle: chat.title });
+    await ctx.replyWithMarkdown(
+      `🔥 *Burn alerts on.* Every burn of *$${info.symbol}* will be posted here${ctx.message.message_thread_id ? ' (this topic)' : ''}.\n\n` +
+      `Total supply burned so far: *${info.burnedPct.toFixed(2)}%*.`,
+      ctx.message.message_thread_id ? { message_thread_id: ctx.message.message_thread_id } : {}
+    );
+  } catch (e) {
+    await ctx.reply(`Could not read that token on Robinhood Chain: ${e.message}`);
+  }
 }
 
 // ---------- loyalty ----------

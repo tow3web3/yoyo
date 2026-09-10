@@ -6,14 +6,17 @@
 // token, WETH -> USDG -> token, simulated through SwapRouter02) -> V2. When a
 // Yahoo fair price exists for the reward, a route is only taken if it delivers
 // at least MIN_FAIR_RATIO of fair value.
-import { encodePacked, parseAbi, maxUint256 } from 'viem';
+import { encodePacked, parseAbi, parseAbiItem, maxUint256 } from 'viem';
 import {
   publicClient, walletFor, confirm, erc20Abi, wethAbi,
-  ZERO, WETH, USDG, UNIV2_ROUTER, UNIV3_SWAP_ROUTER02, UNIV4_QUOTER, UNIV4_ROUTER,
+  ZERO, WETH, USDG, UNIV2_ROUTER, UNIV3_SWAP_ROUTER02, UNIV4_QUOTER, UNIV4_ROUTER, UNIV4_POOL_MANAGER,
   explorerTx,
 } from '../chain/config.js';
 
 export const MIN_FAIR_RATIO = parseFloat(process.env.MIN_SWAP_FAIR_RATIO || '0.9');
+// Memecoins priced by DexScreener: launchpad pools charge a hook fee on top of
+// price impact, so a buyback that clears 80% of the screener price is a fair fill.
+export const MIN_TOKEN_FAIR_RATIO = parseFloat(process.env.MIN_TOKEN_SWAP_FAIR_RATIO || '0.8');
 
 const FEE_TIERS = [[100, 1], [500, 10], [3000, 60], [10000, 200]];
 const MIN_SQRT_PRICE_PLUS_1 = 4295128740n;
@@ -45,6 +48,78 @@ function v4Key(a, b, fee, tickSpacing) {
   return { key: { currency0: c0, currency1: c1, fee, tickSpacing, hooks: ZERO }, zeroForOne: lc(c0) === lc(a) };
 }
 
+async function v4QuoteKey(key, tokenIn, amountIn) {
+  if (amountIn <= 0n) return null;
+  const zeroForOne = lc(key.currency0) === lc(tokenIn);
+  try {
+    const { result } = await publicClient().simulateContract({
+      address: UNIV4_QUOTER, abi: V4_QUOTER_ABI, functionName: 'quoteExactInputSingle',
+      args: [{ poolKey: key, zeroForOne, exactAmount: amountIn, hookData: '0x' }],
+    });
+    const out = result[0];
+    return out > 0n ? { key, zeroForOne, tokenIn, out } : null;
+  } catch {
+    return null;
+  }
+}
+
+// Pools created by launchpads carry a hook and a custom fee/tick pair, so the
+// standard tiers never find them. DexScreener knows the pool id; the
+// PoolManager's Initialize event (indexed by that id) gives back the full key.
+const INITIALIZE = parseAbiItem('event Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)');
+const v4KeyCache = new Map(); // token -> { keys, ts }
+const V4_KEY_TTL = 6 * 60 * 60 * 1000;
+
+async function blockAtTimestamp(client, ts) {
+  let lo = 0n;
+  let hi = await client.getBlockNumber();
+  while (lo < hi) {
+    const mid = (lo + hi) / 2n;
+    const b = await client.getBlock({ blockNumber: mid });
+    if (Number(b.timestamp) < ts) lo = mid + 1n;
+    else hi = mid;
+  }
+  return lo;
+}
+
+export async function discoverV4Keys(token) {
+  const t = lc(token);
+  const hit = v4KeyCache.get(t);
+  if (hit && Date.now() - hit.ts < (hit.keys.length ? V4_KEY_TTL : 10 * 60 * 1000)) return hit.keys;
+  const keys = [];
+  try {
+    const res = await fetch(`https://api.dexscreener.com/tokens/v1/robinhood/${t}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) });
+    const pairs = res.ok ? (await res.json()) || [] : [];
+    const v4 = pairs.filter((p) => p?.dexId === 'uniswap' && (p.labels || []).includes('v4') && /^0x[0-9a-f]{64}$/i.test(p.pairAddress || ''));
+    const client = publicClient();
+    for (const p of v4.slice(0, 4)) {
+      const id = lc(p.pairAddress);
+      let from = 0n;
+      let to = await client.getBlockNumber();
+      if (p.pairCreatedAt > 0) {
+        const at = await blockAtTimestamp(client, Math.floor(p.pairCreatedAt / 1000) - 3600);
+        from = at;
+        to = at + 200_000n < to ? at + 200_000n : to;
+      }
+      // Walk forward in 20k-block windows; the pool is initialised near its creation time.
+      for (let a = from; a <= to; a += 20_000n) {
+        const b = a + 19_999n < to ? a + 19_999n : to;
+        const logs = await client.getLogs({ address: UNIV4_POOL_MANAGER, event: INITIALIZE, args: { id }, fromBlock: a, toBlock: b });
+        if (logs.length) {
+          const l = logs[0].args;
+          keys.push({ currency0: l.currency0, currency1: l.currency1, fee: Number(l.fee), tickSpacing: Number(l.tickSpacing), hooks: l.hooks, id });
+          console.log(`   V4 pool for ${t.slice(0, 6)}…: fee ${l.fee}, tick ${l.tickSpacing}, hook ${l.hooks === ZERO ? 'none' : l.hooks.slice(0, 8) + '…'}`);
+          break;
+        }
+      }
+    }
+  } catch (e) {
+    console.log(`   V4 pool discovery failed for ${t.slice(0, 6)}…: ${e.message}`);
+  }
+  v4KeyCache.set(t, { keys, ts: Date.now() });
+  return keys;
+}
+
 async function v4QuoteSingle(tokenIn, tokenOut, fee, tickSpacing, amountIn) {
   if (amountIn <= 0n) return null;
   const { key, zeroForOne } = v4Key(tokenIn, tokenOut, fee, tickSpacing);
@@ -65,6 +140,16 @@ async function v4BestSingle(tokenIn, tokenOut, amountIn) {
   for (const [fee, tick] of FEE_TIERS) {
     const q = await v4QuoteSingle(tokenIn, tokenOut, fee, tick, amountIn);
     if (q && (!best || q.out > best.out)) best = q;
+  }
+  // Hooked or custom-tier pools, discovered per token (the non-ETH side).
+  const custom = lc(tokenIn) === lc(ZERO) ? tokenOut : lc(tokenOut) === lc(ZERO) ? tokenIn : null;
+  if (custom) {
+    for (const k of await discoverV4Keys(custom)) {
+      const pair = [lc(k.currency0), lc(k.currency1)];
+      if (!pair.includes(lc(tokenIn)) || !pair.includes(lc(tokenOut))) continue;
+      const q = await v4QuoteKey({ currency0: k.currency0, currency1: k.currency1, fee: k.fee, tickSpacing: k.tickSpacing, hooks: k.hooks }, tokenIn, amountIn);
+      if (q && (!best || q.out > best.out)) best = q;
+    }
   }
   return best;
 }
@@ -136,12 +221,12 @@ async function quoteV2(token, amountWei) {
  * oracle guard: routes below MIN_FAIR_RATIO of it are rejected.
  * Returns { route, ratio } or null.
  */
-export async function quoteEthForToken({ token, amountWei, recipient, fairOut = null }) {
+export async function quoteEthForToken({ token, amountWei, recipient, fairOut = null, minRatio = MIN_FAIR_RATIO }) {
   const guard = (route) => {
     if (!route) return null;
     if (!fairOut || fairOut <= 0n) return { route, ratio: null };
     const ratio = Number((route.out * 10_000n) / fairOut) / 10_000;
-    return ratio >= MIN_FAIR_RATIO ? { route, ratio } : null;
+    return ratio >= minRatio ? { route, ratio } : null;
   };
   const rejected = [];
   for (const q of [() => quoteV4(token, amountWei), () => quoteV3(token, amountWei, recipient), () => quoteV2(token, amountWei)]) {
@@ -180,7 +265,7 @@ async function executeRoute({ privateKey, token, amountWei, route, slippageBps }
       const isNative = leg.tokenIn === ZERO;
       if (!isNative) await ensureAllowance(wallet, account, leg.tokenIn, UNIV4_ROUTER, amountIn);
       const outToken = leg.zeroForOne ? leg.key.currency1 : leg.key.currency0;
-      const fresh = await v4QuoteSingle(leg.tokenIn, outToken, leg.key.fee, leg.key.tickSpacing, amountIn);
+      const fresh = await v4QuoteKey(leg.key, leg.tokenIn, amountIn);
       const expected = fresh?.out ?? leg.out;
       const isLast = i === route.legs.length - 1;
       const outBefore = isLast ? 0n : await balanceOf(outToken, account.address);
@@ -234,8 +319,9 @@ export async function swapEthForToken({ privateKey, token, decimals, amountWei, 
     const fairTokens = (Number(amountWei) / 1e18) * (oracle.ethUsd / oracle.stockUsd);
     fairOut = BigInt(Math.floor(fairTokens * 10 ** decimals));
   }
-  const quoted = await quoteEthForToken({ token, amountWei, recipient: account.address, fairOut });
-  if (!quoted) throw new Error(fairOut ? `No route delivers ${(MIN_FAIR_RATIO * 100).toFixed(0)}% of fair value` : 'No liquidity route for this token');
+  const minRatio = oracle?.dex ? MIN_TOKEN_FAIR_RATIO : MIN_FAIR_RATIO;
+  const quoted = await quoteEthForToken({ token, amountWei, recipient: account.address, fairOut, minRatio });
+  if (!quoted) throw new Error(fairOut ? `No route delivers ${(minRatio * 100).toFixed(0)}% of fair value` : 'No liquidity route for this token');
   const { route, ratio } = quoted;
   console.log(`   Route: ${route.label}${ratio !== null ? ` at ${(ratio * 100).toFixed(1)}% of fair` : ''}, expecting ${route.out.toString()} raw`);
   const result = await executeRoute({ privateKey, token, amountWei, route, slippageBps });

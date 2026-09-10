@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { initBot } from './bot/telegram.js';
 import { initScheduler } from './scheduler/cron.js';
+import { startBurnWatch } from './services/burnWatch.js';
 import routes from './api/routes.js';
 import * as middleware from './api/middleware.js';
 import pool from './db/connection.js';
@@ -58,6 +59,7 @@ async function start() {
       });
 
     await initScheduler();
+    startBurnWatch();
     console.log('Scheduler started. yo-yo is running.');
 
     process.once('SIGINT', () => gracefulShutdown(bot));

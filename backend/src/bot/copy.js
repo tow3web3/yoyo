@@ -40,6 +40,7 @@ export const help = () =>
   `/dashboard · open the canvas\n` +
   `/stocks · the 195 Stock Tokens\n` +
   `/announce · post receipts in a group (send it inside the group)\n` +
+  `/burns · post every burn of a token in a group\n` +
   `/faq · questions people ask\n` +
   `/community · the yo-yo group\n\n` +
   `*The loop, in one breath*\n` +
@@ -89,7 +90,8 @@ export const announceHelp = () =>
   `1. Add this bot to your holders' group.\n` +
   `2. Send */announce* in the group (as the creator of the policy).\n` +
   `3. Every dividend posts a receipt card there, with the amount, the wallets paid and a Share on X button.\n\n` +
-  `Topics are supported: send /announce inside the topic you want.`;
+  `Topics are supported: send /announce inside the topic you want.\n\n` +
+  `🔥 Burns too: send */burns* in the group and every buyback & burn posts there, with the share of supply burned and the transaction.`;
 
 export const stocksIntro = (count, liquid) =>
   `📈 *${count} Robinhood Stock Tokens*\n\nAny of them can be a dividend. The liquid ones fill at fair value today:\n\`${liquid}\`\n\nThe full list, by sector, with addresses: ${links.stocks()}\n\n`;

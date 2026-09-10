@@ -5,6 +5,7 @@
 // Studio, no React Flow, for public pages and the homepage.
 import { useEffect, useRef, useState } from 'react';
 import StockLogo from './StockLogo';
+import Countdown from './Countdown';
 
 const KIND = {
   holders: { label: 'Holders', emoji: '🎁', color: '#CAF90F', text: 'text-hood-700', chip: 'bg-hood-100 text-hood-800' },
@@ -31,7 +32,7 @@ export function legsFrom({ legs, split }) {
 const LEG_H = 92;
 const LEG_GAP = 14;
 
-export default function PolicyMini({ source, devWallet, schedule, legs: rawLegs, split, className = '' }) {
+export default function PolicyMini({ source, devWallet, schedule, legs: rawLegs, split, countdown = null, className = '' }) {
   const legs = legsFrom({ legs: rawLegs, split });
   const wrap = useRef(null);
   const [w, setW] = useState(0);
@@ -43,7 +44,7 @@ export default function PolicyMini({ source, devWallet, schedule, legs: rawLegs,
   }, []);
 
   const n = Math.max(1, legs.length);
-  const height = Math.max(190, n * (LEG_H + LEG_GAP) + 12);
+  const height = Math.max(countdown ? 250 : 190, n * (LEG_H + LEG_GAP) + 12);
   const narrow = w > 0 && w < 560;
   const srcW = narrow ? Math.min(240, w * 0.5) : Math.min(300, w * 0.4);
   const legX = narrow ? srcW + 34 : Math.max(srcW + 56, w * 0.56);
@@ -90,8 +91,17 @@ export default function PolicyMini({ source, devWallet, schedule, legs: rawLegs,
             <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/50">In the dev wallet</div>
             <div className="figure font-display text-xl font-extrabold text-hood-500">{devWallet && devWallet.totalUsd != null ? usd(devWallet.totalUsd) : '…'}</div>
           </div>
-          {schedule && <div className="text-right text-[9px] text-white/50">goes out<br /><span className="font-semibold text-white/80">{schedule.toLowerCase()}</span></div>}
+          {schedule && !countdown && <div className="text-right text-[9px] text-white/50">goes out<br /><span className="font-semibold text-white/80">{schedule.toLowerCase()}</span></div>}
         </div>
+        {countdown && (
+          <div className="mt-2.5 flex items-center justify-between gap-3 rounded-xl border border-hood-500/40 bg-white/5 px-3 py-2">
+            <div>
+              <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white/50"><span className={`h-1.5 w-1.5 rounded-full ${countdown.active === false ? 'bg-white/30' : 'animate-pulse bg-hood-500'}`} />{countdown.active === false ? 'Paused' : 'Next cycle in'}</div>
+              <div className="figure font-display text-2xl font-extrabold leading-none text-hood-500">{countdown.active === false ? '--:--' : <Countdown intervalMinutes={countdown.intervalMinutes} scheduleKind={countdown.scheduleKind} />}</div>
+            </div>
+            {schedule && <div className="text-right text-[9px] leading-tight text-white/50">goes out<br /><span className="font-semibold text-white/80">{schedule.toLowerCase()}</span></div>}
+          </div>
+        )}
       </div>
 
       {/* legs */}

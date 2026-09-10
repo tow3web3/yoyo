@@ -28,6 +28,8 @@ const KIND = {
 const ADDR = /^0x[0-9a-fA-F]{40}$/;
 const SOURCE_ID = 'source';
 const LEG_X = 480;
+const TG_ID = 'tg'; // the Telegram action node
+const ACTION_X = LEG_X + 330;
 const LEG_GAP = 168;
 
 /* ---------------- draft model ---------------- */
@@ -111,6 +113,7 @@ function LegNode({ data }) {
       <div className={`mt-1.5 font-mono text-[11px] ${problem ? 'text-red-600' : 'text-mut'}`}>{problem ? '⚠ ' + problem : dest}</div>
       <div className="mt-2 flex flex-wrap items-center gap-1">
         {leg.kind === 'burn' ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700">buyback</span> : <AssetChip asset={leg.asset} meta={meta} kind={leg.kind} fallback={leg.kind === 'treasury' ? 'stocks in kind · ETH buys SPY' : 'in kind'} />}
+        {data.notify && <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-semibold text-hood-500">→ Telegram</span>}
       </div>
     </div>
   );
@@ -130,8 +133,52 @@ function ShareEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
   );
 }
 
-const nodeTypes = { source: SourceNode, leg: LegNode };
-const edgeTypes = { share: ShareEdge };
+/** Actions: what happens off-chain when a leg pays. Today: Telegram notifications. */
+function ActionNode({ data }) {
+  const { selected, telegram, sourceSymbol } = data;
+  const receipts = telegram?.receiptsChatId ? telegram.receiptsTitle || 'your group' : null;
+  const burns = telegram?.burnAlerts?.length ? telegram.burnAlerts[0].title || 'your group' : null;
+  const bound = Boolean(receipts || burns);
+  const Row = ({ icon, label, to }) => (
+    <div className="flex items-center justify-between gap-2 text-[11px]">
+      <span className="text-mut">{icon} {label}</span>
+      <span className={`truncate rounded-full px-1.5 py-0.5 font-semibold ${to ? 'bg-hood-100 text-hood-800' : 'bg-tile text-mut'}`}>{to ? `→ ${to}` : 'not bound'}</span>
+    </div>
+  );
+  return (
+    <div className={`w-[250px] rounded-2xl border-2 border-dashed bg-paper p-3.5 shadow-soft transition ${selected ? 'border-ink' : bound ? 'border-hood-400' : 'border-line'}`}>
+      <Handle type="target" position={Position.Left} className="!h-3 !w-3 !border-2 !border-paper !bg-ink" />
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink">⚡ Actions</div>
+          <div className="truncate text-sm font-bold text-ink">Telegram notifications</div>
+        </div>
+        <span className="text-xl">📣</span>
+      </div>
+      <div className="mt-2 space-y-1">
+        <Row icon="🧾" label="Dividend receipts" to={receipts} />
+        <Row icon="🔥" label="Burn alerts" to={burns} />
+      </div>
+      <div className="mt-2 font-mono text-[10px] text-mut">{bound ? `posts in Telegram every cycle` : `click to connect a group for $${sourceSymbol || 'TOKEN'}`}</div>
+    </div>
+  );
+}
+
+/** Thin grey link from a leg to an action, with a word on it. */
+function NotifyEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data }) {
+  const [path, lx, ly] = getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition });
+  return (
+    <>
+      <BaseEdge id={id} path={path} style={{ stroke: data.active ? '#0B0F0C' : '#9AA39D', strokeWidth: 1.5, strokeDasharray: '3 6', opacity: data.active ? 0.6 : 0.35 }} />
+      <EdgeLabelRenderer>
+        <div className="pointer-events-none absolute rounded-full border border-line bg-paper px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-mut shadow-soft" style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>{data.label}</div>
+      </EdgeLabelRenderer>
+    </>
+  );
+}
+
+const nodeTypes = { source: SourceNode, leg: LegNode, action: ActionNode };
+const edgeTypes = { share: ShareEdge, notify: NotifyEdge };
 
 /* ---------------- inspector panels ---------------- */
 /** Loud state: a play sign with moving bars while the policy runs, a pause sign when it does not. */
@@ -285,6 +332,52 @@ function DevKeyReveal({ onRevealKey, address }) {
   );
 }
 
+function ActionInspector({ data, act, busy, tg, demo }) {
+  const { config, user, telegram } = data;
+  const bot = process.env.NEXT_PUBLIC_BOT_USERNAME || 'yoyotek_bot';
+  const receipts = telegram?.receiptsChatId ? telegram.receiptsTitle || `chat ${telegram.receiptsChatId}` : null;
+  const burns = telegram?.burnAlerts?.length ? telegram.burnAlerts.map((b) => b.title || `chat ${b.chatId}`).join(', ') : null;
+  const Status = ({ ok, label, to }) => (
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-ground px-3 py-2 text-xs">
+      <span className="text-ink">{label}</span>
+      <span className={`truncate font-semibold ${ok ? 'text-hood-700' : 'text-mut'}`}>{ok ? `→ ${to}` : 'not bound'}</span>
+    </div>
+  );
+  return (
+    <>
+      <div className="border-b border-line px-4 py-4">
+        <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-mut">⚡ Actions · Telegram</div>
+        <div className="mt-1 font-display text-base font-extrabold text-ink">Tell your community, every cycle</div>
+        <p className="mt-1 text-xs text-mut">The bot posts in your group when the holders leg pays (a receipt card with Share on X) and when the burn leg burns (the amount, the share of supply gone, the transaction).</p>
+      </div>
+      <Section title="Bound groups">
+        <div className="space-y-1.5">
+          <Status ok={Boolean(receipts)} label="🧾 Dividend receipts" to={receipts} />
+          <Status ok={Boolean(burns)} label="🔥 Burn alerts" to={burns} />
+        </div>
+      </Section>
+      <Section title="How to bind a group">
+        <ol className="space-y-2 text-xs text-mut">
+          <li><span className="font-semibold text-ink">1.</span> Add <a href={`https://t.me/${bot}`} target="_blank" rel="noopener noreferrer" className="font-mono text-hood-700 hover:underline">@{bot}</a> to your Telegram group as admin.</li>
+          <li><span className="font-semibold text-ink">2.</span> In the group, send one command. It binds both alerts for this coin:<div className="mt-1 flex items-center gap-2"><code className="rounded-lg border border-line bg-paper px-2 py-1 font-mono text-[11px] text-ink">/burns</code><CopyBtn text="/burns" label="Copy" /></div></li>
+          <li><span className="font-semibold text-ink">3.</span> Receipts only, or to move them to another group:<div className="mt-1 flex items-center gap-2"><code className="truncate rounded-lg border border-line bg-paper px-2 py-1 font-mono text-[11px] text-ink">/announce {shortAddr(config.source_token_address)}</code><CopyBtn text={`/announce ${config.source_token_address}`} label="Copy" /></div></li>
+        </ol>
+        <p className="mt-2 text-[11px] text-mut">Send the command inside a topic to post there. <span className="font-mono">/burns off</span> or <span className="font-mono">/announce off</span> stops it.</p>
+      </Section>
+      <Section title="Alerts for you">
+        {user.telegramLinked ? (
+          <p className="text-xs text-mut">Your account is linked{user.telegramUsername ? ` to @${user.telegramUsername}` : ''}: every cycle's result also reaches you in a private chat.</p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-mut">Link your own Telegram to get each cycle's result privately and to steer the policy from your phone.</p>
+            {tg ? <a href={tg} target="_blank" rel="noopener noreferrer" className="btn-primary !py-1.5 text-xs">Open Telegram to link <Arrow className="h-3.5 w-3.5" /></a> : <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => act('tg')} busy={busy === 'tg'} disabled={demo}>Link Telegram</Button>}
+          </div>
+        )}
+      </Section>
+    </>
+  );
+}
+
 function SourceInspector({ data, draft, setDraft, act, busy, tg, onRevealKey }) {
   const { config, assets, user } = data;
   const eth = assets?.assets?.find((a) => a.isNative);
@@ -430,6 +523,7 @@ const TOUR = [
   { title: 'This is your coin', body: 'Fees from your launchpad land in this dev wallet. Everything that lands here gets routed at the closing bell. Click the node to see holdings, schedule and the Telegram link.', pos: 'left-[24%] top-[40%]' },
   { title: 'These are the legs', body: 'Each card is a destination with a share of every cycle. Holders is the dividend. Click a leg to change its share, its address and the asset it is paid in: a stock, ETH, or any token by contract address.', pos: 'right-[26%] top-[30%]' },
   { title: 'Add destinations', body: 'A partner wallet, a buyback and burn, a stock treasury. Add as many as you like; shares must add up to 100%.', pos: 'right-[26%] top-[6%]' },
+  { title: 'Actions: your Telegram', body: 'The dashed node on the right is what happens off-chain: dividend receipts and burn alerts posted in your group. Click it to bind a group with one command.', pos: 'right-[26%] top-[50%]' },
   { title: 'Save, then let it run', body: 'Save routing writes the policy. Run now fires a cycle immediately. Cycles shows every payout with its receipt. You can change anything, any time.', pos: 'right-[6%] top-[12%]' },
 ];
 function Tour({ onDone }) {
@@ -489,7 +583,8 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
       const pos = new Map(prev.map((n) => [n.id, n.position]));
       return [
         { id: SOURCE_ID, type: 'source', position: pos.get(SOURCE_ID) || draft.sourcePos, data: { src, config, assets, selected: selected === SOURCE_ID }, draggable: true },
-        ...draft.legs.map((leg) => ({ id: leg.key, type: 'leg', position: pos.get(leg.key) || { x: leg.posX, y: leg.posY }, data: { leg, meta, sourceSymbol: src.symbol, selected: selected === leg.key } })),
+        ...draft.legs.map((leg) => ({ id: leg.key, type: 'leg', position: pos.get(leg.key) || { x: leg.posX, y: leg.posY }, data: { leg, meta, sourceSymbol: src.symbol, selected: selected === leg.key, notify: leg.kind === 'holders' ? Boolean(data.telegram?.receiptsChatId) : leg.kind === 'burn' ? Boolean(data.telegram?.burnAlerts?.length) : false } })),
+        { id: TG_ID, type: 'action', position: pos.get(TG_ID) || { x: Math.max(ACTION_X, ...draft.legs.map((l) => l.posX + 330)), y: draft.legs.length ? draft.legs.reduce((s, l) => s + l.posY, 0) / draft.legs.length : 30 }, data: { telegram: data.telegram, sourceSymbol: src.symbol, selected: selected === TG_ID }, draggable: true },
       ];
     });
   }, [contentSig]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -502,7 +597,13 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
       return target && (target.x !== n.position.x || target.y !== n.position.y) ? { ...n, position: target } : n;
     }));
   }, [posSig]); // eslint-disable-line react-hooks/exhaustive-deps
-  const edges = useMemo(() => draft.legs.map((leg) => ({ id: `e-${leg.key}`, source: SOURCE_ID, target: leg.key, type: 'share', data: { shareBps: leg.shareBps, color: KIND[leg.kind].color, active: demo || setup ? true : Boolean(config.is_active) } })), [draft.legs, config.is_active, demo, setup]);
+  const edges = useMemo(() => [
+    ...draft.legs.map((leg) => ({ id: `e-${leg.key}`, source: SOURCE_ID, target: leg.key, type: 'share', data: { shareBps: leg.shareBps, color: KIND[leg.kind].color, active: demo || setup ? true : Boolean(config.is_active) } })),
+    ...draft.legs.filter((l) => l.kind === 'holders' || l.kind === 'burn').map((leg) => ({
+      id: `n-${leg.key}`, source: leg.key, target: TG_ID, type: 'notify',
+      data: { label: leg.kind === 'burn' ? 'burn alert' : 'receipt', active: leg.kind === 'burn' ? Boolean(data.telegram?.burnAlerts?.length) : Boolean(data.telegram?.receiptsChatId) },
+    })),
+  ], [draft.legs, config.is_active, demo, setup, data.telegram]);
 
   const onNodesChange = useCallback((changes) => onNodesChangeRF(changes.filter((c) => c.type !== 'remove')), [onNodesChangeRF]);
   const onNodeDragStop = useCallback((_, node) => {
@@ -684,6 +785,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
         {/* Inspector */}
         <aside className="w-[360px] shrink-0 overflow-y-auto border-l border-line bg-paper">
           {selected === SOURCE_ID ? <SourceInspector data={data} draft={draft} setDraft={setDraft} act={act} busy={busy} tg={tg} onRevealKey={onRevealKey} />
+            : selected === TG_ID ? <ActionInspector data={data} act={act} busy={busy} tg={tg} demo={demo} />
             : selectedLeg ? <LegInspector key={selectedLeg.key} leg={selectedLeg} draft={draft} setDraft={setDraft} meta={meta} sourceSymbol={src.symbol} onRemove={() => removeLeg(selectedLeg.key)} />
             : <RoutingSummary draft={draft} meta={meta} select={setSelected} data={setup ? null : data} />}
         </aside>

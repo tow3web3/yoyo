@@ -117,10 +117,15 @@ export default function TokenDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`chip ${data.config.isActive ? 'text-hood-700' : 'text-mut'}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${data.config.isActive ? 'bg-hood-500' : 'bg-mut'}`} />
-              {data.config.isActive ? 'Active' : 'Paused'} · {data.config.scheduleLabel}
-            </span>
+            {data.config.isActive ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-ink px-3 py-1.5 text-xs text-white/70">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-hood-500" />
+                next dividend in <span className="figure font-mono text-base font-bold text-hood-500"><Countdown intervalMinutes={data.config.intervalMinutes} scheduleKind={data.config.scheduleKind} /></span>
+                <span className="text-white/50">· {data.config.scheduleLabel}</span>
+              </span>
+            ) : (
+              <span className="chip text-mut"><span className="h-1.5 w-1.5 rounded-full bg-mut" />Paused · {data.config.scheduleLabel}</span>
+            )}
             {data.yield?.apy ? (
               <span className="chip-gold" title={`${data.yield.eth30d.toFixed(4)} ETH returned over the last ${data.yield.windowDays} days, annualized against market cap`}>
                 📈 {data.yield.apy >= 100 ? Math.round(data.yield.apy) : data.yield.apy >= 10 ? data.yield.apy.toFixed(1) : data.yield.apy.toFixed(2)}% dividend yield
@@ -133,6 +138,18 @@ export default function TokenDashboard() {
             )}
             <a href={explorerToken(src.address)} target="_blank" rel="noopener noreferrer" className="btn-ghost px-3 py-1.5 text-xs">Blockscout <Arrow className="h-3.5 w-3.5" /></a>
           </div>
+        </div>
+
+        {/* The routing, as drawn on the canvas, with the clock */}
+        <div className="mb-6">
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-mut">The routing</h3>
+              <p className="text-[11px] text-mut">Where every cycle's fees go, exactly as the creator drew it.</p>
+            </div>
+            <span className="text-[11px] text-mut">Updated {new Date(data.timestamp).toLocaleTimeString()}</span>
+          </div>
+          <PolicyMini source={data.sourceToken} devWallet={data.devWallet} schedule={data.config.scheduleLabel} legs={data.legs} split={data.config.split} countdown={{ intervalMinutes: data.config.intervalMinutes, scheduleKind: data.config.scheduleKind, active: data.config.isActive }} />
         </div>
 
         {/* Reward card */}
@@ -178,18 +195,6 @@ export default function TokenDashboard() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* The routing, as drawn on the canvas */}
-        <div className="mb-6">
-          <div className="mb-2 flex items-end justify-between gap-3">
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-mut">The routing</h3>
-              <p className="text-[11px] text-mut">Where every cycle's fees go, exactly as the creator drew it.</p>
-            </div>
-            <span className="text-[11px] text-mut">Updated {new Date(data.timestamp).toLocaleTimeString()}</span>
-          </div>
-          <PolicyMini source={data.sourceToken} devWallet={data.devWallet} schedule={data.config.scheduleLabel} legs={data.legs} split={data.config.split} />
         </div>
 
         {/* Fee split + balance sheet */}

@@ -6,6 +6,7 @@ import { walletAssets } from '../../../../lib/walletAssets';
 import { fetchTokenMeta } from '../../../../lib/tokenMeta';
 import { tokenYield } from '../../../../lib/yield';
 import { scheduleLabel } from '../../../../lib/queries';
+import { getSql } from '../../../../lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,18 @@ export async function GET() {
     let meta = {};
     let yieldStats = null;
     let legs = [];
+    let telegram = null;
     if (config) {
+      try {
+        const sql = getSql();
+        const burnAlerts = await sql`SELECT chat_id::text AS chat_id, chat_title, thread_id FROM burn_alert_chats WHERE token = ${config.source_token_address.toLowerCase()}`;
+        const receiptsChatId = config.announce_chat_id ? String(config.announce_chat_id) : null;
+        telegram = {
+          receiptsChatId,
+          receiptsTitle: receiptsChatId ? burnAlerts.find((b) => b.chat_id === receiptsChatId)?.chat_title || null : null,
+          burnAlerts: burnAlerts.map((b) => ({ chatId: b.chat_id, title: b.chat_title || null })),
+        };
+      } catch { telegram = { receiptsChatId: config.announce_chat_id ? String(config.announce_chat_id) : null, receiptsTitle: null, burnAlerts: [] }; }
       const [a, l, lg] = await Promise.all([
         walletAssets(config.dev_wallet_public, BigInt(config.gas_reserve_wei || 0)).catch((e) => ({ error: e.message, assets: [] })),
         recentLogsForConfig(config.id),
@@ -43,6 +55,7 @@ export async function GET() {
       user: { id: user.id, wallet: user.wallet_address, telegramLinked: Boolean(user.telegram_id), telegramUsername: user.username || null },
       config: publicConfig(config),
       legs,
+      telegram,
       assets,
       logs,
       meta,

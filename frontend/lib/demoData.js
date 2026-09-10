@@ -13,6 +13,7 @@ const now = Date.now();
 export const DEMO_DATA = {
   demo: true,
   user: { id: 0, wallet: null, telegramLinked: false, telegramUsername: null },
+  telegram: { receiptsChatId: '-1', receiptsTitle: 'DEMO Community', burnAlerts: [{ chatId: '-1', title: 'DEMO Community' }] },
   config: {
     id: 0, is_active: true, source_token_address: DEMO_TOKEN, dev_wallet_public: DEV, target_token_address: ZERO,
     reward_mode: 'fixed', basket: 'MAG7', schedule_kind: 'closing_bell', interval_minutes: 1440, market_hours_only: false, fee_source: 'wallet',

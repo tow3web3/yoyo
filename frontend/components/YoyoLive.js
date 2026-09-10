@@ -43,7 +43,7 @@ export default function YoyoLive() {
         </div>
         <Link href={`/${CA}`} className="btn-primary whitespace-nowrap">Open the ${sym} dashboard <Arrow className="h-4 w-4" /></Link>
       </div>
-      <PolicyMini source={data.sourceToken} devWallet={data.devWallet} schedule={data.config.scheduleLabel} legs={data.legs} split={data.config.split} />
+      <PolicyMini source={data.sourceToken} devWallet={data.devWallet} schedule={data.config.scheduleLabel} legs={data.legs} split={data.config.split} countdown={{ intervalMinutes: data.config.intervalMinutes, scheduleKind: data.config.scheduleKind, active: data.config.isActive }} />
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(([l, v]) => (
           <div key={l} className="panel p-4">

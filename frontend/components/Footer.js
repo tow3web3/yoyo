@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 md:flex-row">
         <div className="flex items-center gap-2.5">
           <div className="relative h-7 w-7"><Image src="/brand/yoyo-256.png" alt="yo-yo" fill className="object-contain" /></div>
-          <span className="text-sm text-mut">© {year} <span className="whitespace-nowrap font-display font-bold text-ink">yo-yo</span> · The dividend policy for memecoins</span>
+          <span className="text-sm text-mut">© {year} <span className="whitespace-nowrap font-display font-bold text-ink">yo-yo<span className="text-hood-700">.dev</span></span> · The dividend policy for memecoins</span>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-5 text-sm text-mut">
           <a href="https://x.com/Boomerang_tek" target="_blank" rel="noopener noreferrer" aria-label="yo-yo on X" className="flex items-center transition hover:text-ink"><X className="h-4 w-4" /></a>

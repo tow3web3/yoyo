@@ -42,7 +42,7 @@ function AppShell({ children, wallet, studio, onSwitch, onLogout }) {
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="relative h-8 w-8"><Image src="/brand/yoyo-256.png" alt="yo-yo" fill className="object-contain" /></div>
-            <span className="whitespace-nowrap font-display text-lg font-bold tracking-tight text-ink">yo-yo</span>
+            <span className="whitespace-nowrap font-display text-lg font-bold tracking-tight text-ink">yo-yo<span className="text-hood-700">.dev</span></span>
             <span className="rounded-full border border-ink bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Dashboard</span>
           </Link>
           <div className="flex items-center gap-3 text-sm">

@@ -3,7 +3,9 @@ import { treasurySheet } from '../../../../lib/treasury';
 import { tokenYield } from '../../../../lib/yield';
 import { fetchTokenMeta } from '../../../../lib/tokenMeta';
 import { getQuotes } from '../../../../lib/prices';
-import { getStock, EVM_ADDR, BASKETS } from '../../../../lib/stocks';
+import { getStock, EVM_ADDR, BASKETS, ZERO } from '../../../../lib/stocks';
+import { getLegs } from '../../../../lib/appQueries';
+import { walletAssets } from '../../../../lib/walletAssets';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +32,13 @@ export async function GET(request, { params }) {
     const src = config.source_token_address;
     const tgt = config.target_token_address;
     const used = recentExecutions.map((e) => e.reward_token_used).filter(Boolean);
-    const meta = await fetchTokenMeta([src, tgt, ...used, ...topRecipients.map((r) => r.reward_token).filter(Boolean)]);
+    const [legRows, wallet] = await Promise.all([
+      getLegs(config.id).catch(() => []),
+      walletAssets(config.dev_wallet_public, BigInt(config.gas_reserve_wei || 0)).catch(() => null),
+    ]);
+    const legAssets = legRows.map((l) => l.asset).filter((a) => a && a.toLowerCase() !== ZERO);
+    const meta = await fetchTokenMeta([src, tgt, ...used, ...legAssets, ...topRecipients.map((r) => r.reward_token).filter(Boolean)]);
+    const assetSymbol = (a) => (!a ? null : a.toLowerCase() === ZERO ? 'ETH' : getStock(a)?.ticker || meta[a]?.symbol || null);
 
     // Fee split (legacy destination=burn means 100% burn) and the treasury balance sheet.
     let sh = Number(config.split_holders_bps ?? 10000), sc = Number(config.split_creator_bps ?? 0), sb = Number(config.split_burn_bps ?? 0), st = Number(config.split_treasury_bps ?? 0);
@@ -113,6 +121,8 @@ export async function GET(request, { params }) {
           sellReset: Boolean(config.loyalty_sell_reset),
         },
       },
+      legs: legRows.map((l) => ({ kind: l.kind, shareBps: Number(l.share_bps), label: l.label || null, address: l.address || null, asset: l.asset || null, assetSymbol: assetSymbol(l.asset) })),
+      devWallet: { address: config.dev_wallet_public, totalUsd: wallet?.totalUsd ?? null, eth: wallet?.assets?.find((a) => a.isNative)?.amount ?? null },
       treasury,
       yield: yieldStats,
       timestamp: new Date().toISOString(),

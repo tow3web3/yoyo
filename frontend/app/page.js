@@ -10,6 +10,7 @@ import Screener from '../components/Screener'
 import HowItWorks from '../components/HowItWorks'
 import StockUniverse from '../components/StockUniverse'
 import Modes from '../components/Modes'
+import YoyoLive from '../components/YoyoLive'
 import Developers from '../components/Developers'
 import Security from '../components/Security'
 import FAQ from '../components/FAQ'
@@ -26,6 +27,7 @@ export default function Home() {
 
       <div className="mx-auto max-w-6xl space-y-20 px-5 py-24">
         <Reveal><Modes /></Reveal>
+        <Reveal><YoyoLive /></Reveal>
         <WhyBoomerang />
         <Reveal><Peeks /></Reveal>
         <Reveal><StatsBar /></Reveal>

@@ -9,6 +9,7 @@ import TickerTape from '../../components/TickerTape';
 import Footer from '../../components/Footer';
 import StockLogo from '../../components/StockLogo';
 import Countdown from '../../components/Countdown';
+import PolicyMini from '../../components/PolicyMini';
 import { Coins, Bolt, Swap, Gift, Arrow, Users, Copy, Check } from '../../components/Icons';
 import { describeAddress, explorerTx, explorerToken, explorerAddress } from '../../lib/stocks';
 
@@ -177,6 +178,18 @@ export default function TokenDashboard() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* The routing, as drawn on the canvas */}
+        <div className="mb-6">
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-mut">The routing</h3>
+              <p className="text-[11px] text-mut">Where every cycle's fees go, exactly as the creator drew it.</p>
+            </div>
+            <span className="text-[11px] text-mut">Updated {new Date(data.timestamp).toLocaleTimeString()}</span>
+          </div>
+          <PolicyMini source={data.sourceToken} devWallet={data.devWallet} schedule={data.config.scheduleLabel} legs={data.legs} split={data.config.split} />
         </div>
 
         {/* Fee split + balance sheet */}

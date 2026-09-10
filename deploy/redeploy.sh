@@ -42,6 +42,7 @@ mkdir -p "$SA/.next" && cp -r .next/static "$SA/.next/" && cp -r public "$SA/"
 echo "Waiting for running cycles to finish before restarting the bot"
 for i in $(seq 1 72); do
   H="$(curl -sf --max-time 5 http://127.0.0.1:5400/api/health || echo '"busy":[]')"
+  if ! printf '%s' "$H" | grep -qF '"busy"'; then break; fi
   if printf '%s' "$H" | grep -qF '"busy":[]'; then break; fi
   echo "  cycle in flight ($H), waiting"
   sleep 5

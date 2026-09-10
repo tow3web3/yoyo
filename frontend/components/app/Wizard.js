@@ -16,7 +16,7 @@ function addressOfKey(pk) {
   try { return privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`).address; } catch { return null; }
 }
 
-export default function Wizard({ onCreated, user, onSwitchWallet, onLogout }) {
+export default function Wizard({ onCreated, user, onSwitchWallet, onLogout, embedded = false }) {
   const toast = useToast();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -90,7 +90,7 @@ export default function Wizard({ onCreated, user, onSwitchWallet, onLogout }) {
   );
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-10">
+    <div className={embedded ? 'w-full' : 'mx-auto max-w-2xl px-5 py-10'}>
       <div className="mb-6">
         <div className="eyebrow mb-2">Set up yo-yo</div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">Your wallet, your token, then draw the routing.</h1>

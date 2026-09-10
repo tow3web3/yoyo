@@ -15,6 +15,7 @@ import { Bolt, Pause, Arrow, Copy, Check } from '../Icons';
 import { LoyaltyEditor, RewardEditor, ScheduleEditor } from './Editors';
 import { Button, Seg, Slider, StockPicker, inputCls, useToast, useCustomToken, useTokenResearch, shortAddr, fmtUsd, fmtNum, units, scheduleValue, parseSchedule } from './ui';
 import TokenCard from './TokenCard';
+import Wizard from './Wizard';
 import { describeAddress, explorerAddress, explorerTx, getStock, ZERO } from '../../lib/stocks';
 
 const KIND = {
@@ -326,7 +327,40 @@ function Cycles({ logs, meta, onClose }) {
 }
 
 /* ---------------- the studio ---------------- */
-function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, onConnect }) {
+/** Step-by-step overlay shown once after the first policy is created. */
+const TOUR = [
+  { title: 'This is your coin', body: 'Fees from your launchpad land in this dev wallet. Everything that lands here gets routed at the closing bell. Click the node to see holdings, schedule and the Telegram link.', pos: 'left-[24%] top-[40%]' },
+  { title: 'These are the legs', body: 'Each card is a destination with a share of every cycle. Holders is the dividend. Click a leg to change its share, its address and the asset it is paid in: a stock, ETH, or any token by contract address.', pos: 'right-[26%] top-[30%]' },
+  { title: 'Add destinations', body: 'A partner wallet, a buyback and burn, a stock treasury. Add as many as you like; shares must add up to 100%.', pos: 'right-[26%] top-[6%]' },
+  { title: 'Save, then let it run', body: 'Save routing writes the policy. Run now fires a cycle immediately. Cycles shows every payout with its receipt. You can change anything, any time.', pos: 'right-[6%] top-[12%]' },
+];
+function Tour({ onDone }) {
+  const [i, setI] = useState(0);
+  const step = TOUR[i];
+  return (
+    <div className="pointer-events-none absolute inset-0 z-40">
+      <div className="pointer-events-auto absolute inset-0 bg-ink/30" onClick={onDone} />
+      <div className={`pointer-events-auto absolute w-[360px] rounded-2xl border border-hood-300 bg-paper p-4 shadow-lg reveal-pop ${step.pos}`}>
+        <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-hood-700">Quick tour · {i + 1} / {TOUR.length}</div>
+        <div className="font-display text-base font-extrabold text-ink">{step.title}</div>
+        <p className="mt-1 text-sm text-mut">{step.body}</p>
+        <div className="mt-3 flex items-center justify-between">
+          <button type="button" onClick={onDone} className="text-xs text-mut hover:text-ink">Skip</button>
+          <Button className="!py-1.5 text-xs" onClick={() => (i + 1 < TOUR.length ? setI(i + 1) : onDone())}>{i + 1 < TOUR.length ? 'Next' : 'Got it'}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, onConnect, setup = false, onCreated }) {
+  const [guide, setGuide] = useState(true);
+  const [tour, setTour] = useState(false);
+  useEffect(() => {
+    if (demo || setup) return;
+    try { if (!localStorage.getItem('yoyo:tour-done')) setTour(true); } catch { /* ignore */ }
+  }, [demo, setup]);
+  const endTour = () => { setTour(false); try { localStorage.setItem('yoyo:tour-done', '1'); } catch { /* ignore */ } };
   const { config, assets, logs, meta, user } = data;
   const toast = useToast();
   const src = meta[config.source_token_address] || {};
@@ -403,6 +437,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
 
   async function save() {
     if (demo) { toast('This is the sample policy. Connect a wallet to route your own coin.'); onConnect?.(); return; }
+    if (setup) { setGuide(true); return; }
     setBusy('save');
     try {
       const s = parseSchedule(draft.schedule.schedule);
@@ -428,6 +463,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
   async function act(kind) {
     setAddOpen(false);
     if (demo) { toast(kind === 'tg' ? 'Connect a wallet first, then link Telegram.' : 'Connect a wallet to run this on your own coin.'); onConnect?.(); return; }
+    if (setup) { setGuide(true); return; }
     setBusy(kind);
     try {
       if (kind === 'run') {
@@ -468,7 +504,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
   const selectedLeg = draft.legs.find((l) => l.key === selected);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-ground">
+    <div className="relative flex h-full min-h-0 flex-col bg-ground">
       {/* Top bar */}
       <div className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-paper px-4">
         <StockLogo address={config.source_token_address} meta={src} size="h-8 w-8" text="text-[9px]" />
@@ -492,13 +528,28 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
           <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => act('run')} busy={busy === 'run'} disabled={!config.is_active}><Bolt className="h-3.5 w-3.5" /> Run now</Button>
           {config.is_active ? <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => act('pause')} busy={busy === 'pause'}><Pause className="h-3.5 w-3.5" /></Button> : <Button variant="ink" className="!py-1.5 text-xs" onClick={() => act('resume')} busy={busy === 'resume'}>▶ Resume</Button>}
           {dirty && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setDraft(initial)} disabled={busy === 'save'}>Discard</Button>}
-          <Button className="!py-1.5 text-xs" onClick={save} busy={busy === 'save'} disabled={demo ? false : !canSave}>{demo ? 'Connect to save' : dirty ? 'Save routing' : 'Saved'}</Button>
+          <Button className="!py-1.5 text-xs" onClick={save} busy={busy === 'save'} disabled={demo ? false : !canSave}>{demo ? 'Connect to save' : setup ? 'Pick your coin first' : dirty ? 'Save routing' : 'Saved'}</Button>
           <Link href={`/${config.source_token_address}`} className="hidden text-xs font-semibold text-hood-700 hover:underline lg:inline">Public ↗</Link>
           {!demo && onSwitchWallet && <button type="button" onClick={onSwitchWallet} className="text-xs text-mut hover:text-ink" title={`Signed in as ${data.user.wallet}`}>Switch wallet</button>}
           {!demo && <button type="button" onClick={onLogout} className="text-xs text-mut hover:text-ink">Sign out</button>}
         </div>
       </div>
 
+      {setup && (
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-gold-300 bg-gold-50 px-4 py-2 text-sm text-gold-700">
+          <span><span className="font-bold">Blank canvas.</span> Pick the wallet and the coin in the guide, launch, then draw the routing here.</span>
+          <Button className="!py-1.5 text-xs" onClick={() => setGuide(true)}>Open the guide</Button>
+        </div>
+      )}
+      {setup && guide && (
+        <div className="absolute inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 p-4 pt-8 backdrop-blur-sm sm:pt-12">
+          <div className="relative w-full max-w-2xl rounded-3xl border border-line bg-ground p-5 shadow-lg reveal-pop">
+            <button type="button" onClick={() => setGuide(false)} className="absolute right-4 top-4 rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold text-mut hover:text-ink">Look around first</button>
+            <Wizard embedded user={data.user} onCreated={onCreated} onSwitchWallet={onSwitchWallet} onLogout={onLogout} />
+          </div>
+        </div>
+      )}
+      {tour && <Tour onDone={endTour} />}
       {demo && (
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-hood-300 bg-hood-100 px-4 py-2 text-sm text-hood-800">
           <span><span className="font-bold">Sample policy.</span> This is what a creator's canvas looks like: drag the nodes, open them, change shares and payout assets. Nothing is saved until you connect a wallet and pick your coin.</span>

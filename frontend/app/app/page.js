@@ -5,8 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import TickerTape from '../../components/TickerTape';
 import Footer from '../../components/Footer';
-import { DEMO_DATA } from '../../lib/demoData';
-import Wizard from '../../components/app/Wizard';
+import { DEMO_DATA, blankData } from '../../lib/demoData';
 import Studio from '../../components/app/Studio';
 import { ToastProvider, useToast } from '../../components/app/ui';
 import { useWallet } from '../../lib/useWallet';
@@ -126,13 +125,13 @@ function AppInner() {
   const wallet = state.data?.user?.wallet;
   return (
     <>
-      <AppShell wallet={wallet} studio={!state.loading && (!state.data?.user || Boolean(state.data?.config))} onSwitch={switchWallet} onLogout={logout} onConnect={connect} connecting={connecting}>
+      <AppShell wallet={wallet} studio={!state.loading} onSwitch={switchWallet} onLogout={logout} onConnect={connect} connecting={connecting}>
         {state.loading ? (
           <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-hood-500" /></div>
         ) : !state.data?.user ? (
           <Studio data={DEMO_DATA} demo onConnect={connect} refresh={() => {}} onLogout={() => {}} />
         ) : !state.data.config ? (
-          <Wizard onCreated={load} user={state.data.user} onSwitchWallet={switchWallet} onLogout={logout} />
+          <Studio data={blankData(state.data.user)} setup onCreated={load} refresh={load} onLogout={logout} onSwitchWallet={switchWallet} />
         ) : (
           <Studio data={state.data} refresh={load} onLogout={logout} onSwitchWallet={switchWallet} />
         )}

@@ -25,7 +25,6 @@ export default function Navigation() {
 
           <div className="hidden items-center gap-0.5 lg:flex">
             <a href="/#how" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">How it works</a>
-            <Link href="/stocks" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">Stocks</Link>
             <a href="/#modes" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">Modes</a>
             <a href="/#screener" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">Screener</a>
             <Link href="/wallet" className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] font-medium text-mut transition hover:text-ink">My dividends</Link>

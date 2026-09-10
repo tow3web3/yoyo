@@ -4,9 +4,10 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Arrow } from './Icons';
 import StockLogo from './StockLogo';
+import MemecoinList from './MemecoinList';
 import { STOCKS, SECTORS, LIQUID_TICKERS, explorerToken } from '../lib/stocks';
 
-const FEATURED = ['NVDA', 'TSLA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'SPY', 'GLD', 'COIN', 'PLTR', 'GME', 'AMD', 'QQQ', 'SPCX', 'ASML'];
+const FEATURED = ['NVDA', 'TSLA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'SPY', 'GLD', 'COIN', 'PLTR', 'GME', 'AMD', 'QQQ', 'SPCX', 'ASML', 'NFLX', 'MU', 'INTC', 'RDDT', 'HOOD', 'MSTR', 'AVGO', 'ORCL'];
 
 /**
  * The stock universe. `compact` shows the featured 16 with a link to /stocks;
@@ -32,9 +33,9 @@ export default function StockUniverse({ compact = false }) {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="eyebrow mb-2">The universe</div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">{STOCKS.length} stocks and ETFs, all payable</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">{compact ? 'Stocks to pay with, memecoins to plug in' : `${STOCKS.length} stocks and ETFs, all payable`}</h2>
           <p className="mt-2 max-w-xl text-sm text-mut">
-            Every official Robinhood Stock Token on Robinhood Chain. <span className="font-semibold text-ink">Liquid</span> tickers fill at fair value today; the rest are guarded and pay ETH until their pools deepen.
+            {compact ? <>Dividends can be paid in any of the {STOCKS.length} official Robinhood Stock Tokens, or in any memecoin on the chain. Any coin on the right can link a policy today.</> : <>Every official Robinhood Stock Token on Robinhood Chain. <span className="font-semibold text-ink">Liquid</span> tickers fill at fair value today; the rest are guarded and pay ETH until their pools deepen.</>}
           </p>
         </div>
         {compact ? (
@@ -50,6 +51,27 @@ export default function StockUniverse({ compact = false }) {
         )}
       </div>
 
+      {compact ? (
+        <div className="grid items-start gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <div>
+            <div className="flex flex-wrap gap-2">
+              {list.map((s, i) => {
+                const liquid = LIQUID_TICKERS.includes(s.ticker);
+                return (
+                  <Link key={s.ticker} href={`/stocks#${s.ticker}`} title={`${s.name} · ${s.sector}`} className={`bubble group inline-flex items-center gap-2 rounded-full border bg-paper py-1.5 pl-1.5 pr-3 shadow-soft transition hover:-translate-y-0.5 ${liquid ? 'border-hood-300 hover:border-hood-500' : 'border-line hover:border-ink'}`} style={{ animationDelay: `${(i % 8) * 0.35}s` }}>
+                    <StockLogo address={s.address} size="h-8 w-8" text="text-[8px]" />
+                    <span className="font-mono text-sm font-bold text-ink">{s.ticker}</span>
+                    {liquid && <span className="h-1.5 w-1.5 rounded-full bg-hood-500" title="Liquid today" />}
+                  </Link>
+                );
+              })}
+              <Link href="/stocks" className="inline-flex items-center gap-1 rounded-full border border-dashed border-line px-3 py-1.5 text-sm font-semibold text-mut hover:border-ink hover:text-ink">+{STOCKS.length - list.length} more <Arrow className="h-3.5 w-3.5" /></Link>
+            </div>
+            <p className="mt-3 text-xs text-mut"><span className="inline-block h-1.5 w-1.5 rounded-full bg-hood-500 align-middle" /> liquid today: fills at fair value on Uniswap. The rest are guarded and pay ETH until their pools deepen.</p>
+          </div>
+          <MemecoinList />
+        </div>
+      ) : (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {list.map((s) => {
           const liquid = LIQUID_TICKERS.includes(s.ticker);
@@ -77,6 +99,7 @@ export default function StockUniverse({ compact = false }) {
         })}
         {list.length === 0 && <div className="col-span-full panel px-6 py-10 text-center text-sm text-mut">No ticker matches.</div>}
       </div>
+      )}
     </div>
   );
 }

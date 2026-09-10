@@ -48,3 +48,22 @@ export const DEMO_DATA = {
   yield: { apy: 12.4 },
   timestamp: new Date(now).toISOString(),
 };
+
+/** Blank canvas for a wallet that has no policy yet: one holders leg, nothing else. */
+export const blankData = (user) => ({
+  setup: true,
+  user,
+  config: {
+    id: 0, is_active: false, source_token_address: DEMO_TOKEN, dev_wallet_public: '0x0000000000000000000000000000000000000000', target_token_address: ZERO,
+    reward_mode: 'fixed', basket: 'MAG7', schedule_kind: 'closing_bell', interval_minutes: 1440, market_hours_only: false, fee_source: 'wallet',
+    split_holders_bps: 10000, split_creator_bps: 0, split_burn_bps: 0, split_treasury_bps: 0, creator_address: null, treasury_address: null, treasury_asset: null, payout_mode: 'in_kind',
+    loyalty_enabled: true, loyalty_min_hold_hours: 24, loyalty_ramp_days: 30, loyalty_max_bps: 20000, loyalty_sell_reset: true,
+    legs_enabled: true, gas_reserve_wei: '2000000000000000', scheduleLabel: 'at the closing bell',
+  },
+  legs: [{ id: 1, kind: 'holders', share_bps: 10000, address: null, asset: null, label: 'Holders', sort_order: 0, pos_x: 480, pos_y: 60 }],
+  assets: { totalUsd: 0, gasReserveEth: 0.002, assets: [] },
+  logs: [],
+  meta: { [DEMO_TOKEN]: { symbol: '…', name: 'Your coin', image: '/brand/yoyo-256.png', decimals: 18, marketCap: null } },
+  yield: null,
+  timestamp: new Date().toISOString(),
+});

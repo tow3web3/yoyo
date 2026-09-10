@@ -260,3 +260,8 @@ body {
 /* Studio nodes: promote to their own layer so images do not repaint while dragging */
 .react-flow__node { will-change: transform; }
 .react-flow__node img { backface-visibility: hidden; transform: translateZ(0); }
+
+/* Stock bubbles: a slow float so the wall feels alive */
+@keyframes bubble-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.bubble { animation: bubble-float 4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .bubble { animation: none; } }

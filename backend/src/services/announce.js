@@ -8,6 +8,8 @@ import { formatEth, formatUnits } from '../chain/config.js';
 import { scheduleLabel } from './schedule.js';
 
 const FRONTEND = process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'https://yo-yo.dev';
+// Receipt cards are rendered by the web app; CARD_BASE_URL lets the bot fetch them from the VM host while links point at the public domain.
+const CARD_BASE = String(process.env.CARD_BASE_URL || FRONTEND).replace(/[/]+$/, '');
 const X_HANDLE = process.env.X_HANDLE || 'yo_yo_tech';
 
 export function receiptUrl(logId) {
@@ -20,7 +22,7 @@ export function shareOnXUrl({ sourceSymbol, amountLabel, rewardSymbol, holders, 
 }
 
 async function fetchCard(logId) {
-  const res = await fetch(`${FRONTEND}/api/card/receipt/${logId}`, { signal: AbortSignal.timeout(20_000) });
+  const res = await fetch(`${CARD_BASE}/api/card/receipt/${logId}`, { signal: AbortSignal.timeout(20_000) });
   if (!res.ok) throw new Error(`card ${res.status}`);
   return Buffer.from(await res.arrayBuffer());
 }

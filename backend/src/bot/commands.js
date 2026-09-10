@@ -697,10 +697,22 @@ async function handleTreasuryAssetInput(ctx, session, text) {
  * creator's dividends get posted (card + Share on X). /announce off in DM unbinds.
  */
 export async function handleAnnounce(ctx) {
-  const { config } = await getUserConfig(ctx.from.id);
-  if (!config) return ctx.reply('You have no yo-yo yet. Set one up in a private chat with me first (/setup).');
   const arg = (ctx.message.text || '').split(/\s+/)[1];
   const chat = ctx.chat;
+  let { config } = await getUserConfig(ctx.from.id);
+
+  // In a group, an admin can name the coin: /announce <contract address>. That
+  // covers policies created on the canvas, which have no Telegram account behind them.
+  if (chat.type !== 'private' && isAddress(arg || '')) {
+    if (!(await isGroupAdmin(ctx))) return ctx.reply('Only a group admin can do that.');
+    const byToken = await db.getBotConfigBySourceToken(arg);
+    if (!byToken) return ctx.reply('No active yo-yo policy for that coin yet. Create one on the canvas or with /setup first.');
+    config = byToken;
+  } else if (chat.type !== 'private' && !config && BOOMERANG_TOKEN) {
+    // No policy of their own: default to $YOYO's, for admins.
+    if (await isGroupAdmin(ctx)) config = await db.getBotConfigBySourceToken(BOOMERANG_TOKEN);
+  }
+  if (!config) return ctx.reply('You have no yo-yo yet. Set one up on the canvas or in a private chat with me (/setup). In a group, an admin can also send /announce <contract address>.');
 
   if (chat.type === 'private') {
     if (arg === 'off') {
@@ -752,9 +764,15 @@ export async function handleBurns(ctx) {
   if (!token) return ctx.reply('Tell me which token: /burns <contract address>');
   try {
     const info = await enableBurnAlerts({ chatId: chat.id, threadId: ctx.message.message_thread_id || null, token, enabledBy: ctx.from.id, chatTitle: chat.title });
+    let receiptsLine = '';
+    const policy = await db.getBotConfigBySourceToken(token).catch(() => null);
+    if (policy) {
+      await db.setAnnounceChat(policy.id, chat.id, ctx.message.message_thread_id || null);
+      receiptsLine = `\n💸 Dividend receipts for $${info.symbol} will be posted here too, every cycle.`;
+    }
     await ctx.replyWithMarkdown(
       `🔥 *Burn alerts on.* Every burn of *$${info.symbol}* will be posted here${ctx.message.message_thread_id ? ' (this topic)' : ''}.\n\n` +
-      `Total supply burned so far: *${info.burnedPct.toFixed(2)}%*.`,
+      `Total supply burned so far: *${info.burnedPct.toFixed(2)}%*.${receiptsLine}`,
       ctx.message.message_thread_id ? { message_thread_id: ctx.message.message_thread_id } : {}
     );
   } catch (e) {

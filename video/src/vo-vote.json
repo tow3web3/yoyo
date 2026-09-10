@@ -1,0 +1,62 @@
+{
+  "fps": 30,
+  "total": 1319,
+  "lines": [
+    {
+      "id": "opinions",
+      "text": "Your community has opinions. NVDA or gold? Tesla? Let them decide.",
+      "file": "line-01.mp3",
+      "duration": 5.208,
+      "startFrame": 18,
+      "endFrame": 191
+    },
+    {
+      "id": "mode",
+      "text": "On the canvas, open the holders node, and switch the reward to Community Vote. One click.",
+      "file": "line-02.mp3",
+      "duration": 5.784,
+      "startFrame": 191,
+      "endFrame": 387
+    },
+    {
+      "id": "vote",
+      "text": "A vote opens on your public page. Holders sign, no gas. Their weight follows balance and loyalty.",
+      "file": "line-03.mp3",
+      "duration": 6.6,
+      "startFrame": 387,
+      "endFrame": 601
+    },
+    {
+      "id": "sniper",
+      "text": "Nobody buys a vote. A wallet that bought yesterday weighs less than one that held a month.",
+      "file": "line-04.mp3",
+      "duration": 5.136,
+      "startFrame": 601,
+      "endFrame": 772
+    },
+    {
+      "id": "winner",
+      "text": "At the closing bell, the winner becomes the dividend. Fees convert with the fair-price guard, and everyone is paid in what they chose.",
+      "file": "line-05.mp3",
+      "duration": 7.392,
+      "startFrame": 772,
+      "endFrame": 1019
+    },
+    {
+      "id": "loop",
+      "text": "Next cycle, new vote. Your holders run the dividend policy with you.",
+      "file": "line-06.mp3",
+      "duration": 4.44,
+      "startFrame": 1019,
+      "endFrame": 1169
+    },
+    {
+      "id": "outro",
+      "text": "Let them vote. yo dash yo dot dev.",
+      "file": "line-07.mp3",
+      "duration": 2.472,
+      "startFrame": 1169,
+      "endFrame": 1283
+    }
+  ]
+}

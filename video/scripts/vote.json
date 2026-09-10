@@ -1,0 +1,9 @@
+[
+  { "id": "opinions", "text": "Your community has opinions. NVDA or gold? Tesla? Let them decide." },
+  { "id": "mode", "text": "On the canvas, open the holders node, and switch the reward to Community Vote. One click.", "hold": 0.2 },
+  { "id": "vote", "text": "A vote opens on your public page. Holders sign, no gas. Their weight follows balance and loyalty." },
+  { "id": "sniper", "text": "Nobody buys a vote. A wallet that bought yesterday weighs less than one that held a month." },
+  { "id": "winner", "text": "At the closing bell, the winner becomes the dividend. Fees convert with the fair-price guard, and everyone is paid in what they chose.", "hold": 0.3 },
+  { "id": "loop", "text": "Next cycle, new vote. Your holders run the dividend policy with you." },
+  { "id": "outro", "text": "Let them vote. yo dash yo dot dev.", "hold": 0.8 }
+]

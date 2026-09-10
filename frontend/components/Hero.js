@@ -33,7 +33,7 @@ export default function Hero() {
           <div>
             <div className="chip mb-5">
               <span className="h-1.5 w-1.5 rounded-full bg-hood-500" />
-              The dividend policy for Robinhood Chain
+              Works with any coin on Robinhood Chain
             </div>
 
             <h1 className="font-display text-5xl font-extrabold leading-[0.98] tracking-tight text-ink sm:text-6xl lg:text-7xl">
@@ -43,13 +43,17 @@ export default function Hero() {
 
             <div className="mt-6 max-w-xl rounded-xl border border-line border-l-4 border-l-hood-500 bg-paper p-4 shadow-soft">
               <p className="text-[15px] leading-relaxed text-mut">
-                Your launchpad pays you in real stocks.{' '}
-                <span className="font-semibold text-ink">yo-yo decides what happens next: a payout ratio to holders, paid in kind, a share you keep, buybacks, a stock treasury.</span>{' '}
-                NVDA fees become NVDA dividends. Drawn on one screen, run on schedule.
+                <span className="font-semibold text-ink">Link any coin.</span> Pons, ARROW, your own contract: if it is an ERC-20 on Robinhood Chain with fees, it can pay dividends.{' '}
+                Your launchpad pays you in real stocks; yo-yo decides what happens next: a payout ratio to holders, paid in NVDA or in any memecoin you pick, a share you keep, buybacks, a stock treasury. Drawn on one screen, run on schedule.
               </p>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-2 text-sm font-medium">
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-sm font-semibold">
+              <span className="rounded-full border border-hood-300 bg-hood-100 px-3 py-1 text-hood-800 shadow-soft">🪙 Any coin, any launchpad</span>
+              <span className="rounded-full border border-hood-300 bg-hood-100 px-3 py-1 text-hood-800 shadow-soft">📈 Dividends in stocks or memecoins</span>
+              <span className="rounded-full border border-line bg-paper px-3 py-1 text-ink shadow-soft">🧭 Routing drawn on one screen</span>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-medium">
               <span className="rounded-full border border-line bg-paper px-3 py-1 text-ink shadow-soft">Fees in stocks</span>
               <Arrow className="h-4 w-4 text-hood-500" />
               <span className="rounded-full border border-line bg-paper px-3 py-1 text-ink shadow-soft">Policy applied</span>

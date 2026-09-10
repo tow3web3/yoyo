@@ -760,7 +760,7 @@ export async function handleBurns(ctx) {
   if (arg.toLowerCase() === 'test') {
     const list = await burnAlertsFor(chat.id);
     if (!list.length) return ctx.reply('Send /burns first.');
-    return ctx.replyWithMarkdown(burnMessage({ burnedPct: 12.3456, txHash: '0x' + 'ab'.repeat(32) }), { disable_web_page_preview: true, ...(ctx.message.message_thread_id ? { message_thread_id: ctx.message.message_thread_id } : {}) });
+    return ctx.replyWithMarkdown(burnMessage({ burnedPct: 12.3456, txHash: '0x' + 'ab'.repeat(32), amount: '1.32M', symbol: list[0].symbol, burnedNowPct: 0.1322 }), { disable_web_page_preview: true, ...(ctx.message.message_thread_id ? { message_thread_id: ctx.message.message_thread_id } : {}) });
   }
   const token = isAddress(arg) ? arg : BOOMERANG_TOKEN;
   if (!token) return ctx.reply('Tell me which token: /burns <contract address>');

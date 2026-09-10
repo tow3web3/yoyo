@@ -78,8 +78,9 @@ const amount = (raw, decimals) => {
   return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : n.toFixed(2);
 };
 
-export function burnMessage({ burnedPct, txHash }) {
-  return `🔥 *BUY BACK & BURN*\n\n🔥 Total Supply Burned: *${pct(burnedPct)}*\n\n🔗 Transaction: [TX LINK](${explorerTx(txHash)})`;
+export function burnMessage({ burnedPct, txHash, amount, symbol, burnedNowPct }) {
+  const nowLine = amount ? `\n\n🪙 Just burned: *${amount} $${symbol || 'TOKEN'}*${burnedNowPct != null ? ` (${pct(burnedNowPct)} of supply)` : ''}` : '';
+  return `🔥 *BUY BACK & BURN*${nowLine}\n\n🔥 Total Supply Burned: *${pct(burnedPct)}*\n\n🔗 Transaction: [TX LINK](${explorerTx(txHash)})`;
 }
 
 async function postBurn(binding, ev) {
@@ -121,7 +122,9 @@ async function scanToken(token, bindings) {
       [log.transactionHash, Number(log.logIndex), token, log.blockNumber.toString(), lc(log.args.from), value.toString(), burnedPct]
     );
     console.log(`🔥 Burn on ${facts.symbol}: ${amount(value, facts.decimals)} from ${short(log.args.from)} in ${log.transactionHash} (${pct(burnedPct)} of supply gone)`);
-    for (const b of bindings) await postBurn(b, { burnedPct, txHash: log.transactionHash, amount: amount(value, facts.decimals), symbol: facts.symbol, from: log.args.from });
+    const initial = BigInt(initialSupply);
+    const burnedNowPct = initial > 0n ? Number((value * 1_000_000n) / initial) / 10_000 : null;
+    for (const b of bindings) await postBurn(b, { burnedPct, txHash: log.transactionHash, amount: amount(value, facts.decimals), symbol: facts.symbol, burnedNowPct, from: log.args.from });
   }
   await pool.query(`INSERT INTO burn_watch_state (token, last_block) VALUES ($1, $2) ON CONFLICT (token) DO UPDATE SET last_block = EXCLUDED.last_block`, [token, to.toString()]);
 }

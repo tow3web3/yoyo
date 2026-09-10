@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 const erc20 = parseAbi(['function symbol() view returns (string)', 'function name() view returns (string)']);
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '');
-const BOT = process.env.NEXT_PUBLIC_BOT_USERNAME || 'boomerangtekbot';
+const BOT = process.env.NEXT_PUBLIC_BOT_USERNAME || 'yoyotek_bot';
 
 export function OPTIONS() {
   return apiOptions();

@@ -6,7 +6,7 @@ import { Arrow, X, Github } from './Icons';
 import CopyCA from './CopyCA';
 
 export default function Navigation() {
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'boomerangtekbot';
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'yoyotek_bot';
 
   return (
     <nav className="sticky top-0 z-40 border-b border-line bg-ground/80 backdrop-blur-md">

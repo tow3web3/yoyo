@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Arrow } from './Icons';
 
 export default function CTA() {
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'boomerangtekbot';
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'yoyotek_bot';
   return (
     <div className="panel-ink relative flex flex-col items-center justify-between gap-6 overflow-hidden px-8 py-10 text-center sm:flex-row sm:text-left">
       <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-hood-500/20 blur-3xl" aria-hidden />

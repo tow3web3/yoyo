@@ -23,7 +23,7 @@ const COLUMNS = [
 export default function Screener() {
   const [tokens, setTokens] = useState(null);
   const [sort, setSort] = useState({ key: 'yieldApy', dir: -1 });
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'boomerangtekbot';
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'yoyotek_bot';
 
   useEffect(() => {
     let cancelled = false;

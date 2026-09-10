@@ -69,11 +69,11 @@ export default function Developers() {
     -d '{"token":"0x322F…3b2d","creatorWallet":"0xaC97…030b","feeSource":"wallet","reward":"NVDA"}'
 
 { "code": "K7Q2MX4P", "status": "pending",
-  "telegramUrl": "https://t.me/boomerangtekbot?start=l_K7Q2MX4P",
+  "telegramUrl": "https://t.me/yoyotek_bot?start=l_K7Q2MX4P",
   "dashboardUrl": "${BASE || ''}/0x322f…3b2d", "badgeUrl": "${BASE || ''}/api/badge/0x322f…3b2d" }`}
           </pre>
         </div>
-        <p className="mt-3 text-xs text-mut">No API key? Any site can still link <span className="font-mono">https://t.me/boomerangtekbot?start=t_&lt;tokenAddress&gt;</span> to pre-fill the token.</p>
+        <p className="mt-3 text-xs text-mut">No API key? Any site can still link <span className="font-mono">https://t.me/yoyotek_bot?start=t_&lt;tokenAddress&gt;</span> to pre-fill the token.</p>
       </div>
 
       <div className="mt-4 overflow-x-auto rounded-xl border border-ink bg-tape p-4">

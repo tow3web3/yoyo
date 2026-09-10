@@ -17,7 +17,7 @@ const STATEMENT = [
 ];
 
 export default function Hero() {
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'boomerangtekbot';
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'yoyotek_bot';
   const telegramUrl = `https://t.me/${botUsername}`;
 
   return (

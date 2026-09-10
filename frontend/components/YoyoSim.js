@@ -18,6 +18,7 @@ const MIN_RETURN_SPIN = 28; // rad/s needed for a tug to bring it home
 export default function YoyoSim({ className = '' }) {
   const canvasRef = useRef(null);
   const wrapRef = useRef(null);
+  const hitRef = useRef(null);
   const state = useRef(null);
   const [returns, setReturns] = useState(0);
   const [hint, setHint] = useState('Click the yo-yo');
@@ -38,7 +39,7 @@ export default function YoyoSim({ className = '' }) {
       theta: 0, thetaV: 0, // sway pendulum
       squash: 0, catchPulse: 0, sleepT: 0, idle: 0,
       W: 0, H: 0, L: 0, R: 0, x0: 0, y0: 0,
-      last: performance.now(), returns: 0,
+      last: performance.now(), returns: 0, fromButton: false,
     };
     state.current = s;
 
@@ -51,7 +52,12 @@ export default function YoyoSim({ className = '' }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       s.R = Math.max(44, Math.min(78, rect.width * 0.17));
       // hangs right of centre and sleeps above the dividend card that overlaps the bottom-left
-      s.x0 = rect.width * 0.6; s.y0 = 34;
+      // The string hangs from the Dashboard button in the header when the box reaches up to it; else from a finger near the box top.
+      const btn = document.querySelector('nav a[href="/app"]');
+      const br = btn ? btn.getBoundingClientRect() : null;
+      const cx = br ? br.left + br.width / 2 - rect.left : -1;
+      if (br && rect.top < br.bottom && cx > s.R + 8 && cx < rect.width - s.R - 8) { s.fromButton = true; s.x0 = cx; s.y0 = br.bottom - rect.top - 2; }
+      else { s.fromButton = false; s.x0 = rect.width * 0.6; s.y0 = 34; }
       s.L = Math.max(120, Math.min(rect.height - s.y0 - 2 * s.R - 26, rect.height * 0.6 - s.y0 - 2 * s.R));
     };
     resize();
@@ -94,13 +100,14 @@ export default function YoyoSim({ className = '' }) {
       const len = s.y + R * 0.15;
       const cx = x0 + Math.sin(s.theta) * (s.y + R);
       const cy = y0 + Math.cos(s.theta) * (s.y + R);
-      // finger loop at the top
+      // the hand: a finger loop, or a knot under the header button
       ctx.save();
       ctx.translate(x0, y0);
-      ctx.fillStyle = '#0B0F0C';
-      ctx.beginPath(); ctx.roundRect(-16, -22, 32, 26, 12); ctx.fill();
-      ctx.fillStyle = '#CAF90F';
-      ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
+      if (s.fromButton) { ctx.fillStyle = '#0B0F0C'; ctx.beginPath(); ctx.arc(0, 2, 5, 0, Math.PI * 2); ctx.fill(); }
+      else {
+        ctx.fillStyle = '#0B0F0C'; ctx.beginPath(); ctx.roundRect(-16, -22, 32, 26, 12); ctx.fill();
+        ctx.fillStyle = '#CAF90F'; ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
+      }
       ctx.restore();
       // string: a rope with a little bow when climbing or sleeping
       const bow = s.mode === 'up' ? -Math.min(24, Math.abs(s.v) * 0.02) : s.mode === 'sleep' ? Math.sin(s.sleepT * 9) * 3 : 0;
@@ -131,6 +138,8 @@ export default function YoyoSim({ className = '' }) {
       if (ready) ctx.drawImage(img, -R, -R, R * 2, R * 2);
       else { ctx.fillStyle = '#CAF90F'; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill(); }
       ctx.restore();
+      if (hitRef.current) hitRef.current.style.transform = `translate(${cx - R}px, ${cy - R}px)`;
+      if (hitRef.current) { hitRef.current.style.width = `${R * 2}px`; hitRef.current.style.height = `${R * 2}px`; }
       // motion blur streaks when spinning fast
       if (s.omega > 20) {
         ctx.save(); ctx.translate(cx, cy); ctx.rotate(s.angle * 0.35);
@@ -180,8 +189,9 @@ export default function YoyoSim({ className = '' }) {
 
   return (
     <div ref={wrapRef} className={`relative h-full w-full select-none ${className}`}>
-      <canvas ref={canvasRef} onPointerDown={(e) => { e.preventDefault(); act(); }} className="block h-full w-full cursor-pointer touch-none" aria-label="Playable yo-yo: click to throw, click again to bring it back" role="img" />
-      <div className="pointer-events-none absolute left-3 top-3 whitespace-nowrap rounded-full border border-line bg-paper/90 px-2.5 py-1 text-[11px] font-semibold text-mut shadow-soft">{hint}{returns > 0 ? ` · ${returns} return${returns > 1 ? 's' : ''}` : ''}</div>
+      <canvas ref={canvasRef} className="pointer-events-none block h-full w-full" aria-hidden />
+      <button ref={hitRef} type="button" onPointerDown={(e) => { e.preventDefault(); act(); }} className="pointer-events-auto absolute left-0 top-0 cursor-pointer touch-none rounded-full bg-transparent" aria-label="Playable yo-yo: click to throw, click again to bring it back" />
+      <div className="pointer-events-none absolute bottom-3 right-3 whitespace-nowrap rounded-full border border-line bg-paper/90 px-2.5 py-1 text-[11px] font-semibold text-mut shadow-soft">{hint}{returns > 0 ? ` · ${returns} return${returns > 1 ? 's' : ''}` : ''}</div>
     </div>
   );
 }

@@ -21,8 +21,8 @@ export default function Hero() {
   const telegramUrl = `https://t.me/${botUsername}`;
 
   return (
-    <section className="relative overflow-hidden px-5 pt-10 sm:pt-14">
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
+    <section className="relative px-5 pt-10 sm:pt-14">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
         <div className="animate-blob absolute left-[8%] top-24 h-64 w-64 rounded-full bg-hood-300/30 blur-3xl" />
         <div className="animate-blob absolute right-[6%] top-40 h-72 w-72 rounded-full bg-gold-200/40 blur-3xl [animation-delay:-4s]" />
         <div className="animate-blob absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-hood-200/30 blur-3xl [animation-delay:-8s]" />
@@ -76,7 +76,8 @@ export default function Hero() {
           <div className="relative mx-auto w-full max-w-md">
             <div className="relative aspect-square w-full">
               <div className="absolute inset-10 rounded-full bg-hood-300/30 blur-3xl" />
-              <div className="absolute inset-0 overflow-hidden rounded-[2rem]">
+              {/* The finger sits up in the header: the sim box starts above the hero, over the nav, and only the disc itself takes clicks. */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 top-0 z-50 lg:-top-[12rem]">
                 <YoyoSim />
               </div>
             </div>

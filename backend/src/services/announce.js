@@ -46,7 +46,7 @@ export async function announceDividend({ config, log, reward, sourceSymbol, resu
   if (config.announce_thread_id) extra.message_thread_id = config.announce_thread_id;
   try {
     const card = await fetchCard(log.id);
-    await bot.telegram.sendPhoto(config.announce_chat_id, { source: card, filename: `boomerang-dividend-${log.id}.png` }, extra);
+    await bot.telegram.sendPhoto(config.announce_chat_id, { source: card, filename: `yo-yo-dividend-${log.id}.png` }, extra);
   } catch (e) {
     console.log(`   Receipt card unavailable (${e.message}), posting text`);
     try {

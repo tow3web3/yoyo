@@ -332,10 +332,49 @@ function SourceInspector({ data, draft, setDraft, act, busy, tg, onRevealKey }) 
   );
 }
 
-function RoutingSummary({ draft, meta, select }) {
+function DevWalletCard({ data, select }) {
+  const { config, assets } = data;
+  if (!config?.dev_wallet_public) return null;
+  const list = (assets?.assets || []).filter((a) => a.amount > 0 || a.usd >= 0.01);
+  const eth = list.find((a) => a.isNative);
+  const lowGas = eth ? eth.amount < (assets?.gasReserveEth || 0.002) : Boolean(assets);
+  const top = list.filter((a) => !a.isNative).sort((a, b) => (b.usd || 0) - (a.usd || 0)).slice(0, 4);
+  return (
+    <div className="border-b border-line px-4 py-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-mut">Dev wallet</div>
+        <div className="flex items-center gap-1.5"><CopyBtn text={config.dev_wallet_public} label={shortAddr(config.dev_wallet_public)} /><a href={explorerAddress(config.dev_wallet_public)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold text-mut hover:text-hood-700">↗</a></div>
+      </div>
+      <div className="mt-1.5 flex items-end justify-between gap-3">
+        <div>
+          <div className="figure font-display text-3xl font-extrabold text-ink">{assets ? fmtUsd(assets.totalUsd || 0) : '…'}</div>
+          <div className="text-[11px] text-mut">waiting to be routed {config.scheduleLabel ? config.scheduleLabel.toLowerCase() : ''}</div>
+        </div>
+        {eth && <div className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${lowGas ? 'bg-gold-50 text-gold-700' : 'bg-tile text-ink'}`}>⛽ {fmtNum(eth.amount)} ETH</div>}
+      </div>
+      {assets?.error && <p className="mt-2 text-xs text-down">{assets.error}</p>}
+      {top.length > 0 && (
+        <div className="mt-3 space-y-1">
+          {top.map((a) => (
+            <div key={a.address} className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5"><StockLogo address={a.address} meta={{ symbol: a.symbol }} size="h-4 w-4" text="text-[5px]" /><span className="font-mono font-semibold text-ink">{a.symbol}</span></div>
+              <div className="figure text-mut"><span className="text-ink">{fmtNum(a.amount)}</span> · {fmtUsd(a.usd)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {assets && list.length === 0 && <p className="mt-2 text-xs text-mut">Empty so far. Point your launchpad fee recipient here; the next cycle routes whatever lands.</p>}
+      {lowGas && assets && <p className="mt-2 rounded-xl border border-gold-300 bg-gold-50 px-2.5 py-1.5 text-[11px] text-gold-700">Low gas. Send ~0.005 ETH so cycles can pay the transfers.</p>}
+      <button type="button" onClick={() => select(SOURCE_ID)} className="mt-2 text-[11px] font-semibold text-hood-700 hover:underline">All holdings and settings</button>
+    </div>
+  );
+}
+
+function RoutingSummary({ draft, meta, select, data }) {
   const total = totalBps(draft.legs);
   return (
     <>
+      {data && <DevWalletCard data={data} select={select} />}
       <div className="border-b border-line px-4 py-4">
         <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-mut">Routing</div>
         <div className="mt-1 font-display text-base font-extrabold text-ink">Where every cycle goes</div>
@@ -646,7 +685,7 @@ function StudioInner({ data, refresh, onLogout, onSwitchWallet, demo = false, on
         <aside className="w-[360px] shrink-0 overflow-y-auto border-l border-line bg-paper">
           {selected === SOURCE_ID ? <SourceInspector data={data} draft={draft} setDraft={setDraft} act={act} busy={busy} tg={tg} onRevealKey={onRevealKey} />
             : selectedLeg ? <LegInspector key={selectedLeg.key} leg={selectedLeg} draft={draft} setDraft={setDraft} meta={meta} sourceSymbol={src.symbol} onRemove={() => removeLeg(selectedLeg.key)} />
-            : <RoutingSummary draft={draft} meta={meta} select={setSelected} />}
+            : <RoutingSummary draft={draft} meta={meta} select={setSelected} data={setup ? null : data} />}
         </aside>
       </div>
     </div>
